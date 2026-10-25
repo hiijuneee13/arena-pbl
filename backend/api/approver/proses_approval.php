@@ -54,6 +54,14 @@ if ($index_sekarang === false) {
     exit;
 }
 
+// Membuat UUID v4 supaya id_approval terisi walau kolom di database belum punya DEFAULT gen_random_uuid()
+function buat_uuid() {
+    $d = random_bytes(16);
+    $d[6] = chr((ord($d[6]) & 0x0f) | 0x40);
+    $d[8] = chr((ord($d[8]) & 0x3f) | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($d), 4));
+}
+
 // 8. Proses approval/rejection dengan transaksi untuk menghindari race condition
 try {
     $pdo->beginTransaction();
@@ -120,10 +128,11 @@ try {
     ]);
 
     // 13. Simpan log ke tabel approval_log agar terekam siapa yang acc/tolak
-    $sql_log = "INSERT INTO approval_log (id_reservasi, id_approver, tahap_approval, status, catatan)
-                VALUES (:id_res, :id_app, :tahap, :status, :catatan)";
+    $sql_log = "INSERT INTO approval_log (id_approval, id_reservasi, id_approver, tahap_approval, status, catatan, waktu_proses)
+                VALUES (:id_log, :id_res, :id_app, :tahap, :status, :catatan, NOW())";
     $stmt_log = $pdo->prepare($sql_log);
     $stmt_log->execute([
+        ':id_log'  => buat_uuid(),
         ':id_res'  => $id_reservasi,
         ':id_app'  => $id_approver,
         ':tahap'   => $role_sekarang,

@@ -21,8 +21,9 @@ try {
     $stmt_res = $pdo->query($sql_reservasi);
     $data_reservasi = $stmt_res->fetchAll(PDO::FETCH_ASSOC);
 
+
     // 3. Ambil daftar gedung (Untuk dilihat status operasionalnya)
-    $sql_gedung = "SELECT id_gedung, nama_gedung, kapasitas, status_operasional FROM gedung_fasilitas";
+    $sql_gedung = "SELECT id_gedung, nama_gedung, kapasitas, CASE WHEN COALESCE(status_aktif, true) THEN 'Aktif' ELSE 'Nonaktif' END AS status_operasional FROM gedung_fasilitas";
     $stmt_gedung = $pdo->query($sql_gedung);
     $data_gedung = $stmt_gedung->fetchAll(PDO::FETCH_ASSOC);
 
@@ -38,4 +39,4 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => "Terjadi kesalahan database: " . $e->getMessage()]);
 }
-?>
+?> 
