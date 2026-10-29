@@ -12,7 +12,7 @@ if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
 
 try {
     // 2. Ambil daftar gedung dari database, urutkan berdasarkan nama gedung
-    $sql = "SELECT id_gedung, nama_gedung, lokasi, fasilitas, kapasitas, status_operasional 
+    $sql = "SELECT id_gedung, nama_gedung, lokasi, fasilitas, kapasitas, CASE WHEN COALESCE(status_aktif, true) THEN 'Aktif' ELSE 'Nonaktif' END AS status_operasional 
             FROM gedung_fasilitas 
             ORDER BY nama_gedung ASC";
 

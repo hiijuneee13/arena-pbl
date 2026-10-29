@@ -32,10 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 6. Update status gedung di database
     try {
-        $sql = "UPDATE gedung_fasilitas SET status_operasional = :status_baru WHERE id_gedung = :id_gedung";
+        $sql = "UPDATE gedung_fasilitas SET status_aktif = :status_baru WHERE id_gedung = :id_gedung";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            ':status_baru' => $status_baru, 
+            ':status_baru' => ($status_baru === 'Aktif') ? 'true' : 'false', // status_aktif bertipe boolean 
             ':id_gedung' => $id_gedung
         ]);
 
