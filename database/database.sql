@@ -1,5 +1,12 @@
+-- Menyiapkan database via terminal vscode
+-- Buka terminal di vscode, lalu jalankan perintah berikut:
+-- 1. Untuk membuat database(Jika belum ada database)
+-- psql -U postgres -c "CREATE DATABASE arena_db;" 
+-- 2. Untuk menjalankan sql script ini
+-- psql -U postgres -d arena_db -f database.sql
 
--- 1. PEMBUATAN TABEL (TANPA FOREIGN KEY) =========================================================
+
+-- 1. PEMBUATAN TABEL (TANPA FOREIGN KEY) ===================================================
 
 CREATE TABLE public.gedung_fasilitas (
     id_gedung uuid NOT NULL,

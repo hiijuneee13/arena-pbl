@@ -4,7 +4,7 @@ $host = "localhost";
 $port = "5432";
 $dbname = "arena_db";
 $user = "postgres";
-$password = "123"; // Ganti dengan password Postgres
+$password = "123"; // password Postgres
 
 try {
     // Membuat jembatan koneksi menggunakan PDO (PHP Data Objects)

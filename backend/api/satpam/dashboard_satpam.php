@@ -11,7 +11,7 @@ if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'Satpam') {
     http_response_code(403);
     echo json_encode(["status" => "error", "message" => "Akses Ditolak! Halaman ini khusus Satpam."]);
     exit;
-}
+} 
 
 try {
     // 2. Mengambil ID pengguna Satpam dari session

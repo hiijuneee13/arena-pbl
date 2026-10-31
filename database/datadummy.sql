@@ -1,3 +1,6 @@
+-- Untuk menjalankan sql script ini, buka terminal di vscode, lalu jalankan perintah berikut:
+-- psql -U postgres -d arena_db -f datadummy.sql
+
 -- =======================================================
 -- 3. DATA DUMMY (MOCK DATA)
 -- =======================================================

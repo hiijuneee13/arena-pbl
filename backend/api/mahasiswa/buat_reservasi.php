@@ -82,10 +82,18 @@ if (class_exists('finfo')) {
 
 $direktori_simpan = null; // diisi setelah file berhasil dipindahkan
 
+// Membuat UUID v4 supaya id terisi walau kolom di database belum punya DEFAULT gen_random_uuid()
+function buat_uuid() {
+    $d = random_bytes(16);
+    $d[6] = chr((ord($d[6]) & 0x0f) | 0x40);
+    $d[8] = chr((ord($d[8]) & 0x3f) | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($d), 4));
+}
+
 // 10. Proses penyimpanan data ke database dengan pengecekan bentrok jadwal
 try {
     // BARU 1: pastikan gedung ada dan masih aktif
-    $stmt_gedung = $pdo->prepare("SELECT status_operasional FROM gedung_fasilitas WHERE id_gedung = :id_gedung");
+    $stmt_gedung = $pdo->prepare("SELECT COALESCE(status_aktif, true) AS status_aktif FROM gedung_fasilitas WHERE id_gedung = :id_gedung");
     $stmt_gedung->execute([':id_gedung' => $id_gedung]);
     $gedung = $stmt_gedung->fetch();
 
@@ -93,7 +101,7 @@ try {
         echo json_encode(["status" => "error", "message" => "Gedung tidak ditemukan!"]);
         exit;
     }
-    if (($gedung['status_operasional'] ?? 'Aktif') !== 'Aktif') {
+    if (!filter_var($gedung['status_aktif'], FILTER_VALIDATE_BOOLEAN)) {
         echo json_encode(["status" => "error", "message" => "Gedung sedang tidak aktif dan tidak bisa dipinjam."]);
         exit;
     }
@@ -144,12 +152,13 @@ try {
 
     // Masukkan data ke PostgreSQL (alur estafet dimulai dari DosPem)
     $sql = "INSERT INTO reservasi
-            (id_user, id_gedung, nama_acara, tgl_acara, jam_mulai, jam_selesai, file_proposal, posisi_approval, status_akhir)
+            (id_reservasi, id_user, id_gedung, nama_acara, tgl_acara, jam_mulai, jam_selesai, file_proposal, posisi_approval, status_akhir)
             VALUES
-            (:id_user, :id_gedung, :nama_acara, :tgl_acara, :jam_mulai, :jam_selesai, :file_proposal, 'DosPem', 'In-Progress')";
+            (:id_reservasi, :id_user, :id_gedung, :nama_acara, :tgl_acara, :jam_mulai, :jam_selesai, :file_proposal, 'DosPem', 'In-Progress')";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
+        ':id_reservasi'  => buat_uuid(),
         ':id_user'       => $_SESSION['id_user'],
         ':id_gedung'     => $id_gedung,
         ':nama_acara'    => $nama_acara,
