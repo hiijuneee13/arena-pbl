@@ -1,57 +1,138 @@
-/* approver.js - dashboard approver (Dosen Pembina / Pres BEM / Kajur / Wadir)
-   Satu halaman, tahap approver ditentukan role (roleMeta.tahap). */
+/* =====================================================================
+   dasboard-approver.js - dashboard approver (DosPem / Presiden BEM / Kajur / Wadir)
+   Satu halaman; tahap approver ditentukan role (roleMeta.tahap).
+   Endpoint yang dipakai (lihat api.js):
+     API.getPending()      -> backend/api/approver/get_pending.php
+     API.prosesApproval()  -> backend/api/approver/proses_approval.php (action: approve | reject | revise[belum ada di backend])
+     API.riwayatApproval() [belum ada di backend]
+   ===================================================================== */
 (function () {
   'use strict';
-  const user = Auth.requireRole(['dosen_pembina', 'pres_bem', 'kajur', 'wadir']);
+
+  const user = Auth.requireRole(DATA.URUTAN);
   if (!user) return;
-  Shell.mount({ title: 'Dashboard' });
+  const shell = Shell.mount({ title: 'Dashboard' });
 
-  const myTahap = user.roleMeta.tahap;
-  let current = null;                                   // pengajuan yang sedang dibuka di modal
-  const stats = { Disetujui: 5, Direvisi: 1, Ditolak: 1 };
+  const esc = UI.esc;
+  const $ = (id) => document.getElementById(id);
+  let antrean = [];                                       // hasil get_pending
+  let current = null;                                     // pengajuan yang sedang dibuka di modal
 
-  /* Mini stepper 4 tahap: done = sudah lewat, now = tahap approver ini */
-  const steps = (p) => '<div class="mini-steps">' + DATA.tahapNama.map((n, i) =>
-    `<div class="ms ${i + 1 < p.tahap ? 'done' : i + 1 === p.tahap ? 'now' : ''}"><span class="dot">${i + 1}</span>${n}</div>`).join('') + '</div>';
+  /* Kartu pengajuan: bagian atas (judul, status, info) dipakai di daftar & halaman tinjau */
+  const cardHead = (p) => `<h3>${esc(p.nama_acara)}</h3>${UI.badge(p.status_akhir)}
+    <div class="meta"><span>Diajukan oleh <b>${esc(p.nama_instansi || p.nama_pemohon)}</b></span></div>
+    <div class="meta"><span>${esc(p.nama_gedung)}</span><span>${esc(UI.fmtTgl(p.tgl_acara))}</span>${p.jumlah_peserta ? `<span>${esc(p.jumlah_peserta)} Peserta</span>` : ''}</div>
+    ${p.deskripsi ? `<div class="meta"><span>${esc(p.deskripsi)}</span></div>` : ''}
+    ${UI.tracker(p)}`;
 
-  /* Kartu pengajuan (dipakai di Dashboard & Antrean) */
-  const card = (p) => `<div class="card req reveal" style="--i:${p.id}">
-    <h3>${p.judul}</h3>${UI.badge(p.status)}
-    <div class="meta"><span>Diajukan oleh <b>${p.oleh}</b></span></div>
-    <div class="meta"><span>Ruang ${p.ruang}</span><span>${p.tanggal}</span><span>${p.peserta} Peserta</span></div>
-    <div class="meta">${p.deskripsi}</div>${steps(p)}
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn" data-review="${p.id}">Tinjau Proposal</button>
-      <button class="btn btn-muted" data-pdf="${p.id}">Lihat Berkas PDF</button></div></div>`;
+  const card = (p, i) => `<div class="card req reveal" style="--i:${i}">${cardHead(p)}
+    <div class="card-actions">
+      <button class="btn btn-pill" data-review="${esc(p.id_reservasi)}">Tinjau Proposal</button>
+      <button class="btn btn-pill btn-muted" data-pdf="${esc(p.id_reservasi)}">Lihat Berkas PDF</button></div></div>`;
 
-  const statCards = () => Object.entries(stats).map(([k, v]) => `<div class="card stat"><div class="label">${k === 'Direvisi' ? 'Revisi' : k}</div><div class="value">${v}</div></div>`).join('');
+  /* Tabel riwayat keputusan: No | Nama Kegiatan | Instansi | Tanggal | Status */
+  const tabelRiwayat = (rows, kosong) => '<thead><tr><th>No</th><th>Nama Kegiatan</th><th>Instansi</th><th>Tanggal</th><th>Status</th></tr></thead><tbody>' +
+    (rows.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.nama_acara)}</td><td>${esc(a.nama_instansi || a.nama_pemohon)}</td><td>${esc(UI.fmtTgl(a.tgl_acara))}</td><td>${UI.badge(a.status)}</td></tr>`).join('')
+      || `<tr><td colspan="5" class="muted">${kosong}</td></tr>`) + '</tbody>';
 
-  function render() {
-    const waiting = DATA.pengajuan.filter(p => p.status === 'Pending');
-    document.getElementById('st-masuk').textContent = DATA.pengajuan.length;
-    document.getElementById('st-tunggu').textContent = waiting.length;
-    document.getElementById('list-dashboard').innerHTML = waiting.slice(0, 2).map(card).join('') || '<div class="card">Tidak ada antrean.</div>';
-    document.getElementById('list-antrean').innerHTML = DATA.pengajuan.map(card).join('');
-    document.getElementById('stat-riwayat').innerHTML = document.getElementById('stat-arsip').innerHTML = statCards();
-    document.getElementById('tbl-arsip').innerHTML = '<thead><tr><th>No</th><th>Nama Kegiatan</th><th>Instansi</th><th>Tanggal</th><th>Status</th></tr></thead><tbody>' +
-      DATA.arsip.map(a => `<tr><td>${a.no}</td><td>${a.nama}</td><td>${a.instansi}</td><td>${a.tanggal}</td><td>${UI.badge('Approved')}</td></tr>`).join('') + '</tbody>';
+  const statCard = (label, value) => `<div class="card stat"><div class="label">${label}</div><div class="value">${value}</div></div>`;
+
+  async function render() {
+    const [pend, riw] = await Promise.all([API.getPending(), API.riwayatApproval()]);
+    if (pend.status !== 'success') {
+      $('list-dashboard').innerHTML = $('list-antrean').innerHTML = `<div class="card empty">${esc(pend.message)}</div>`;
+      return;
+    }
+    antrean = pend.data;
+    const st = (riw.statistik || { disetujui: 0, revisi: 0, ditolak: 0, total: 0 });
+    const riwayat = riw.data || [];
+
+    $('st-hariini').textContent = pend.jumlah_masuk_hari_ini || 0;
+    $('st-tunggu').textContent = pend.jumlah_antrean;
+    $('st-setuju').textContent = st.disetujui;
+    $('st-revisi').textContent = st.revisi || 0;
+    $('st-tolak').textContent = st.ditolak;
+
+    const kosong = '<div class="card empty">Tidak ada antrean. Semua pengajuan sudah Anda proses.</div>';
+    $('list-dashboard').innerHTML = antrean.slice(0, 2).map(card).join('') || kosong;
+    $('list-antrean').innerHTML = antrean.map(card).join('') || kosong;
+
+    $('tbl-dashboard').innerHTML = tabelRiwayat(riwayat.slice(0, 7), 'Belum ada keputusan.');
+
+    // Arsip Kegiatan: statistik lengkap + tabel dengan catatan & waktu
+    $('stat-arsip').innerHTML = statCard('Total Keputusan', st.total) + statCard('Disetujui', st.disetujui) + statCard('Revisi', st.revisi || 0) + statCard('Ditolak', st.ditolak);
+    $('tbl-arsip').innerHTML = '<thead><tr><th>No</th><th>Nama Kegiatan</th><th>Instansi</th><th>Tanggal Acara</th><th>Keputusan</th><th>Waktu</th><th>Catatan</th></tr></thead><tbody>' +
+      (riwayat.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.nama_acara)}</td><td>${esc(a.nama_instansi || a.nama_pemohon)}</td><td>${esc(UI.fmtTgl(a.tgl_acara))}</td>
+        <td>${UI.badge(a.status)}</td><td>${esc(UI.fmtWaktu(a.waktu_proses))}</td><td>${esc(a.catatan || '-')}</td></tr>`).join('')
+        || '<tr><td colspan="7" class="muted">Belum ada keputusan.</td></tr>') + '</tbody>';
+  }
+
+  /* Pratinjau PDF (dipakai di modal & halaman tinjau) */
+  const pdfBox = (x) => `<div style="text-align:center">[ Pratinjau PDF ]<br><b>${esc(x.file_proposal || '-')}</b><br><small>tempat embed iframe / pdf.js</small></div>`;
+  // TODO backend: ganti dengan <iframe src="../../backend/uploads/NAMA_FILE"> setelah folder uploads tersedia
+
+  /* Buka halaman Tinjau Proposal (tetap di bawah menu Antrean Persetujuan) */
+  function bukaTinjau(x) {
+    current = x;
+    $('rv-head').innerHTML = cardHead(x);
+    $('rv-pdf').innerHTML = pdfBox(x);
+    $('rv-note').value = '';
+    shell.show('tinjau');
+    document.getElementById('page-title').textContent = 'Antrean Persetujuan';
+    document.querySelector('.menu-item[data-menu="antrean"]').classList.add('active');
+    window.scrollTo({ top: 0 });
   }
 
   /* Klik tombol di kartu (event delegation) */
   document.addEventListener('click', (e) => {
     const r = e.target.closest('[data-review]'), p = e.target.closest('[data-pdf]');
-    if (r) { current = DATA.pengajuan.find(x => x.id == r.dataset.review); document.getElementById('rv-title').textContent = 'Tinjau: ' + current.judul; document.getElementById('rv-note').value = ''; UI.modal.open('m-review'); }
-    if (p) { const x = DATA.pengajuan.find(y => y.id == p.dataset.pdf); document.getElementById('pdf-title').textContent = 'Proposal ' + x.judul; UI.modal.open('m-pdf'); }
+    if (r) { const x = antrean.find((y) => y.id_reservasi === r.dataset.review); if (x) bukaTinjau(x); }
+    if (p) {
+      const x = antrean.find((y) => y.id_reservasi === p.dataset.pdf);
+      if (!x) return;
+      $('pdf-title').textContent = 'Proposal ' + x.nama_acara;
+      $('pdf-preview').innerHTML = pdfBox(x);
+      UI.modal.open('m-pdf');
+    }
   });
 
-  /* Keputusan: Revisi / Disetujui / Ditolak (catatan wajib untuk Revisi & Ditolak) */
-  document.querySelectorAll('#m-review [data-act]').forEach(b => b.onclick = () => {
-    const act = b.dataset.act, note = document.getElementById('rv-note').value.trim();
-    if (act !== 'Disetujui' && !note) return UI.toast('Catatan wajib diisi.', 'bad');
-    current.status = act; stats[act]++;
-    if (act === 'Disetujui') current.tahap = Math.min(4, myTahap + 1);   // lanjut ke approver berikutnya
-    // TODO backend: POST /approval {reservasi_id, tahap_ke: myTahap, status, catatan}
-    UI.modal.close('m-review'); UI.toast(`Pengajuan ${act.toLowerCase()}.`, act === 'Ditolak' ? 'bad' : 'ok'); render();
-  });
+  /* Keputusan: Revisi / Disetujui / Ditolak -> konfirmasi dulu -> submit ke proses_approval.php.
+     Catatan wajib untuk revisi & tolak (aturan UI). */
+  const KONFIRMASI = {
+    revise:  ['Anda memilih revisi',  'Setelah anda memilih, pesan yg telah anda inputkan akan dikirim kepada peminjam. Pesan yg telah terkirim tidak bisa diubah lagi, jadi pastikan lagi'],
+    approve: ['Anda memilih setujui', 'Setelah anda memilih, pengajuan akan diteruskan ke tahap berikutnya dan tidak bisa dibatalkan, jadi pastikan lagi'],
+    reject:  ['Anda memilih tolak',   'Setelah anda memilih, pesan yg telah anda inputkan akan dikirim kepada peminjam dan pengajuan dihentikan. Keputusan tidak bisa diubah lagi, jadi pastikan lagi'],
+  };
+  let pendingAction = null;
+
+  document.querySelectorAll('#rv-pdf ~ .review-form [data-act]').forEach((b) => { b.onclick = () => {
+    const action = b.dataset.act, catatan = $('rv-note').value.trim();
+    if (action !== 'approve' && !catatan) return UI.toast('Catatan wajib diisi saat merevisi atau menolak pengajuan.', 'bad');
+    pendingAction = action;
+    $('cf-title').textContent = KONFIRMASI[action][0];
+    $('cf-text').textContent = KONFIRMASI[action][1];
+    UI.modal.open('m-confirm');
+  }; });
+
+  $('cf-cancel').onclick = () => { pendingAction = null; UI.modal.close('m-confirm'); };
+
+  $('cf-submit').onclick = async () => {
+    if (!pendingAction || !current) return;
+    const action = pendingAction, btn = $('cf-submit');
+    btn.disabled = true;
+    const res = await API.prosesApproval({ id_reservasi: current.id_reservasi, action, catatan: $('rv-note').value.trim() });
+    btn.disabled = false;
+    UI.modal.close('m-confirm');
+    if (res.status !== 'success') return UI.toast(res.message, 'bad');
+    pendingAction = null;
+    const next = action === 'revise' ? 'Dikembalikan ke peminjam untuk direvisi.'
+      : action === 'reject' ? 'Pengajuan ditolak.'
+      : res.next_posisi === 'Selesai' ? 'Seluruh tahap selesai, pengajuan disetujui penuh.'
+      : `Diteruskan ke ${DATA.LABEL_TAHAP[res.next_posisi] || res.next_posisi}.`;
+    UI.toast(`${res.message}. ${next}`, action === 'approve' ? 'ok' : 'bad');
+    await render();
+    shell.show('antrean');                      // kembali ke daftar antrean
+  };
+
   render();
 })();

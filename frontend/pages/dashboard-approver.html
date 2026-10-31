@@ -12,54 +12,80 @@
 </head>
 <body>
   <div id="app">
-    <!-- Menu: Dashboard -->
+    <!-- Menu: Dashboard (GET get_pending.php + riwayat) -->
     <section class="view" data-view="dashboard">
       <div class="grid cols-2">
-        <div class="card stat"><div class="label">Pengajuan Masuk Hari ini</div><div class="value" id="st-masuk">0</div></div>
+        <div class="card stat"><div class="label">Pengajuan Masuk Hari ini</div><div class="value" id="st-hariini">0</div></div>
         <div class="card stat"><div class="label">Menunggu Tinjauan</div><div class="value" id="st-tunggu">0</div></div>
       </div>
       <h2 class="section-title">Daftar Pengajuan Menunggu Tinjauan</h2>
       <div id="list-dashboard"></div>
+
       <h2 class="section-title">Riwayat &amp; Statistik</h2>
-      <div class="grid cols-3" id="stat-riwayat"></div>
+      <div class="grid cols-3">
+        <div class="card stat"><div class="label">Disetujui</div><div class="value" id="st-setuju">0</div></div>
+        <div class="card stat"><div class="label">Revisi</div><div class="value" id="st-revisi">0</div></div>
+        <div class="card stat"><div class="label">Ditolak</div><div class="value" id="st-tolak">0</div></div>
+      </div>
+      <div class="card table-wrap" style="margin-top:14px"><table class="table" id="tbl-dashboard"></table></div>
     </section>
+
     <!-- Menu: Antrean Persetujuan -->
     <section class="view" data-view="antrean">
       <h2 class="section-title" style="margin-top:0">Daftar Pengajuan Menunggu Tinjauan</h2>
       <div id="list-antrean"></div>
     </section>
-    <!-- Menu: Arsip Kegiatan -->
-    <section class="view" data-view="arsip">
-      <h2 class="section-title" style="margin-top:0">Riwayat</h2>
-      <div class="grid cols-3" id="stat-arsip"></div>
-      <div class="card" style="margin-top:14px"><table class="table" id="tbl-arsip"></table></div>
+
+    <!-- Halaman Tinjau Proposal (dibuka dari tombol "Tinjau Proposal", tetap di bawah menu Antrean Persetujuan) -->
+    <section class="view" data-view="tinjau">
+      <h2 class="section-title" style="margin-top:0">Daftar Pengajuan Menunggu Tinjauan</h2>
+      <div class="card req review-card">
+        <div id="rv-head"></div>
+        <div class="pdf-viewer" id="rv-pdf"></div>
+        <div class="review-form">
+          <h3>Masukkan catatan</h3>
+          <div class="review-row">
+            <textarea class="textarea" id="rv-note" placeholder="Catatan wajib diisi bila pengajuan direvisi atau ditolak"></textarea>
+            <div class="review-actions">
+              <button class="btn btn-pill" data-act="revise">Revisi</button>
+              <button class="btn btn-pill" data-act="approve">Disetujui</button>
+              <button class="btn btn-pill" data-act="reject">Ditolak</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- Modal: lihat PDF (frame "lihat pdf") -->
+    <!-- Menu: Arsip Kegiatan (riwayat keputusan saya, dari approval_log) -->
+    <section class="view" data-view="arsip">
+      <h2 class="section-title" style="margin-top:0">Riwayat Keputusan</h2>
+      <div class="grid cols-4" id="stat-arsip"></div>
+      <div class="card table-wrap" style="margin-top:14px"><table class="table" id="tbl-arsip"></table></div>
+    </section>
+
+    <!-- Modal: lihat berkas PDF (kolom reservasi.file_proposal) -->
     <div class="overlay" id="m-pdf"><div class="modal">
       <h2 id="pdf-title">Proposal</h2>
-      <div class="preview">[ Pratinjau PDF proposal - tempat embed &lt;iframe&gt;/pdf.js ]</div>
+      <div class="preview" id="pdf-preview">[ Pratinjau PDF proposal - tempat embed &lt;iframe&gt; / pdf.js ]</div>
       <div class="actions"><button class="btn" onclick="UI.modal.close('m-pdf')">Selesai lihat</button></div>
     </div></div>
 
-    <!-- Modal: tinjau proposal (frame "tinjau proposal") -->
-    <div class="overlay" id="m-review"><div class="modal">
-      <h2 id="rv-title">Tinjau Proposal</h2>
-      <div class="preview">[ Pratinjau proposal ]</div>
-      <div class="field"><label>Masukkan catatan</label><textarea class="textarea" id="rv-note" placeholder="Catatan wajib diisi untuk Revisi / Ditolak"></textarea></div>
+    <!-- Modal konfirmasi keputusan (revisi / setujui / tolak) -->
+    <div class="overlay" id="m-confirm"><div class="modal confirm-modal">
+      <h2 id="cf-title">Anda memilih revisi</h2>
+      <p id="cf-text"></p>
       <div class="actions">
-        <button class="btn btn-ghost" onclick="UI.modal.close('m-review')">Batal</button>
-        <button class="btn" data-act="Direvisi">Revisi</button>
-        <button class="btn" data-act="Disetujui">Disetujui</button>
-        <button class="btn" data-act="Ditolak">Ditolak</button>
+        <button class="btn btn-cancel" id="cf-cancel">cancel</button>
+        <button class="btn" id="cf-submit">submit</button>
       </div>
     </div></div>
   </div>
 
+  <script src="../assets/js/data.js"></script>
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script src="../assets/js/ui.js"></script>
   <script src="../assets/js/shell.js"></script>
-  <script src="../assets/js/data.js"></script>
   <script src="../assets/js/dasboard-approver.js"></script>
 </body>
 </html>

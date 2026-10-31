@@ -1,9 +1,115 @@
-/* Styling khusus Dashboard Admin TU */
-.stats-grid .stat-box {
-  transition: transform 0.2s ease;
+/* =====================================================================
+   dasboard-admin.css - Dashboard Admin TU
+   Mengikuti mockup "Kelola Gedung & Laporan". Dimuat paling akhir,
+   jadi hanya memengaruhi halaman admin (role lain tidak berubah).
+   Warna status (merah/hijau/kuning) memakai token di variables.css.
+   ===================================================================== */
+:root {
+  --row-line: #424655;        /* garis pemisah baris tabel */
+  --navy: #11163f;            /* latar modal */
+  --navy-line: #232a66;
 }
 
-.stats-grid .stat-box:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent);
+/* ---------- Layout: sidebar ramping + konten ---------- */
+.app { grid-template-columns: 190px minmax(0, 1fr); gap: 24px; }
+.app .main { padding: 8px 12px 40px 0; }
+
+/* ---------- Sidebar ---------- */
+.sidebar { background: var(--panel); border-color: var(--panel-border); border-radius: 18px; padding: 18px 14px; gap: 12px; }
+.brand { font-size: 22px; gap: 12px; margin: 6px 0 20px 4px; }
+.brand-logo { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, var(--mark-start), var(--mark-end)); }
+.menu-item { background: var(--surface-2); border: 1px solid var(--panel-border); border-radius: 10px; padding: 7px 22px; font-size: 13px; font-weight: 600; color: var(--text); }
+.menu-item:hover { background: #1d2240; }
+.menu-item.active { background: #1d2240; border-color: var(--accent-soft); box-shadow: none; }
+.sidebar-foot { padding: 0 0 10px 14px; }
+.sidebar-foot .logout { color: var(--danger); font-size: 12px; font-weight: 600; }
+
+/* ---------- Kartu & judul ---------- */
+.card { border-color: var(--panel-border); border-radius: 18px; padding: 20px 22px; }
+.card-title { font-size: 16px; margin-bottom: 14px; }
+.section-title { font-size: 21px; margin: 28px 0 12px; }
+.card-tall { min-height: calc(100vh - 140px); }
+.small { font-size: 11px; }
+
+/* Kartu statistik */
+.stat { padding: 20px 24px; border-radius: 16px; }
+.stat .label { font: 500 15px var(--font-head); color: var(--muted); }
+.stat .value { font: 700 38px var(--font-head); margin-top: 10px; }
+.stat .hint { margin-top: 10px; font-size: 11px; color: var(--green); }
+
+/* Baris Managemen Ruang + Log Aktivitas */
+.grid.split { grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); margin-top: 18px; align-items: start; }
+
+/* Laporan rekapitulasi: dua kartu besar */
+.grid.rekap { gap: 48px; }
+.rekap .stat { padding: 30px 34px; min-height: 150px; }
+.rekap .stat .label { font-size: 12px; }
+.rekap .stat .value { font-size: 40px; margin-top: 8px; }
+
+/* ---------- Tabel ---------- */
+.rtable { width: 100%; border-collapse: collapse; font-family: var(--font-head); }
+.rtable th { color: var(--muted); font-weight: 500; font-size: 11px; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--row-line); }
+.rtable td { padding: 22px 12px; font-size: 11px; font-weight: 500; border-bottom: 1px solid var(--row-line); vertical-align: middle; }
+.rtable tbody tr { transition: background var(--dur); }
+.rtable tbody tr:hover { background: rgba(255, 255, 255, .03); }
+.rtable .c { text-align: center; }
+.rtable .r { text-align: right; }
+.rtable td.muted { color: var(--muted); }
+
+/* ---------- Badge status ruang ---------- */
+.pill { display: inline-block; min-width: 76px; text-align: center; padding: 2px 12px; border-radius: var(--radius-pill); border: 1px solid; font: 500 11px var(--font-head); }
+.pill.blocked   { background: var(--red-bg);   border-color: var(--red-border);   color: var(--red); }
+.pill.available { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+.pill.pending   { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+
+/* ---------- Tombol ---------- */
+.btn { border: 1px solid rgba(255, 255, 255, .16); }
+.btn.btn-outline { background: transparent; border: 1px solid var(--panel-border); color: var(--text); font-weight: 600; }
+.btn.btn-outline:hover { background: var(--surface-2); box-shadow: none; filter: none; }
+.btn-rect { border-radius: 10px; padding: 8px 18px; font-size: 12px; }
+
+/* ---------- Filter dropdown (panel datar gelap, item terpilih ungu, submenu ruang di samping) ---------- */
+.filters { display: flex; gap: 12px; flex-wrap: wrap; }
+.dropdown-btn { min-width: 160px; padding: 8px 14px; border-radius: 12px; background: transparent; border: 1px solid var(--panel-border); font: 500 12px var(--font-head); transition: background var(--dur); }
+.dropdown-btn:hover { background: var(--surface-2); }
+.dropdown-menu { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px; padding: 0; }
+.dropdown-menu li { position: relative; font: 500 12px var(--font-head); padding: 12px 10px; border-radius: 0; }
+.dropdown-menu li + li { border-top: 1px solid var(--panel-border); }
+.dropdown-menu li:hover { background: #1b2036; }
+.dropdown-menu li.sel { background: var(--accent-2); color: #fff; }
+.dropdown-menu li.sel-parent { background: #1b2036; }
+/* submenu ruang: muncul di kanan item tempat */
+.sub-menu { display: none; position: absolute; left: 100%; top: -1px; min-width: 160px; margin: 0; padding: 0; list-style: none; z-index: 21;
+  background: #2a2d3d; border: 1px solid var(--panel-border); border-radius: 0 4px 4px 0; }
+.dropdown-menu li:hover > .sub-menu, .dropdown-menu li.open-sub > .sub-menu { display: block; }
+.sub-menu li:hover { background: #353a50; }
+.sub-menu li.sel { background: var(--accent-2); }
+
+/* ---------- Log aktivitas ---------- */
+.log-item { font-size: 11px; margin: 0 0 14px; line-height: 1.5; }
+.log-item .neg { color: var(--bad); font-weight: 600; }
+
+/* ---------- Siap dikunci & diterbitkan ---------- */
+.row-item { padding: 14px 0; border-top: 1px solid var(--row-line); }
+.row-item:first-child { border-top: 0; padding-top: 0; }
+.row-item:last-child { padding-bottom: 0; }
+.row-item h3 { font: 700 16px var(--font-head); }
+.row-item p { margin: 4px 0 12px; font-size: 11px; }
+
+/* ---------- Modal (biru tua, sudut membulat) ---------- */
+.modal { background: var(--navy); border: 1px solid var(--navy-line); border-radius: 32px; padding: 30px 34px; }
+.modal .note-box { background: rgba(255, 255, 255, .05); }
+.modal.wide { width: min(860px, 92vw); min-height: 480px; grid-template-rows: auto 1fr auto; }
+.surat-body { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 28px; align-items: start; }
+.surat-body .note-box { margin-top: 16px; }
+.modal .actions { align-self: end; }
+
+/* ---------- Responsif ---------- */
+@media (max-width: 900px) {
+  .grid.split { grid-template-columns: 1fr; }
+  .grid.rekap { gap: 14px; }
+}
+@media (max-width: 800px) {
+  .app { grid-template-columns: 1fr; }
+  .surat-body { grid-template-columns: 1fr; }
 }

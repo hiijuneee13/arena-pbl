@@ -13,13 +13,15 @@
 <body>
   <!-- #app diisi sidebar+header oleh shell.js; isi di bawah ini = konten halaman -->
   <div id="app">
+
+    <!-- Menu: Ajukan Peminjaman (wizard 5 langkah, memakai POST buat_reservasi.php) -->
     <section class="view" data-view="ajukan">
 
       <!-- STEPPER 5 LANGKAH (dibuat oleh dasboard-mahasiswa.js agar mudah diubah) -->
       <div class="stepper" id="stepper"></div>
 
       <div class="card" id="wizard">
-        <!-- LANGKAH 1: Unduh templat (muncul sesuai role BEM/HMJ/UKM) -->
+        <!-- LANGKAH 1: Unduh templat (mengikuti organisasi.tipe: BEM / HMJ / UKM) -->
         <div class="step-panel" data-step="1">
           <div class="template-box">
             <div><h2 id="tpl-title">Template Proposal Peminjaman Tempat</h2>
@@ -28,30 +30,30 @@
           </div>
         </div>
 
-        <!-- LANGKAH 2: Data kegiatan -->
+        <!-- LANGKAH 2: Data kegiatan (kolom reservasi.nama_acara) -->
         <div class="step-panel" data-step="2">
-          <div class="field"><label>Nama Kegiatan</label><input class="input" id="f-nama" placeholder="Dies Natalis Jurusan Teknologi Informasi"></div>
+          <div class="field"><label for="f-nama">Nama Kegiatan</label><input class="input" id="f-nama" maxlength="255" placeholder="Dies Natalis Jurusan Teknologi Informasi"></div>
           <div class="grid cols-2">
-            <div class="field"><label>Organisasi Pelaksana</label><input class="input" id="f-org" readonly></div>
-            <div class="field"><label>Perkiraan Peserta</label><input class="input" id="f-peserta" type="number" min="1" placeholder="100"></div>
+            <div class="field"><label for="f-org">Organisasi Pelaksana</label><input class="input" id="f-org" readonly></div>
+            <div class="field"><label for="f-pemohon">Pemohon</label><input class="input" id="f-pemohon" readonly></div>
           </div>
-          <div class="field"><label>Deskripsi Kegiatan</label><textarea class="textarea" id="f-desk" placeholder="Jelaskan tujuan & rangkaian acara..."></textarea></div>
+          <p class="hint">Data peserta dan deskripsi acara cukup ditulis di dalam proposal PDF.</p>
         </div>
 
-        <!-- LANGKAH 3: Ruang & jadwal -->
+        <!-- LANGKAH 3: Gedung & jadwal (id_gedung, tgl_acara, jam_mulai, jam_selesai) -->
         <div class="step-panel" data-step="3">
           <div class="grid cols-2">
-            <div class="field"><label>Tempat</label><div id="dd-tempat"></div></div>
-            <div class="field"><label>Tanggal Kegiatan</label><input class="input" id="f-tgl" type="date"></div>
-            <div class="field"><label>Jam Mulai</label><input class="input" id="f-mulai" type="time"></div>
-            <div class="field"><label>Jam Selesai</label><input class="input" id="f-selesai" type="time"></div>
+            <div class="field"><label>Tempat</label><div id="dd-tempat"></div><p class="hint" id="info-gedung"></p></div>
+            <div class="field"><label for="f-tgl">Tanggal Kegiatan</label><input class="input" id="f-tgl" type="date"></div>
+            <div class="field"><label for="f-mulai">Jam Mulai</label><input class="input" id="f-mulai" type="time"></div>
+            <div class="field"><label for="f-selesai">Jam Selesai</label><input class="input" id="f-selesai" type="time"></div>
           </div>
-          <p class="hint" id="jadwal-hint">Tanggal dan jam akan menyesuaikan dengan ketersediaan ruang</p>
+          <p class="hint" id="jadwal-hint">Pilih tempat dan tanggal untuk melihat jadwal yang sudah terpakai.</p>
         </div>
 
-        <!-- LANGKAH 4: Upload proposal PDF -->
+        <!-- LANGKAH 4: Upload proposal PDF (maks. 5MB, divalidasi backend) -->
         <div class="step-panel" data-step="4">
-          <p class="lbl">Unggah Proposal (Format PDF, sesuai template yg telah diberikan)</p>
+          <p class="lbl">Unggah Proposal (Format PDF, maksimal 5MB, sesuai template yg telah diberikan)</p>
           <label class="dropzone" id="dropzone">
             <input type="file" id="f-file" accept="application/pdf" hidden>
             <span id="dz-text">Seret file, atau klik untuk unggah</span>
@@ -69,39 +71,40 @@
           <button class="btn" id="btn-next">Lanjut &gt;</button>
         </div>
       </div>
+    </section>
 
-      <div id="riwayat">
-        <h2 class="section-title">Riwayat Peminjaman Tempat</h2>
-        <div class="card"><table class="table" id="tbl-riwayat"></table></div>
+    <!-- Menu: Riwayat Pengajuan (GET riwayat_reservasi.php) -->
+    <section class="view" data-view="riwayat">
+      <div class="grid cols-4" id="stat-riwayat"></div>
+      <h2 class="section-title">Riwayat Peminjaman Tempat</h2>
+      <div id="list-riwayat"></div>
+    </section>
+
+    <!-- Menu: Jadwal Acara (semua organisasi: lihat tempat yang sudah dipinjam atau masih kosong) -->
+    <section class="view" data-view="jadwal">
+      <div class="card">
+        <div class="card-title">Jadwal Aktif Hari Ini</div>
+        <div class="table-wrap"><table class="table" id="tbl-hari-ini"></table></div>
+      </div>
+      <div class="card">
+        <div class="toolbar">
+          <div class="cal-month" id="cal-title">Kalender</div>
+          <div class="spacer"></div>
+          <div id="filter-gedung"></div>
+          <button class="btn btn-ghost btn-sm" id="cal-prev">&lt; Sebelumnya</button>
+          <button class="btn btn-ghost btn-sm" id="cal-next">Berikutnya &gt;</button>
+        </div>
+        <div class="cal" id="cal"></div>
       </div>
     </section>
+
   </div>
 
+  <script src="../assets/js/data.js"></script>
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script src="../assets/js/ui.js"></script>
   <script src="../assets/js/shell.js"></script>
-  <script src="../assets/js/data.js"></script>
   <script src="../assets/js/dasboard-mahasiswa.js"></script>
-
-  <script>
-    // Riwayat hanya tampil di langkah 1 (Unduh Template)
-    (function () {
-      const wizard = document.getElementById('wizard');
-      const riwayat = document.getElementById('riwayat');
-      if (!wizard || !riwayat) return;
-
-      function update() {
-        const step1 = wizard.querySelector('.step-panel[data-step="1"]');
-        const onStep1 = step1 && getComputedStyle(step1).display !== 'none';
-        riwayat.style.display = onStep1 ? '' : 'none';
-      }
-
-      new MutationObserver(update).observe(wizard, {
-        attributes: true, subtree: true, childList: true
-      });
-      wizard.addEventListener('click', () => setTimeout(update, 0));
-      update();
-    })();
-  </script>
 </body>
 </html>

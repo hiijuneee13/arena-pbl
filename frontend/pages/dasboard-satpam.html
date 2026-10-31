@@ -12,19 +12,45 @@
 </head>
 <body>
   <div id="app">
+
+    <!-- Menu: Dashboard (GET dashboard_satpam.php: acara Approved di gedung tugas) -->
     <section class="view" data-view="dashboard">
-      <div class="card"><div class="card-title">Jadwal Aktif Hari Ini <span class="pos-tag" id="pos-tag"></span></div><table class="table" id="tbl-aktif"></table></div>
-      <div class="card"><div class="card-title" id="cal-title">Oktober 2026</div><div class="cal" id="cal"></div></div>
+      <div class="card gedung-info">
+        <div><div class="muted small">Gedung Tugas</div><h2 id="nama-gedung">-</h2><div class="muted small" id="lokasi-gedung"></div></div>
+        <div class="sync muted small" id="sync">Memuat jadwal...</div>
+      </div>
+      <div class="grid cols-3" id="stat-satpam"></div>
+      <div class="card"><div class="card-title">Jadwal Aktif Hari Ini</div><div class="table-wrap"><table class="table" id="tbl-aktif"></table></div></div>
+      <div class="card">
+        <div class="toolbar"><div class="card-title" id="cal-title" style="margin:0">Kalender</div><div class="spacer"></div>
+          <button class="btn btn-ghost btn-sm" id="cal-prev">&lt; Sebelumnya</button>
+          <button class="btn btn-ghost btn-sm" id="cal-next">Berikutnya &gt;</button></div>
+        <div class="cal" id="cal"></div>
+      </div>
     </section>
+
+    <!-- Menu: Jadwal Acara (semua jadwal + QR surat) -->
     <section class="view" data-view="jadwal">
-      <div class="card"><div class="card-title">Semua Jadwal Acara</div><table class="table" id="tbl-semua"></table></div>
+      <div class="card">
+        <div class="toolbar"><div class="card-title" style="margin:0">Semua Jadwal Acara</div><div class="spacer"></div><div id="filter-jadwal"></div></div>
+        <div class="table-wrap"><table class="table" id="tbl-semua"></table></div>
+      </div>
     </section>
+
+    <!-- Modal: QR surat izin -->
+    <div class="overlay" id="m-qr"><div class="modal narrow">
+      <h2 id="qr-title">Surat Izin</h2>
+      <div class="qr-box" id="qr-box"></div>
+      <dl class="kv" id="qr-info"></dl>
+      <div class="actions"><button class="btn" onclick="UI.modal.close('m-qr')">Tutup</button></div>
+    </div></div>
   </div>
 
+  <script src="../assets/js/data.js"></script>
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script src="../assets/js/ui.js"></script>
   <script src="../assets/js/shell.js"></script>
-  <script src="../assets/js/data.js"></script>
   <script src="../assets/js/dasboard-satpam.js"></script>
 </body>
 </html>

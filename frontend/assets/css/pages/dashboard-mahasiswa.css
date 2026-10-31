@@ -1,4 +1,4 @@
-/* mahasiswa.css - gaya khusus wizard pengajuan */
+/* dashboard-mahasiswa.css - gaya khusus wizard pengajuan & riwayat */
 .template-box { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 26px 24px; border-radius: 14px; background: linear-gradient(90deg, #1b1f4a, #2c2a6a 60%, #2b2f55); border: 1px solid var(--line); }
 .template-box h2 { font-size: 22px; } .template-box p { margin: 6px 0 0; color: #cfd1ea; }
 .lbl { font-weight: 600; font-size: 13px; margin: 0 0 10px; }
@@ -9,3 +9,21 @@
 .confirm-box dt { color: var(--muted); } .confirm-box dd { margin: 0; }
 #dd-tempat .dropdown, #dd-tempat .dropdown-btn { width: 100%; }
 #dd-tempat .dropdown-btn { background: var(--field); border-color: #3a3e52; border-radius: 14px; padding: 12px 14px; }
+#info-gedung { margin-top: 2px; }
+.input[readonly] { opacity: .75; cursor: default; }
+.file-chip small { color: var(--muted); margin-left: 6px; font-weight: 500; }
+#list-riwayat .req + .req { margin-top: 14px; }
+#list-riwayat .btn-sm { margin-top: 6px; }
+
+/* ---- Menu Jadwal Acara (kalender + tabel hari ini) ---- */
+.view[data-view="jadwal"] > .card + .card { margin-top: 14px; }
+.cal-month { padding: 9px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); font: 700 16px var(--font-head); }
+.cal .cell { align-content: start; justify-items: stretch; min-height: 96px; }
+.cal .cell small { color: var(--muted); justify-self: start; }
+.cal .cell.blank { background: transparent; border-color: transparent; }
+.cal .cell.blank:hover { transform: none; }
+.cal .cell.today { border-color: var(--accent-soft); box-shadow: 0 0 14px rgba(181,124,255,.35); }
+.cal .cell.today small { color: #fff; font-weight: 700; }
+.cal .cell .badge { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; padding: 2px 8px; max-width: 100%; text-align: center; }
+.cal .cell .badge.wait { border-style: dashed; background: transparent; }          /* belum disetujui penuh, tapi slot sudah terpakai */
+@media (max-width: 900px) { .cal { gap: 6px; } .cal .cell { min-height: 70px; padding: 6px 4px; } }

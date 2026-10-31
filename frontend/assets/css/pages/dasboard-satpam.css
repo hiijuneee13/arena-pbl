@@ -1,0 +1,14 @@
+/* Styling khusus Dashboard Satpam */
+.gedung-info { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.gedung-info h2 { font-size: 24px; margin: 4px 0; }
+.small { font-size: 11px; }
+.view[data-view="dashboard"] > .card + .card, .view[data-view="dashboard"] > .grid + .card { margin-top: 14px; }
+.cal .cell { align-content: start; justify-items: stretch; min-height: 96px; }
+.cal .cell small { color: var(--muted); justify-self: start; }
+.cal .cell.blank { background: transparent; border-color: transparent; }
+.cal .cell.blank:hover { transform: none; }
+.cal .cell.today { border-color: var(--accent-soft); box-shadow: 0 0 14px rgba(181,124,255,.35); }
+.cal .cell.today small { color: #fff; font-weight: 700; }
+.cal .cell .badge { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; padding: 2px 8px; max-width: 100%; }
+table tbody tr:hover { background-color: var(--surface-2); }
+@media (max-width: 900px) { .cal { gap: 6px; } .cal .cell { min-height: 70px; padding: 6px 4px; } }

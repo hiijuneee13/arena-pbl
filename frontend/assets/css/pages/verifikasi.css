@@ -1,0 +1,19 @@
+/* Halaman publik verifikasi surat izin */
+.verif-page { display: grid; place-items: start center; padding: 40px 16px; }
+.verif-wrap { width: min(640px, 100%); display: grid; gap: 16px; }
+.verif-wrap .brand { margin: 0 0 4px; }
+.verif-wrap .brand .small { margin-left: 6px; font: 500 12px var(--font-body); }
+.small { font-size: 11px; }
+.verif-card { display: grid; gap: 18px; }
+.verif-status { display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 16px; border: 1px solid; }
+.verif-status.valid { background: rgba(47,210,138,.1);  border-color: var(--ok);   color: var(--ok); }
+.verif-status.warn  { background: rgba(232,176,74,.1);  border-color: var(--warn); color: var(--warn); }
+.verif-status.bad   { background: rgba(229,56,79,.12);  border-color: var(--bad);  color: var(--bad); }
+.verif-icon { width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; border: 2px solid currentColor; display: grid; place-items: center; font: 800 24px var(--font-head); }
+.verif-msg { font: 700 17px var(--font-head); }
+.verif-card .kv dd { word-break: break-word; }
+.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; }
+.verif-form label { font-weight: 600; font-size: 13px; display: block; margin-bottom: 8px; }
+.verif-form .row { display: flex; gap: 8px; }
+.verif-form .row .input { flex: 1; }
+.verif-form .demo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }

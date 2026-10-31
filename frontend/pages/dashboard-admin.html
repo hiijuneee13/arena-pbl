@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Staf TU - ARENA</title>
+  <title>Admin TU - ARENA</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/global.css">
@@ -12,44 +12,80 @@
 </head>
 <body>
   <div id="app">
-    <!-- Menu: Dashboard -->
+
+    <!-- Menu: Dashboard (GET dashboard_admin.php) -->
     <section class="view" data-view="dashboard">
-      <div class="grid cols-4">
-        <div class="card stat"><div class="label">Total Gedung</div><div class="value">40</div></div>
-        <div class="card stat"><div class="label">Ruang Tersedia</div><div class="value">8</div></div>
-        <div class="card stat"><div class="label">Pengajuan Aktif</div><div class="value">23</div></div>
-        <div class="card stat"><div class="label">Selesai Bulan Ini</div><div class="value">23</div></div>
-      </div>
-      <div class="grid" style="grid-template-columns:2fr 1fr;margin-top:16px">
-        <div class="card"><div class="card-title">Managemen Ruang</div><div class="filters" id="filters-dash"></div><table class="table" id="tbl-ruang-dash"></table></div>
+      <div class="grid cols-4" id="stat-dash"></div>
+
+      <div class="grid split">
+        <div class="card">
+          <div class="card-title">Managemen Ruang</div>
+          <div class="toolbar">
+            <div class="filters" data-filter-slot></div>
+            <div class="spacer"></div>
+            <button type="button" class="btn btn-outline btn-rect" data-goto="gedung">Selengkapnya &gt;</button>
+          </div>
+          <div class="table-wrap"><table class="rtable" id="tbl-ruang-dash"></table></div>
+        </div>
         <div class="card"><div class="card-title">Log Aktivitas</div><div id="log"></div></div>
       </div>
+
       <h2 class="section-title">Siap Dikunci &amp; Diterbitkan Surat Izin</h2>
-      <div class="card"><b>Rapat kerja HMJ</b><p style="color:var(--muted);font-size:11px;margin:2px 0 8px">Ruang Sidang A - 29 September - Disetujui oleh 4 Approver</p>
-        <button class="btn" onclick="UI.modal.open('m-surat')">Terbitkan Surat</button></div>
+      <div class="card"><div id="siap-terbit"></div></div>
+
       <h2 class="section-title">Laporan Rekapitulasi</h2>
-      <div class="grid cols-2">
-        <div class="card stat"><div class="label">Pemakaian Gedung - Bulan Ini</div><div class="value">57</div><div class="hint">Kegiatan Selesai - September 2026</div></div>
-        <div class="card stat"><div class="label">Pemakaian Gedung - Semester Ini</div><div class="value">214</div><div class="hint">Kegiatan Selesai - Genap 2026</div></div>
-      </div>
-    </section>
-    <!-- Menu: Pengajuan (daftar siap terbit surat) -->
-    <section class="view" data-view="pengajuan">
-      <div class="card"><div class="card-title">Gedung</div><table class="table" id="tbl-pengajuan"></table></div>
+      <div class="grid cols-2 rekap" id="stat-rekap"></div>
     </section>
 
-    <!-- Modal: preview surat izin (frame "terbit") -->
-    <div class="overlay" id="m-surat"><div class="modal">
+    <!-- Halaman "Selengkapnya": Managemen Ruang penuh (GET get_gedung.php, POST update_status_gedung.php) -->
+    <section class="view" data-view="gedung">
+      <div class="card card-tall">
+        <div class="card-title">Managemen Ruang</div>
+        <div class="toolbar"><div class="filters" data-filter-slot></div></div>
+        <div class="table-wrap"><table class="rtable" id="tbl-ruang-full"></table></div>
+      </div>
+    </section>
+
+    <!-- Menu: Pengajuan (reservasi Approved dari get_jadwal_global.php, siap diterbitkan suratnya) -->
+    <section class="view" data-view="pengajuan">
+      <div class="card card-tall">
+        <div class="card-title">Gedung</div>
+        <div class="table-wrap"><table class="rtable" id="tbl-pengajuan"></table></div>
+      </div>
+    </section>
+
+    <!-- Modal: surat izin digital + QR -->
+    <div class="overlay" id="m-surat"><div class="modal wide">
       <h2>Surat Izin Digital</h2>
-      <div class="preview">[ Pratinjau surat izin + QR Code ]</div>
-      <div class="actions"><button class="btn btn-ghost" onclick="UI.modal.close('m-surat')">Batal</button><button class="btn" id="btn-terbit">Terbitkan Surat</button></div>
+      <div class="surat-body">
+        <div>
+          <dl class="kv" id="surat-info"></dl>
+          <div class="note-box" id="surat-note"></div>
+        </div>
+        <div class="qr-box" id="surat-qr"></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost" onclick="UI.modal.close('m-surat')">Tutup</button>
+        <button class="btn" id="btn-terbit">Terbitkan Surat</button>
+      </div>
+    </div></div>
+
+    <!-- Modal: konfirmasi ubah status ruang -->
+    <div class="overlay" id="m-gedung"><div class="modal narrow">
+      <h2 id="gd-title">Ubah Status Ruang</h2>
+      <div class="note-box" id="gd-note"></div>
+      <div class="actions">
+        <button class="btn btn-ghost" onclick="UI.modal.close('m-gedung')">Batal</button>
+        <button class="btn" id="btn-gd-ok">Ya, Ubah</button>
+      </div>
     </div></div>
   </div>
 
+  <script src="../assets/js/data.js"></script>
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script src="../assets/js/ui.js"></script>
   <script src="../assets/js/shell.js"></script>
-  <script src="../assets/js/data.js"></script>
   <script src="../assets/js/dasboard-admin.js"></script>
 </body>
 </html>
