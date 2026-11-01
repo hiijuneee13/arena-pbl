@@ -50,6 +50,13 @@ if (strtotime($jam_selesai) === false || strtotime($jam_mulai) === false
     exit;
 }
 
+// 7.5. Tambah 1: Validasi tanggal reservasi tidak boleh di masa lalu
+$hari_ini = date('Y-m-d');
+if ($tgl_acara < $hari_ini) {
+    echo json_encode(["status" => "error", "message" => "Gagal! Tanggal reservasi tidak boleh memilih tanggal di masa lalu."]);
+    exit;
+}
+
 // 8. Validasi keberadaan file
 if (!isset($_FILES['file_proposal']) || $_FILES['file_proposal']['error'] !== UPLOAD_ERR_OK) {
     echo json_encode(["status" => "error", "message" => "File proposal wajib diunggah!"]);
