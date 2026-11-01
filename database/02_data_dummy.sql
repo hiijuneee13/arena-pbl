@@ -1,9 +1,6 @@
 -- Untuk menjalankan sql script ini, buka terminal di vscode, lalu jalankan perintah berikut:
 -- psql -U postgres -d arena_db -f datadummy.sql
 
--- =======================================================
--- 3. DATA DUMMY (MOCK DATA)
--- =======================================================
 
 -- A. Insert Gedung (Tidak memiliki Foreign Key)
 INSERT INTO public.gedung_fasilitas (id_gedung, nama_gedung, lokasi, fasilitas, kapasitas, status_aktif) VALUES

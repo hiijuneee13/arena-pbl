@@ -6,8 +6,6 @@
 -- psql -U postgres -d arena_db -f database.sql
 
 
--- 1. PEMBUATAN TABEL (TANPA FOREIGN KEY) ===================================================
-
 CREATE TABLE public.gedung_fasilitas (
     id_gedung uuid NOT NULL,
     nama_gedung varchar(255) NOT NULL,
@@ -81,9 +79,6 @@ CREATE TABLE public.riwayat_proposal (
     CONSTRAINT riwayat_proposal_pkey PRIMARY KEY (id_riwayat)
 );
 
-
-
--- 2. PENAMBAHAN RELASI (FOREIGN KEYS) =========================================
 
 -- Relasi Tabel Jurusan
 ALTER TABLE public.jurusan 
