@@ -28,8 +28,23 @@ WHERE r.status_akhir = 'Approved';
 
 -- Mahasiswa
 
-CREATE OR REPLACE VIEW vw_mahasiswa_riwayat_reservasi AS
+CREATE OR REPLACE VIEW v_mahasiswa_riwayat_reservasi AS
 SELECT r.id_reservasi, r.id_user, g.nama_gedung, r.nama_acara, r.tgl_acara, 
        r.jam_mulai, r.jam_selesai, r.posisi_approval, r.status_akhir 
 FROM reservasi r
 JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung;
+
+
+
+-- Approver
+
+CREATE OR REPLACE VIEW v_approver_ajuan_reservasi AS
+SELECT r.id_reservasi, u.nama_lengkap AS nama_pemohon, g.nama_gedung, 
+       r.nama_acara, r.tgl_acara, r.jam_mulai, r.jam_selesai, 
+       r.posisi_approval, r.status_akhir, r.file_proposal 
+FROM reservasi r
+JOIN users u ON r.id_user = u.id_user
+JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung
+WHERE r.status_akhir IN ('Pending', 'In-Progress');
+
+
