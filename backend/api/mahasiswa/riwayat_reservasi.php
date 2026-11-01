@@ -20,13 +20,15 @@ if ($_SESSION['role'] !== 'Mahasiswa') {
 try {
     $id_user = $_SESSION['id_user'];
 
-    // 4. Query untuk mengambil riwayat reservasi mahasiswa, urutkan dari acara terbaru
-    $sql = "SELECT r.id_reservasi, g.nama_gedung, r.nama_acara, r.tgl_acara, 
-                   r.jam_mulai, r.jam_selesai, r.posisi_approval, r.status_akhir 
+    // 4. Query untuk mengambil riwayat reservasi mahasiswa 
+    // Menambahkan LEFT JOIN ke tabel approval untuk ambil catatan & tahap, serta ORDER BY tahap paling sedikit
+    $sql = "SELECT r.*, g.nama_gedung, a.tahap_ke, a.status_approval AS status_step, a.catatan AS catatan_approver
             FROM reservasi r
             JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung
+            LEFT JOIN approval a ON r.id_reservasi = a.id_reservasi
             WHERE r.id_user = :id_user
-            ORDER BY r.tgl_acara DESC"; // Urutkan dari acara paling baru
+            ORDER BY COALESCE(a.tahap_ke, 1) ASC, r.tgl_acara DESC";
+
      // 5. Eksekusi query dan ambil hasilnya       
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':id_user' => $id_user]);
