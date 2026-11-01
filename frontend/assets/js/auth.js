@@ -22,8 +22,8 @@
   // 'home' relatif dari login.html
   const APPROVER_MENU = [
     { key: 'dashboard', label: 'Dashboard',            title: 'Dashboard' },
-    { key: 'antrean',   label: 'Antrean Persetujuan',  title: 'Antrean Persetujuan' },
-    { key: 'arsip',     label: 'Arsip Kegiatan',       title: 'Arsip Kegiatan' },
+    { key: 'antrean',   label: 'Antrean Persetujuan',  title: 'Daftar Pengajuan Menunggu Tinjauan' },
+    { key: 'arsip',     label: 'Arsip Kegiatan',       title: 'Daftar Pengajuan Menunggu Tinjauan' },
   ];
   const approver = (label, tahap) => ({ label, sub: 'Approver', home: 'pages/dashboard-approver.html', menu: APPROVER_MENU, tahap });
 
@@ -32,8 +32,8 @@
                       menu: [{ key: 'ajukan', label: 'Ajukan Peminjaman', title: 'Ajukan Peminjaman' },
                              { key: 'riwayat', label: 'Riwayat Pengajuan', title: 'Riwayat Pengajuan' },
                              { key: 'jadwal',  label: 'Jadwal Acara',      title: 'Jadwal Acara Real-Time' }] },
-    DosPem:         approver('Dosen Pembina', 1),
-    'Presiden BEM': approver('Presiden BEM', 2),
+    'Presiden BEM': approver('Presiden BEM', 1),
+    DosPem:         approver('Dosen Pembina', 2),
     Kajur:          approver('Ketua Jurusan', 3),
     Wadir:          approver('Wakil Direktur', 4),
     AdminTU:        { label: 'Admin TU', sub: 'Staff TU/Admin', home: 'pages/dashboard-admin.html',
@@ -56,10 +56,10 @@
     { email: 'hmti@arena.ac.id',    label: 'HMJ',           nama: 'Arkan',             dataEmail: 'hmti@student.polinema.ac.id',    cabang: 'HMTI - Himpunan Mahasiswa Teknologi Informasi' },
     { email: 'ukmseni@arena.ac.id', label: 'UKM',           nama: 'Panitia UKM Seni',  dataEmail: 'ukmseni@student.polinema.ac.id', cabang: 'UKM Seni' },
     { email: 'pembina@arena.ac.id', label: 'Dosen Pembina', nama: 'Dosen Pembina',     dataEmail: 'dospem@polinema.ac.id' },
-    { email: 'presbem@arena.ac.id', label: 'Presiden BEM',  nama: 'Presiden BEM',      dataEmail: 'siti.bem@student.polinema.ac.id' },
-    { email: 'kajur@arena.ac.id',   label: 'Ketua Jurusan', nama: 'Ketua Jurusan',     dataEmail: 'kajur.ti@polinema.ac.id' },
+    { email: 'presbem@arena.ac.id', label: 'Presiden BEM',  nama: 'Badan Eksekutif Mahasiswa',      dataEmail: 'siti.bem@student.polinema.ac.id' },
+    { email: 'kajur@arena.ac.id',   label: 'Ketua Jurusan', nama: 'Ketua Jurusan TI',  dataEmail: 'kajur.ti@polinema.ac.id' },
     { email: 'wadir@arena.ac.id',   label: 'Wakil Direktur', nama: 'Wakil Direktur',   dataEmail: 'wadir@polinema.ac.id' },
-    { email: 'tu@arena.ac.id',      label: 'Staf TU',       nama: 'Staf TU',           dataEmail: 'admin@polinema.ac.id' },
+    { email: 'tu@arena.ac.id',      label: 'Staf TU',       nama: 'Admin 1',           dataEmail: 'admin@polinema.ac.id' },
     { email: 'satpam@arena.ac.id',  label: 'Satpam',        nama: 'Satpam Pos Depan',  dataEmail: 'satpam@polinema.ac.id',          pos: 'Pos Depan' },
   ];
 

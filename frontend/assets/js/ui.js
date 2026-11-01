@@ -92,14 +92,14 @@
 
   /* Penelusur 4 tahap approval dari posisi_approval + status_akhir.
      done = sudah lewat, now = sedang di tahap ini, rej = ditolak di tahap ini */
-  function tracker(r) {
-    const urutan = global.DATA.URUTAN, idx = urutan.indexOf(r.posisi_approval);
+  function tracker(r, labels) {
+    const urutan = global.DATA.URUTAN, idx = urutan.indexOf(r.posisi_approval), L = labels || global.DATA.LABEL_TAHAP;
     return '<div class="mini-steps">' + urutan.map((t, i) => {
       let cls = '';
       if (r.status_akhir === 'Approved') cls = 'done';
       else if (r.status_akhir === 'Rejected') cls = i < idx ? 'done' : i === idx ? 'rej' : '';
       else cls = i < idx ? 'done' : i === idx ? 'now' : '';
-      return `<div class="ms ${cls}"><span class="dot">${i + 1}</span>${esc(global.DATA.LABEL_TAHAP[t])}</div>`;
+      return `<div class="ms ${cls}"><span class="dot">${i + 1}</span>${esc(L[t])}</div>`;
     }).join('') + '</div>';
   }
 

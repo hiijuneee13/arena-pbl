@@ -1,91 +1,265 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin TU - ARENA</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/variables.css">
-  <link rel="stylesheet" href="../assets/css/global.css">
-  <link rel="stylesheet" href="../assets/css/components.css">
-  <link rel="stylesheet" href="../assets/css/pages/main.css">
-  <link rel="stylesheet" href="../assets/css/pages/dasboard-admin.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelola Gedung &amp; Laporan - ARENA</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = { theme: { extend: {
+    fontFamily: { head: ['Montserrat', 'system-ui', 'sans-serif'], body: ['Inter', 'system-ui', 'sans-serif'] },
+    colors: { page: '#050820', panel: '#0d1121', surf: '#171b2b', bord: '#353747', line: '#414551', muted: '#94a3b8',
+              navy: '#11163f', acc: '#b57cff', danger: '#c70101' }
+  } } };
+</script>
+<style>
+  body { background: #050820; color: #fff; }
+  .view { display: none; }
+  .view.active { display: block; animation: up .35s both; }
+  @keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+</style>
 </head>
-<body>
-  <div id="app">
+<body class="font-body text-[13px]">
 
-    <!-- Menu: Dashboard (GET dashboard_admin.php) -->
-    <section class="view" data-view="dashboard">
-      <div class="grid cols-4" id="stat-dash"></div>
+<div class="grid min-h-screen grid-cols-1 gap-6 p-3 min-[801px]:grid-cols-[190px_minmax(0,1fr)]">
 
-      <div class="grid split">
-        <div class="card">
-          <div class="card-title">Managemen Ruang</div>
-          <div class="toolbar">
-            <div class="filters" data-filter-slot></div>
-            <div class="spacer"></div>
-            <button type="button" class="btn btn-outline btn-rect" data-goto="gedung">Selengkapnya &gt;</button>
-          </div>
-          <div class="table-wrap"><table class="rtable" id="tbl-ruang-dash"></table></div>
-        </div>
-        <div class="card"><div class="card-title">Log Aktivitas</div><div id="log"></div></div>
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="flex flex-col gap-3 rounded-[18px] border border-bord bg-panel px-3.5 py-[18px] min-[801px]:sticky min-[801px]:top-3 min-[801px]:h-[calc(100vh-24px)]">
+    <div class="mb-5 ml-1 mt-1.5 flex items-center gap-3 font-head text-[22px] font-bold">
+      <span class="grid h-[34px] w-[34px] place-items-center rounded-lg bg-gradient-to-br from-[#6965f2] to-[#c080fd] text-lg font-extrabold">A</span>ARENA
+    </div>
+    <button data-menu="dashboard" class="menu rounded-[10px] border border-bord bg-surf px-[22px] py-[7px] text-left text-[13px] font-semibold hover:bg-[#1d2240]">Dashboard</button>
+    <button data-menu="pengajuan" class="menu rounded-[10px] border border-bord bg-surf px-[22px] py-[7px] text-left text-[13px] font-semibold hover:bg-[#1d2240]">Pengajuan</button>
+    <div class="mt-auto pb-2.5 pl-3.5 pt-6"><button id="btn-logout" type="button" class="text-xs font-semibold text-danger hover:underline">Keluar</button></div>
+  </aside>
+
+  <!-- ===== KONTEN ===== -->
+  <main class="min-w-0 pb-10 pt-2 min-[801px]:pr-3">
+
+    <header class="mb-[18px] flex items-start justify-between gap-4">
+      <div>
+        <h1 class="font-head text-[22px] font-bold leading-tight">Kelola Gedung &amp; Laporan</h1>
+        <p class="text-[11px] text-muted">Masuk sebagai Staff TU/Admin</p>
       </div>
-
-      <h2 class="section-title">Siap Dikunci &amp; Diterbitkan Surat Izin</h2>
-      <div class="card"><div id="siap-terbit"></div></div>
-
-      <h2 class="section-title">Laporan Rekapitulasi</h2>
-      <div class="grid cols-2 rekap" id="stat-rekap"></div>
-    </section>
-
-    <!-- Halaman "Selengkapnya": Managemen Ruang penuh (GET get_gedung.php, POST update_status_gedung.php) -->
-    <section class="view" data-view="gedung">
-      <div class="card card-tall">
-        <div class="card-title">Managemen Ruang</div>
-        <div class="toolbar"><div class="filters" data-filter-slot></div></div>
-        <div class="table-wrap"><table class="rtable" id="tbl-ruang-full"></table></div>
-      </div>
-    </section>
-
-    <!-- Menu: Pengajuan (reservasi Approved dari get_jadwal_global.php, siap diterbitkan suratnya) -->
-    <section class="view" data-view="pengajuan">
-      <div class="card card-tall">
-        <div class="card-title">Gedung</div>
-        <div class="table-wrap"><table class="rtable" id="tbl-pengajuan"></table></div>
-      </div>
-    </section>
-
-    <!-- Modal: surat izin digital + QR -->
-    <div class="overlay" id="m-surat"><div class="modal wide">
-      <h2>Surat Izin Digital</h2>
-      <div class="surat-body">
+      <!-- profil hanya tampil di Dashboard -->
+      <div id="profile" class="flex items-center gap-2.5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#efe4ff]">
+          <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="15" r="6.5" fill="none" stroke="#5b3fd1" stroke-width="2"/><path d="M7.5 34c1.5-7 6.5-10.5 12.5-10.5S31 27 32.5 34" fill="none" stroke="#5b3fd1" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
         <div>
-          <dl class="kv" id="surat-info"></dl>
-          <div class="note-box" id="surat-note"></div>
+          <div id="profile-name" class="font-head text-[15px] font-semibold leading-tight">Admin 1</div>
+          <button class="mt-0.5 rounded-full bg-[#3b3e52] px-[9px] py-px font-head text-[9px] font-bold text-[#e9eaf5] hover:bg-[#4a4e68]">Edit Profile</button>
         </div>
-        <div class="qr-box" id="surat-qr"></div>
       </div>
-      <div class="actions">
-        <button class="btn btn-ghost" onclick="UI.modal.close('m-surat')">Tutup</button>
-        <button class="btn" id="btn-terbit">Terbitkan Surat</button>
-      </div>
-    </div></div>
+    </header>
 
-    <!-- Modal: konfirmasi ubah status ruang -->
-    <div class="overlay" id="m-gedung"><div class="modal narrow">
-      <h2 id="gd-title">Ubah Status Ruang</h2>
-      <div class="note-box" id="gd-note"></div>
-      <div class="actions">
-        <button class="btn btn-ghost" onclick="UI.modal.close('m-gedung')">Batal</button>
-        <button class="btn" id="btn-gd-ok">Ya, Ubah</button>
-      </div>
-    </div></div>
-  </div>
+    <!-- ================= VIEW: DASHBOARD ================= -->
+    <section class="view" data-view="dashboard">
+      <div id="stats" class="grid grid-cols-1 gap-3.5 min-[520px]:grid-cols-2 min-[1000px]:grid-cols-4"></div>
 
-  <script src="../assets/js/data.js"></script>
-  <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/api.js"></script>
-  <script src="../assets/js/ui.js"></script>
-  <script src="../assets/js/shell.js"></script>
-  <script src="../assets/js/dasboard-admin.js"></script>
+      <div class="mt-[30px] grid items-start gap-[22px] min-[1000px]:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)]">
+        <div class="rounded-[18px] border border-bord bg-panel px-[22px] py-5">
+          <h2 class="mb-3 font-head text-base font-bold">Managemen Ruang</h2>
+          <div class="mb-3 flex flex-wrap items-center gap-3">
+            <div data-filters class="flex flex-wrap gap-3"></div>
+            <button data-goto="gedung" class="ml-auto rounded-[10px] border border-bord px-[18px] py-2 font-head text-[11px] font-medium hover:bg-surf">Selengkapnya &gt;</button>
+          </div>
+          <div class="overflow-x-auto"><div id="tbl-dash" class="min-w-[520px]"></div></div>
+        </div>
+
+        <div class="rounded-[18px] border border-bord bg-panel px-[22px] py-5">
+          <h2 class="mb-4 font-head text-base font-bold">Log Aktivitas</h2>
+          <div id="log" class="space-y-[9px] text-[11px] leading-snug"></div>
+        </div>
+      </div>
+
+      <h2 class="mb-3 mt-7 font-head text-[21px] font-bold">Siap Dikunci &amp; Diterbitkan Surat Izin</h2>
+      <div class="rounded-[18px] border border-bord bg-panel px-[22px] py-5">
+        <h3 class="font-head text-base font-bold">Rapat kerja HMJ</h3>
+        <p class="mb-3 mt-1 text-[11px] text-muted">Ruang Sidang A - 29 September - Disetujui oleh 4 Approver</p>
+        <button data-surat="0" class="rounded-full bg-gradient-to-r from-[#6865f2] to-[#c787ff] px-[18px] py-[5px] font-head text-[10px] font-bold">Terbitkan Surat</button>
+      </div>
+
+      <h2 class="mb-3 mt-7 font-head text-[21px] font-bold">Laporan Rekapitulasi</h2>
+      <div class="grid gap-3.5 min-[800px]:grid-cols-2 min-[800px]:gap-12">
+        <div class="rounded-[18px] border border-bord bg-panel px-[34px] py-[30px]">
+          <div class="font-head text-xs text-muted">Pemakaian Gedung - Bulan Ini</div>
+          <div class="mt-2 font-head text-[40px] font-bold leading-tight">57</div>
+          <div class="mt-2.5 text-[11px] text-[#25c281]">Kegiatan Selesai - September 2026</div>
+        </div>
+        <div class="rounded-[18px] border border-bord bg-panel px-[34px] py-[30px]">
+          <div class="font-head text-xs text-muted">Pemakaian Gedung - Semester Ini</div>
+          <div class="mt-2 font-head text-[40px] font-bold leading-tight">214</div>
+          <div class="mt-2.5 text-[11px] text-[#25c281]">Kegiatan Selesai - Genap 2026</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW: MANAGEMEN RUANG (Selengkapnya) ================= -->
+    <section class="view" data-view="gedung">
+      <div class="min-h-[calc(100vh-140px)] rounded-[18px] border border-bord bg-panel px-[22px] py-5">
+        <h2 class="mb-3 font-head text-base font-bold">Managemen Ruang</h2>
+        <div data-filters class="mb-3 flex flex-wrap gap-3"></div>
+        <div class="overflow-x-auto"><div id="tbl-full" class="min-w-[560px]"></div></div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW: PENGAJUAN ================= -->
+    <section class="view" data-view="pengajuan">
+      <div class="relative min-h-[calc(100vh-140px)] overflow-hidden rounded-[18px] border border-bord bg-panel px-[22px] py-5">
+        <h2 class="mb-8 font-head text-base font-bold">Pengajuan Gedung</h2>
+        <div class="overflow-x-auto"><div id="tbl-peng" class="min-w-[640px]"></div></div>
+
+        <!-- panel Surat Izin (muncul saat "Terbitkan Surat" ditekan) -->
+        <div id="surat" class="absolute bottom-px left-[21px] right-[34px] top-[29px] hidden rounded-[32px] bg-navy px-8 py-7">
+          <button id="surat-x" aria-label="Tutup" class="absolute right-5 top-4 h-8 w-8 rounded-full text-2xl leading-none text-muted hover:bg-white/10 hover:text-white">&times;</button>
+          <h3 class="font-head text-xl font-bold">Surat Izin Digital</h3>
+          <dl id="surat-info" class="mt-4 grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-xs"></dl>
+          <button id="surat-ok" class="absolute bottom-[22px] right-[30px] rounded-full bg-gradient-to-r from-[#6865f2] to-[#c787ff] px-[18px] py-[5px] font-head text-[10px] font-bold">Terbitkan Surat</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script>
+/* ---------------- SESI & KELUAR ---------------- */
+// Halaman khusus Admin TU: kalau belum login / bukan Admin TU, kembali ke login.html
+const SESI = Auth.requireRole(['AdminTU']);
+if (SESI) {
+  document.getElementById('profile-name').textContent = SESI.nama_profil || SESI.nama;
+  document.getElementById('btn-logout').addEventListener('click', () => { Auth.logout(); window.location.href = '../login.html'; });
+}
+</script>
+<script>
+/* ---------------- DATA CONTOH (ganti dengan data dari backend) ---------------- */
+const STATS = [['Total Gedung', 40], ['Ruang Tersedia', 8], ['Pengajuan Aktif', 23], ['Selesai Bulan Ini', 23]];
+const RUANG = [                       // n = ruang, t = tempat/gedung, s = status: Blocked | Available | Pending
+  { n: 'Aula Utama',    t: 'Gedung AX',           s: 'Blocked' },
+  { n: 'RT 07',         t: 'Gedung Teknik Sipil', s: 'Available' },
+  { n: 'RT 05',         t: 'Gedung Teknik Sipil', s: 'Pending' },
+  { n: 'RT 01',         t: 'Gedung Teknik Sipil', s: 'Available' },
+  { n: 'Aula Utama',    t: 'Gedung Teknik Mesin', s: 'Pending' },
+  { n: 'Bengkel Utama', t: 'Gedung Teknik Mesin', s: 'Pending' },
+];
+const TEMPAT = [['Semua Tempat', []], ['Gedung AX', []], ['Gedung Teknik Sipil', ['RT 07', 'RT 05', 'RT 01']], ['Gedung Teknik Mesin', []]];
+const STATUS = ['Semua Status', 'Blocked', 'Available', 'Pending'];
+const LOG = ['Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional'];
+const PENGAJUAN = Array.from({ length: 6 }, () => ({ ruang: 'Aula Utama', tempat: 'Gedung Teknik Sipil', tgl: '02 Oktober 2026',
+  peminjam: 'Himpunan Mahasiswa Teknologi Informasi', kegiatan: 'Rapat Kerja HMJ' }));
+
+/* ---------------- KOMPONEN KECIL ---------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const GRAD = 'bg-gradient-to-r from-[#6865f2] to-[#c787ff]';
+const PILL = {
+  Blocked:   'bg-[#581b2e] border-[#802341] text-[#c22525]',
+  Available: 'bg-[#132f35] border-[#23806c] text-[#25c281]',
+  Pending:   'bg-[#342b24] border-[#b49023] text-[#f8bb42]',
+};
+const pill = (s) => `<span class="inline-block whitespace-nowrap rounded-full border px-[18px] py-[3px] text-[11px] font-medium ${PILL[s]}">${s}</span>`;
+const TH = 'border-b border-line px-3 py-2.5 text-left text-[11px] font-medium text-muted';
+const TD = 'border-b border-line px-3 py-[22px] text-[11px] font-medium align-middle';
+const table = (cols, head, body) => `<table class="w-full table-fixed border-collapse font-head">
+  <colgroup>${cols.map((w) => `<col style="width:${w}%">`).join('')}</colgroup>
+  <thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+
+/* ---------------- FILTER (Pilih Tempat bertingkat + Pilih Status) ---------------- */
+const f = { tempat: 'Semua Tempat', ruang: null, status: 'Semua Status' };
+const BTN = 'min-w-[130px] rounded-xl border border-bord px-3.5 py-2 text-left font-head text-xs font-medium hover:bg-surf';
+
+function filterTempat() {
+  const el = document.createElement('div'); el.className = 'relative';
+  el.innerHTML = `<button class="${BTN}">${f.ruang || f.tempat}</button>
+    <ul class="menu-list absolute left-0 top-full z-20 mt-1.5 hidden min-w-full border border-[#4b4e5c] bg-[#0a0c16]">${TEMPAT.map(([t, kids]) => `
+      <li data-t="${t}" class="group relative cursor-pointer whitespace-nowrap border-t border-[#4b4e5c] px-2.5 py-3 font-head text-xs font-medium first:border-t-0 hover:bg-[#c58cff] ${f.tempat === t && !f.ruang ? 'font-bold' : ''}">${t}
+        ${kids.length ? `<ul class="absolute left-full top-[-1px] z-30 hidden min-w-[130px] border border-[#4b4e5c] bg-[#2a2d3d] group-hover:block">${kids.map((k) =>
+          `<li data-t="${t}" data-r="${k}" class="whitespace-nowrap border-t border-[#4b4e5c] px-3.5 py-3 text-xs first:border-t-0 hover:bg-[#353a50]">${k}</li>`).join('')}</ul>` : ''}</li>`).join('')}
+    </ul>`;
+  el.querySelector('button').onclick = (e) => { e.stopPropagation(); toggle(el); };
+  el.querySelectorAll('li').forEach((li) => li.onclick = (e) => {
+    e.stopPropagation(); f.tempat = li.dataset.t; f.ruang = li.dataset.r || null; refresh();
+  });
+  return el;
+}
+function filterStatus() {
+  const el = document.createElement('div'); el.className = 'relative';
+  el.innerHTML = `<button class="${BTN}">${f.status}</button>
+    <ul class="menu-list absolute left-0 top-full z-20 mt-1.5 hidden min-w-full rounded-[14px] border border-[#373d78] bg-gradient-to-b from-[#232855] to-[#1a1f48] p-1">${STATUS.map((s) =>
+      `<li data-s="${s}" class="cursor-pointer whitespace-nowrap rounded-[10px] px-2.5 py-2 font-head text-xs [&+li]:mt-px hover:bg-acc ${f.status === s ? 'bg-acc font-semibold' : ''}">${s}</li>`).join('')}
+    </ul>`;
+  el.querySelector('button').onclick = (e) => { e.stopPropagation(); toggle(el); };
+  el.querySelectorAll('li').forEach((li) => li.onclick = (e) => { e.stopPropagation(); f.status = li.dataset.s; refresh(); });
+  return el;
+}
+function toggle(el) {
+  document.querySelectorAll('.menu-list').forEach((m) => m !== el.querySelector('.menu-list') && m.classList.add('hidden'));
+  el.querySelector('.menu-list').classList.toggle('hidden');
+}
+document.addEventListener('click', () => document.querySelectorAll('.menu-list').forEach((m) => m.classList.add('hidden')));
+
+/* ---------------- RENDER ---------------- */
+const filtered = () => RUANG.filter((r) => (f.tempat === 'Semua Tempat' || r.t === f.tempat) && (!f.ruang || r.n === f.ruang)
+  && (f.status === 'Semua Status' || r.s === f.status));
+const kosong = (n) => `<tr><td colspan="${n}" class="${TD} text-muted">Tidak ada ruang yang cocok dengan filter.</td></tr>`;
+
+function refresh() {
+  document.querySelectorAll('[data-filters]').forEach((s) => { s.innerHTML = ''; s.append(filterTempat(), filterStatus()); });
+  const rows = filtered();
+
+  // Dashboard: ringkas (4 baris), tombol Kelola outline
+  $('#tbl-dash').innerHTML = table([24.5, 18.5, 18, 39],
+    `<th class="${TH}">Ruang</th><th class="${TH}">Tempat/Gedung</th><th class="${TH} text-center">Status</th><th class="${TH}"></th>`,
+    rows.slice(0, 4).map((r) => `<tr><td class="${TD}">${r.n}</td><td class="${TD}">${r.t}</td><td class="${TD} text-center">${pill(r.s)}</td>
+      <td class="${TD} text-center"><button data-kelola class="rounded-full border border-bord px-[18px] py-[3px] font-head text-[10px] font-medium hover:bg-surf">Kelola</button></td></tr>`).join('') || kosong(4));
+
+  // Selengkapnya: penuh, tombol Kelola gradien
+  $('#tbl-full').innerHTML = table([30, 24, 24, 22],
+    `<th class="${TH}">Ruang</th><th class="${TH}">Tempat/Gedung</th><th class="${TH} text-center">Status</th><th class="${TH}"></th>`,
+    rows.map((r) => `<tr><td class="${TD}">${r.n}</td><td class="${TD}">${r.t}</td><td class="${TD} text-center">${pill(r.s)}</td>
+      <td class="${TD} pr-[27px] text-right"><button data-kelola class="${GRAD} min-w-[84px] rounded-full px-[18px] py-[3px] font-head text-[10px] font-bold">Kelola</button></td></tr>`).join('') || kosong(4));
+}
+
+$('#stats').innerHTML = STATS.map(([l, v]) => `<div class="rounded-2xl border border-bord bg-panel px-6 py-5">
+  <div class="font-head text-[15px] font-medium text-muted">${l}</div><div class="mt-2.5 font-head text-[38px] font-bold leading-tight">${v}</div></div>`).join('');
+$('#log').innerHTML = LOG.map((l) => { const [a, b] = [l.slice(0, l.indexOf('Seminar')), 'Seminar Nasional']; return `<p>${a}<b>${b}</b></p>`; }).join('');
+
+$('#tbl-peng').innerHTML = table([16, 20, 21, 30, 13],
+  ['Ruang', 'Tempat/Gedung', 'Tanggal', 'Peminjam', ''].map((h) => `<th class="${TH}">${h}</th>`).join(''),
+  PENGAJUAN.map((p, i) => `<tr><td class="${TD}">${p.ruang}</td><td class="${TD}">${p.tempat}</td><td class="${TD}">${p.tgl}</td><td class="${TD}">${p.peminjam}</td>
+    <td class="${TD} pr-[27px] text-right"><button data-surat="${i}" class="${GRAD} whitespace-nowrap rounded-full px-[14px] py-[3px] font-head text-[10px] font-bold">Terbitkan Surat</button></td></tr>`).join(''));
+
+/* ---------------- NAVIGASI & AKSI ---------------- */
+function show(key) {
+  document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.dataset.view === key));
+  document.querySelectorAll('.menu').forEach((b) => {
+    const on = b.dataset.menu === (key === 'gedung' ? 'dashboard' : key);
+    b.classList.toggle('border-[#4b4e5c]', on); b.classList.toggle('bg-[#1d2240]', on);
+  });
+  $('#profile').classList.toggle('hidden', key !== 'dashboard');
+  $('#surat').classList.add('hidden');
+}
+document.addEventListener('click', (e) => {
+  const m = e.target.closest('[data-menu]'), g = e.target.closest('[data-goto]'), s = e.target.closest('[data-surat]'), k = e.target.closest('[data-kelola]');
+  if (m) show(m.dataset.menu);
+  if (g) show(g.dataset.goto);
+  if (k) { /* TODO: buka form kelola ruang (ubah status Blocked / Available / Pending) */ }
+  if (s) {
+    const p = PENGAJUAN[+s.dataset.surat] || PENGAJUAN[0];
+    if (!e.target.closest('[data-view="pengajuan"]')) show('pengajuan');
+    $('#surat-info').innerHTML = [['Kegiatan', p.kegiatan], ['Penyelenggara', p.peminjam], ['Tempat', `${p.ruang}, ${p.tempat}`], ['Tanggal', p.tgl]]
+      .map(([a, b]) => `<dt class="text-muted">${a}</dt><dd>${b}</dd>`).join('');
+    $('#surat').classList.remove('hidden');
+  }
+});
+$('#surat-x').onclick = () => $('#surat').classList.add('hidden');
+$('#surat-ok').onclick = () => { /* TODO: panggil API terbitkan surat, lalu tutup panel */ $('#surat').classList.add('hidden'); };
+
+refresh();
+show('dashboard');
+</script>
 </body>
 </html>

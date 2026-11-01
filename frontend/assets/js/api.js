@@ -83,7 +83,7 @@
     D.reservasi.push({
       id_reservasi: D.util.uuid(), id_user: u.id_user, id_gedung: f.id_gedung, nama_acara: f.nama_acara,
       tgl_acara: f.tgl_acara, jam_mulai: mulai, jam_selesai: selesai, qr_code_surat: null,
-      status_akhir: 'In-Progress', posisi_approval: 'DosPem',                                  // alur estafet mulai dari DosPem
+      status_akhir: 'In-Progress', posisi_approval: 'Presiden BEM',                            // alur estafet mulai dari Presiden BEM
       file_proposal: 'proposal_' + Math.random().toString(16).slice(2, 12) + '.pdf',
     });
     D.save();
@@ -133,12 +133,16 @@
     const u = me();
     if (!u) return reply(err('Anda belum login!'));
     if (!D.URUTAN.includes(u.role)) return reply(err('Akses Ditolak! Anda bukan Approver.'));
+    // Antrean diurutkan menurut waktu masuk (kapan tahap sebelumnya menyetujui, yang paling lama di atas);
+    // kalau waktu masuk sama, urutan data dipertahankan; tahap pertama (belum ada tahap sebelumnya) diurutkan menurut tanggal acara.
+    const prevTahap = D.URUTAN[D.URUTAN.indexOf(u.role) - 1];
+    const waktuMasukAntrean = (r) => { const l = D.approval_log.filter((x) => x.id_reservasi === r.id_reservasi && x.tahap_approval === prevTahap && x.status === 'Approve').pop(); return l ? l.waktu_proses : ''; };
     const data = D.reservasi.filter((r) => r.posisi_approval === u.role && ['Pending', 'In-Progress'].includes(r.status_akhir))
-      .sort((a, b) => a.tgl_acara.localeCompare(b.tgl_acara))
+      .sort((a, b) => { const wa = waktuMasukAntrean(a), wb = waktuMasukAntrean(b); return (wa || wb) ? wa.localeCompare(wb) : a.tgl_acara.localeCompare(b.tgl_acara); })
       .map((r) => ({
         id_reservasi: r.id_reservasi, nama_pemohon: userName(r.id_user), nama_gedung: gedungName(r.id_gedung), nama_acara: r.nama_acara,
         tgl_acara: r.tgl_acara, jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai, posisi_approval: r.posisi_approval,
-        status_akhir: r.status_akhir, file_proposal: r.file_proposal, nama_instansi: orgOf(r.id_user),
+        status_akhir: r.status_akhir, file_proposal: r.file_proposal, nama_instansi: orgOf(r.id_user), jumlah_peserta: r.jumlah_peserta, deskripsi: r.deskripsi,
       }));
     // [BELUM ADA di backend] jumlah pengajuan yang masuk ke antrean approver ini hari ini
     // (= tahap sebelumnya menyetujui hari ini; untuk tahap pertama belum ada data tanggal pengajuan -> 0)
@@ -188,7 +192,7 @@
       .map((l) => {
         const r = D.reservasiById(l.id_reservasi) || {};
         return { id_approval: l.id_approval, id_reservasi: l.id_reservasi, nama_acara: r.nama_acara, nama_pemohon: userName(r.id_user),
-                 nama_gedung: gedungName(r.id_gedung), nama_instansi: orgOf(r.id_user), tgl_acara: r.tgl_acara, status: l.status, catatan: l.catatan, waktu_proses: l.waktu_proses };
+                 nama_gedung: gedungName(r.id_gedung), nama_instansi: orgOf(r.id_user), tgl_acara: r.tgl_acara, jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai, status: l.status, catatan: l.catatan, waktu_proses: l.waktu_proses };
       });
     const stat = { Approve: 0, Reject: 0, Revise: 0 };
     data.forEach((d) => { stat[d.status] = (stat[d.status] || 0) + 1; });

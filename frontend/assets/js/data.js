@@ -27,14 +27,16 @@
   const mk = (p, d) => `${p}${d.repeat(7)}-${d.repeat(4)}-${d.repeat(4)}-${d.repeat(4)}-${d.repeat(12)}`;
 
   /* ---------- konstanta alur approval (sama dengan proses_approval.php) ---------- */
-  const URUTAN = ['DosPem', 'Presiden BEM', 'Kajur', 'Wadir'];
+  const URUTAN = ['Presiden BEM', 'DosPem', 'Kajur', 'Wadir'];   // urutan baru: Presiden BEM -> Dosen Pembina -> Kajur -> Wadir
   const LABEL_TAHAP = { DosPem: 'Dosen Pembina', 'Presiden BEM': 'Presiden BEM', Kajur: 'Ketua Jurusan', Wadir: 'Wakil Direktur' };
+  // Label khusus tracker di dashboard approver (sesuai desain Figma)
+  const LABEL_TRACKER = { 'Presiden BEM': 'BEM', DosPem: 'Dosen Pembina Kemahasiswaan', Kajur: 'Ketua Jurusan', Wadir: 'Wakil Direktur' };
 
   /* ---------- ID tetap ---------- */
-  const G = { graha: mk('1', '1'), sidang: mk('2', '2'), auditTI: mk('3', '3'), aula: mk('4', '4') };
+  const G = { graha: mk('1', '1'), sidang: mk('2', '2'), auditTI: mk('3', '3'), aula: mk('4', '4'), auditorium: mk('5', '5') };
   const U = { wadir: mk('a', '1'), kajur: mk('a', '2'), dospem: mk('a', '3'), admin: mk('a', '4'), mhs: mk('a', '5'),
-              presbem: mk('a', '6'), satpam: mk('a', '7'), mhsHmj: mk('a', '8'), mhsUkm: mk('a', '9') };
-  const O = { bem: mk('c', '1'), hmti: mk('c', '2'), seni: mk('c', '3') };
+              presbem: mk('a', '6'), satpam: mk('a', '7'), mhsHmj: mk('a', '8'), mhsUkm: mk('a', '9'), mhsHms: mk('a', 'b') };
+  const O = { bem: mk('c', '1'), hmti: mk('c', '2'), seni: mk('c', '3'), hms: mk('c', '4') };
   const J = { ti: mk('b', '1') };
   const R = (n) => mk('d', n.toString(16));               // id reservasi (10 -> 'a', 11 -> 'b' agar tetap 1 digit hex)
 
@@ -46,6 +48,7 @@
       { id_gedung: G.sidang,  nama_gedung: 'Ruang Sidang Utama',  lokasi: 'Gedung Rektorat Lt.3',          fasilitas: 'AC, Mic Meja, LED TV',        kapasitas: 100, status_operasional: 'Nonaktif' },
       // TAMBAHAN
       { id_gedung: G.auditTI, nama_gedung: 'Auditorium TI',       lokasi: 'Gedung Teknologi Informasi Lt.1', fasilitas: 'AC, Proyektor, Panggung',   kapasitas: 250, status_operasional: 'Aktif' },
+      { id_gedung: G.auditorium, nama_gedung: 'Ruang Auditorium', lokasi: 'Gedung Pusat Lt.1',       fasilitas: 'AC, Proyektor, Sound System', kapasitas: 300, status_operasional: 'Aktif' },
       { id_gedung: G.aula,    nama_gedung: 'Aula Teknik Sipil',   lokasi: 'Gedung Teknik Sipil Lt.2',      fasilitas: 'Kipas, Sound System',         kapasitas: 150, status_operasional: 'Aktif' },
     ];
 
@@ -56,6 +59,7 @@
       // TAMBAHAN: contoh HMJ dan UKM (UKM tidak berada di bawah jurusan, sesuai catatan review dosen)
       { id_organisasi: O.hmti, nama_organisasi: 'HMTI - Himpunan Mahasiswa Teknologi Informasi', tipe: 'HMJ', id_dospem: U.dospem, id_jurusan: J.ti },
       { id_organisasi: O.seni, nama_organisasi: 'UKM Seni', tipe: 'UKM', id_dospem: U.dospem, id_jurusan: null },
+      { id_organisasi: O.hms,  nama_organisasi: 'HMS - Himpunan Mahasiswa Teknik Sipil', tipe: 'HMJ', id_dospem: U.dospem, id_jurusan: null },
     ];
 
     // password tidak disimpan di sini (lihat auth.js). Semua akun dummy: password123
@@ -70,35 +74,46 @@
       { id_user: U.satpam,  email: 'satpam@polinema.ac.id',           nama_lengkap: 'Pak Satpam Graha',         role: 'Satpam',       id_organisasi: null,   id_gedung: G.graha },
       { id_user: U.mhsHmj,  email: 'hmti@student.polinema.ac.id',     nama_lengkap: 'Arkan (HMTI)',             role: 'Mahasiswa',    id_organisasi: O.hmti, id_gedung: null },
       { id_user: U.mhsUkm,  email: 'ukmseni@student.polinema.ac.id',  nama_lengkap: 'Panitia UKM Seni',         role: 'Mahasiswa',    id_organisasi: O.seni, id_gedung: null },
+      { id_user: U.mhsHms,  email: 'hms@student.polinema.ac.id',      nama_lengkap: 'Panitia HMS',              role: 'Mahasiswa',    id_organisasi: O.hms,  id_gedung: null },
     ];
 
     const qr = (n) => `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=verifikasi_${n}`;   // format seperti datadummy.sql
     const reservasi = [
       // dua baris pertama = datadummy.sql
       { id_reservasi: R(1), id_user: U.mhs, id_gedung: G.graha, nama_acara: 'Seminar Nasional IT', tgl_acara: '2026-11-10', jam_mulai: '08:00:00', jam_selesai: '15:00:00', qr_code_surat: qr(1), status_akhir: 'Approved', posisi_approval: 'Selesai', file_proposal: 'proposal_seminar.pdf' },
-      { id_reservasi: R(2), id_user: U.mhs, id_gedung: G.graha, nama_acara: 'Makrab Angkatan',     tgl_acara: '2026-12-20', jam_mulai: '18:00:00', jam_selesai: '22:00:00', qr_code_surat: null,  status_akhir: 'In-Progress', posisi_approval: 'DosPem', file_proposal: 'proposal_makrab.pdf' },
+      { id_reservasi: R(2), id_user: U.mhs, id_gedung: G.graha, nama_acara: 'Makrab Angkatan',     tgl_acara: '2026-12-20', jam_mulai: '18:00:00', jam_selesai: '22:00:00', qr_code_surat: null,  status_akhir: 'In-Progress', posisi_approval: 'Presiden BEM', file_proposal: 'proposal_makrab.pdf' },
       // TAMBAHAN (tanggal relatif hari ini supaya dashboard Satpam ada isinya)
       { id_reservasi: R(3), id_user: U.mhsHmj, id_gedung: G.graha,   nama_acara: 'Dies Natalis JTI',            tgl_acara: dayOffset(0), jam_mulai: '10:00:00', jam_selesai: '23:30:00', qr_code_surat: qr(3), status_akhir: 'Approved', posisi_approval: 'Selesai', file_proposal: 'proposal_dies_natalis.pdf' },
       { id_reservasi: R(4), id_user: U.mhsHmj, id_gedung: G.auditTI, nama_acara: 'Rapat Kerja HMJ',             tgl_acara: dayOffset(5), jam_mulai: '09:00:00', jam_selesai: '12:00:00', qr_code_surat: null,  status_akhir: 'Approved', posisi_approval: 'Selesai', file_proposal: 'proposal_raker.pdf' },
       { id_reservasi: R(5), id_user: U.mhs,     id_gedung: G.graha,   nama_acara: 'Dialog Dosen Mahasiswa JTI',  tgl_acara: dayOffset(2), jam_mulai: '13:00:00', jam_selesai: '17:00:00', qr_code_surat: null,  status_akhir: 'Approved', posisi_approval: 'Selesai', file_proposal: 'proposal_dialog.pdf' },
-      { id_reservasi: R(6), id_user: U.mhsHmj, id_gedung: G.auditTI, nama_acara: 'Kuliah Tamu Praktisi IT',     tgl_acara: dayOffset(14), jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'DosPem', file_proposal: 'proposal_kuliah_tamu.pdf' },
-      { id_reservasi: R(7), id_user: U.mhsUkm, id_gedung: G.aula,    nama_acara: 'Pelatihan Desain UI/UX',      tgl_acara: dayOffset(16), jam_mulai: '08:00:00', jam_selesai: '16:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'DosPem', file_proposal: 'proposal_uiux.pdf' },
-      { id_reservasi: R(8), id_user: U.mhsUkm, id_gedung: G.graha,   nama_acara: 'Pentas Seni Kampus',          tgl_acara: dayOffset(30), jam_mulai: '15:00:00', jam_selesai: '21:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Presiden BEM', file_proposal: 'proposal_pentas_seni.pdf' },
-      { id_reservasi: R(9), id_user: U.mhs,     id_gedung: G.auditTI, nama_acara: 'Seminar Kewirausahaan',       tgl_acara: dayOffset(21), jam_mulai: '13:00:00', jam_selesai: '16:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Kajur', file_proposal: 'proposal_wirausaha.pdf' },
-      { id_reservasi: R(10), id_user: U.mhsHmj, id_gedung: G.graha,  nama_acara: 'Wisuda Bersama Jurusan',      tgl_acara: dayOffset(40), jam_mulai: '08:00:00', jam_selesai: '14:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Wadir', file_proposal: 'proposal_wisuda.pdf' },
+      { id_reservasi: R(6), id_user: U.mhsHmj, id_gedung: G.auditTI, nama_acara: 'Kuliah Tamu Praktisi IT',     tgl_acara: dayOffset(14), jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Presiden BEM', file_proposal: 'proposal_kuliah_tamu.pdf', jumlah_peserta: 120, deskripsi: 'Proposal kuliah tamu bersama praktisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: R(7), id_user: U.mhsUkm, id_gedung: G.aula,    nama_acara: 'Pelatihan Desain UI/UX',      tgl_acara: dayOffset(16), jam_mulai: '08:00:00', jam_selesai: '16:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Presiden BEM', file_proposal: 'proposal_uiux.pdf', jumlah_peserta: 60, deskripsi: 'Pelatihan dasar desain antarmuka dan pengalaman pengguna.' },
+      { id_reservasi: R(8), id_user: U.mhsUkm, id_gedung: G.graha,   nama_acara: 'Pentas Seni Kampus',          tgl_acara: dayOffset(30), jam_mulai: '15:00:00', jam_selesai: '21:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'DosPem', file_proposal: 'proposal_pentas_seni.pdf', jumlah_peserta: 300, deskripsi: 'Pertunjukan seni tahunan dari seluruh unit kegiatan mahasiswa.' },
+      { id_reservasi: R(9), id_user: U.mhsHmj, id_gedung: G.auditorium, nama_acara: 'Seminar Nasional HMTI', tgl_acara: '2026-10-02', jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Kajur', file_proposal: 'proposal_seminar_hmti.pdf', jumlah_peserta: 120, deskripsi: 'Proposal kuliah tamu bersama prakdisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: mk('8', '1'), id_user: U.mhsHmj, id_gedung: G.auditorium, nama_acara: 'Lomba Karya Tulis Ilmiah', tgl_acara: '2026-10-08', jam_mulai: '08:00:00', jam_selesai: '15:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Wadir', file_proposal: 'proposal_lkti.pdf', jumlah_peserta: 150, deskripsi: 'Lomba karya tulis ilmiah tingkat jurusan dengan juri dari dosen dan praktisi industri' },
+      { id_reservasi: mk('8', '2'), id_user: U.mhsUkm, id_gedung: G.aula, nama_acara: 'Festival Musik Kampus', tgl_acara: '2026-10-12', jam_mulai: '16:00:00', jam_selesai: '22:00:00', qr_code_surat: null, status_akhir: 'Rejected', posisi_approval: 'Wadir', file_proposal: 'proposal_festival_musik.pdf', jumlah_peserta: 400, deskripsi: 'Festival musik tahunan yang melibatkan seluruh UKM seni' },
+      { id_reservasi: R(15), id_user: U.mhsHms, id_gedung: G.auditorium, nama_acara: 'Dies Natalis HMS', tgl_acara: '2026-10-05', jam_mulai: '13:00:00', jam_selesai: '17:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Kajur', file_proposal: 'proposal_dies_hms.pdf', jumlah_peserta: 100, deskripsi: 'Proposal kuliah tamu bersama prakdisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: mk('8', '3'), id_user: U.mhsHmj, id_gedung: G.auditorium, nama_acara: 'Seminar Nasional HMTI', tgl_acara: '2026-10-02', jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Kajur', file_proposal: 'proposal_seminar_hmti.pdf', jumlah_peserta: 120, deskripsi: 'Proposal kuliah tamu bersama prakdisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: mk('8', '4'), id_user: U.mhsHms, id_gedung: G.auditorium, nama_acara: 'Dies Natalis HMS', tgl_acara: '2026-10-05', jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Kajur', file_proposal: 'proposal_dies_hms.pdf', jumlah_peserta: 100, deskripsi: 'Proposal kuliah tamu bersama prakdisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: mk('8', '5'), id_user: U.mhsHmj, id_gedung: G.auditorium, nama_acara: 'Seminar Nasional HMTI', tgl_acara: '2026-10-02', jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Wadir', file_proposal: 'proposal_seminar_hmti.pdf', jumlah_peserta: 120, deskripsi: 'Proposal kuliah tamu bersama prakdisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: mk('8', '6'), id_user: U.mhsHms, id_gedung: G.auditorium, nama_acara: 'Dies Natalis HMS', tgl_acara: '2026-10-05', jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Wadir', file_proposal: 'proposal_dies_hms.pdf', jumlah_peserta: 100, deskripsi: 'Proposal kuliah tamu bersama prakdisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: R(10), id_user: U.mhsHmj, id_gedung: G.graha,  nama_acara: 'Wisuda Bersama Jurusan',      tgl_acara: dayOffset(40), jam_mulai: '08:00:00', jam_selesai: '14:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'Wadir', file_proposal: 'proposal_wisuda.pdf', jumlah_peserta: 200, deskripsi: 'Wisuda bersama untuk lulusan jurusan.' },
       { id_reservasi: R(11), id_user: U.mhsUkm, id_gedung: G.aula,   nama_acara: 'Konser Amal Akhir Tahun',     tgl_acara: dayOffset(25), jam_mulai: '18:00:00', jam_selesai: '22:00:00', qr_code_surat: null, status_akhir: 'Rejected', posisi_approval: 'Kajur', file_proposal: 'proposal_konser.pdf' },
+      { id_reservasi: R(12), id_user: U.mhsHmj, id_gedung: G.auditTI, nama_acara: 'Kuliah Tamu Praktisi IT', tgl_acara: '2026-10-02', jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'DosPem', file_proposal: 'proposal_kuliah_tamu.pdf', jumlah_peserta: 120, deskripsi: 'Proposal kuliah tamu bersama praktisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: R(13), id_user: U.mhsHmj, id_gedung: G.auditTI, nama_acara: 'Kuliah Tamu Praktisi IT', tgl_acara: '2026-10-02', jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'DosPem', file_proposal: 'proposal_kuliah_tamu.pdf', jumlah_peserta: 120, deskripsi: 'Proposal kuliah tamu bersama praktisi Industri IT yang akan membahas arsitektur cloud' },
+      { id_reservasi: R(14), id_user: U.mhsHmj, id_gedung: G.auditTI, nama_acara: 'Kuliah Tamu Praktisi IT', tgl_acara: '2026-10-02', jam_mulai: '09:00:00', jam_selesai: '13:00:00', qr_code_surat: null, status_akhir: 'In-Progress', posisi_approval: 'DosPem', file_proposal: 'proposal_kuliah_tamu.pdf', jumlah_peserta: 120, deskripsi: 'Proposal kuliah tamu bersama praktisi Industri IT yang akan membahas arsitektur cloud' },
     ];
 
     /* approval_log: ID e1.. dan e2.. = datadummy.sql, sisanya TAMBAHAN supaya riwayat konsisten dengan posisi_approval */
-    const CATATAN = ['Disetujui, silakan lanjut', 'Disetujui BEM', 'Disetujui Jurusan', 'Disetujui Wadir'];
+    const CATATAN = ['Disetujui BEM', 'Disetujui, silakan lanjut', 'Disetujui Jurusan', 'Disetujui Wadir'];
     const APPROVER = { DosPem: U.dospem, 'Presiden BEM': U.presbem, Kajur: U.kajur, Wadir: U.wadir };
     const approved =(idRes, upto, day) => URUTAN.slice(0, upto).map((t, i) => ({
       id_approval: uuid(), id_reservasi: idRes, id_approver: APPROVER[t], tahap_approval: t, status: 'Approve',
       catatan: CATATAN[i], waktu_proses: `${day} ${pad(9 + i * 2)}:00:00`,
     }));
     const approval_log = [
-      { id_approval: mk('e', '1'), id_reservasi: R(1), id_approver: U.dospem, tahap_approval: 'DosPem', status: 'Approve', catatan: 'Disetujui, silakan lanjut', waktu_proses: '2026-10-15 09:00:00' },
-      { id_approval: uuid(),       id_reservasi: R(1), id_approver: U.presbem, tahap_approval: 'Presiden BEM', status: 'Approve', catatan: 'Disetujui BEM', waktu_proses: '2026-10-15 13:00:00' },
+      { id_approval: uuid(),       id_reservasi: R(1), id_approver: U.presbem, tahap_approval: 'Presiden BEM', status: 'Approve', catatan: 'Disetujui BEM', waktu_proses: '2026-10-15 09:00:00' },
+      { id_approval: mk('e', '1'), id_reservasi: R(1), id_approver: U.dospem, tahap_approval: 'DosPem', status: 'Approve', catatan: 'Disetujui, silakan lanjut', waktu_proses: '2026-10-15 13:00:00' },
       { id_approval: uuid(),       id_reservasi: R(1), id_approver: U.kajur, tahap_approval: 'Kajur', status: 'Approve', catatan: 'Disetujui Jurusan', waktu_proses: '2026-10-16 08:15:00' },
       { id_approval: mk('e', '2'), id_reservasi: R(1), id_approver: U.wadir, tahap_approval: 'Wadir', status: 'Approve', catatan: 'Disetujui Wadir', waktu_proses: '2026-10-16 10:30:00' },
       ...approved(R(3), 4, dayOffset(-6)),
@@ -106,8 +121,15 @@
       ...approved(R(5), 4, dayOffset(-3)),
       ...approved(R(8), 1, dayOffset(-1)),
       ...approved(R(9), 2, dayOffset(-2)),
+      ...approved(R(15), 2, dayOffset(-2)),
+      ...approved(mk('8', '3'), 2, dayOffset(-2)), ...approved(mk('8', '4'), 2, dayOffset(-2)),
+      ...approved(mk('8', '5'), 3, dayOffset(-1)), ...approved(mk('8', '6'), 3, dayOffset(-1)),
+      ...approved(mk('8', '1'), 3, dayOffset(-2)),
+      ...approved(mk('8', '2'), 3, dayOffset(-6)),
+      { id_approval: uuid(), id_reservasi: mk('8', '2'), id_approver: U.wadir, tahap_approval: 'Wadir', status: 'Reject', catatan: 'Kapasitas dan jam acara tidak sesuai aturan kampus, mohon ajukan ulang.', waktu_proses: `${dayOffset(-5)} 10:10:00` },
       ...approved(R(10), 3, dayOffset(-3)),
       ...approved(R(11), 2, dayOffset(-5)),
+      ...approved(R(12), 1, dayOffset(-1)), ...approved(R(13), 1, dayOffset(-1)), ...approved(R(14), 1, dayOffset(-1)),
       { id_approval: uuid(), id_reservasi: R(11), id_approver: U.kajur, tahap_approval: 'Kajur', status: 'Reject', catatan: 'Jadwal bersamaan dengan masa ujian, mohon ajukan ulang di tanggal lain.', waktu_proses: `${dayOffset(-4)} 14:20:00` },
     ];
 
@@ -132,7 +154,7 @@
   }
 
   const DATA = Object.assign({
-    URUTAN, LABEL_TAHAP, save, reset,
+    URUTAN, LABEL_TAHAP, LABEL_TRACKER, save, reset,
     util: { uuid, nowSql, ymd, dayOffset },
     gedungById:    (id) => DATA.gedung.find((g) => g.id_gedung === id) || null,
     userById:      (id) => DATA.users.find((u) => u.id_user === id) || null,

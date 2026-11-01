@@ -122,7 +122,7 @@
   /* Langkah 5: ringkasan + kirim */
   function renderConfirm() {
     $('confirm-box').innerHTML =
-      `Periksa kembali data sebelum mengirim. Setelah dikirim, pengajuan masuk ke antrean review Dosen Pembina - tahap 1 dari 4 approval berjenjang.
+      `Periksa kembali data sebelum mengirim. Setelah dikirim, pengajuan masuk ke antrean review Presiden BEM - tahap 1 dari 4 approval berjenjang.
        <dl><dt>Kegiatan</dt><dd>${esc(val('f-nama'))}</dd><dt>Organisasi</dt><dd>${esc(val('f-org'))}</dd>
        <dt>Tempat</dt><dd>${esc(form.gedung ? form.gedung.nama_gedung : '-')}</dd>
        <dt>Waktu</dt><dd>${esc(UI.fmtTgl(val('f-tgl')))}, ${esc(val('f-mulai'))} s/d ${esc(val('f-selesai'))}</dd>

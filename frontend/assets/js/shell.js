@@ -82,7 +82,7 @@
     // Teks di bawah judul: "Masuk sebagai Mahasiswa" / "Masuk sebagai Approver - Tahap : Presiden BEM"
     // Nama akun ditambahkan hanya kalau belum tampil di profil (mis. mahasiswa: profil = organisasi, sub = nama orang)
     const sub = (meta.tahap
-      ? `Masuk sebagai Approver - <span class="tahap">Tahap</span> : <b>${esc(meta.label)}</b>`
+      ? `Masuk Sebagai Approver - <span class="tahap">Tahap</span> : <b>${esc(meta.label)}</b>`
       : `Masuk sebagai ${esc(meta.sub)}`) + (profile && display === user.nama ? '' : ` &middot; ${esc(user.nama)}`);
 
     const menu = meta.menu.map((m, i) =>
@@ -124,7 +124,7 @@
       shell.querySelectorAll('.menu-item').forEach((b) => b.classList.toggle('active', b.dataset.menu === key));
       views.forEach((v) => v.classList.toggle('active', v.dataset.view === key));
       document.getElementById('page-title').textContent = (item && item.title) || title;
-      const pf = shell.querySelector('.profile'); if (pf) pf.hidden = key !== meta.menu[0].key;   // profil hanya di halaman utama
+      const pf = shell.querySelector('.profile'); if (pf) pf.hidden = !meta.tahap && key !== meta.menu[0].key;   // profil hanya di halaman utama (approver: tampil di semua menu)
       document.dispatchEvent(new CustomEvent('arena:view', { detail: key }));   // hook untuk JS halaman
     }
     shell.querySelectorAll('.menu-item').forEach((b) => { b.onclick = () => show(b.dataset.menu); });

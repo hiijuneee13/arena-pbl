@@ -56,11 +56,21 @@
 .rtable .r { text-align: right; }
 .rtable td.muted { color: var(--muted); }
 
+/* Tabel Managemen Ruang (Dashboard & Selengkapnya): kolom rata kiri, lebar tetap, tombol Kelola lebar */
+#tbl-ruang { table-layout: fixed; }
+#tbl-ruang td { padding: 26px 12px; }
+#tbl-ruang .pill { min-width: 0; padding: 3px 18px; white-space: nowrap; }
+
+/* Tombol aksi di tabel (Kelola / Terbitkan Surat / Lihat Surat): pil bergradasi kecil sesuai mockup */
+.rtable td.r { padding-right: 19px; }
+.rtable .btn { border-radius: var(--radius-pill); min-width: 84px; padding: 4px 14px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.rtable .btn.btn-ghost { background: var(--surface-2); }
+
 /* ---------- Badge status ruang ---------- */
-.pill { display: inline-block; min-width: 76px; text-align: center; padding: 2px 12px; border-radius: var(--radius-pill); border: 1px solid; font: 500 11px var(--font-head); }
-.pill.blocked   { background: var(--red-bg);   border-color: var(--red-border);   color: var(--red); }
-.pill.available { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
-.pill.pending   { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+.pill { display: inline-block; text-align: center; padding: 3px 18px; border-radius: var(--radius-pill); border: 1px solid; font: 500 11px var(--font-head); white-space: nowrap; }
+/* Status (Aktif / Tidak aktif) dan Aktivitas */
+.pill.aktif, .pill.sibuk   { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+.pill.nonaktif, .pill.kosong { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
 
 /* ---------- Tombol ---------- */
 .btn { border: 1px solid rgba(255, 255, 255, .16); }
@@ -72,18 +82,17 @@
 .filters { display: flex; gap: 12px; flex-wrap: wrap; }
 .dropdown-btn { min-width: 160px; padding: 8px 14px; border-radius: 12px; background: transparent; border: 1px solid var(--panel-border); font: 500 12px var(--font-head); transition: background var(--dur); }
 .dropdown-btn:hover { background: var(--surface-2); }
-.dropdown-menu { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px; padding: 0; }
+.dropdown-menu { background: #0a0c16; border: 1px solid #4b4e5c; border-radius: 4px; padding: 0; }
 .dropdown-menu li { position: relative; font: 500 12px var(--font-head); padding: 12px 10px; border-radius: 0; }
-.dropdown-menu li + li { border-top: 1px solid var(--panel-border); }
-.dropdown-menu li:hover { background: #1b2036; }
-.dropdown-menu li.sel { background: var(--accent-2); color: #fff; }
-.dropdown-menu li.sel-parent { background: #1b2036; }
+.dropdown-menu li + li { border-top: 1px solid #4b4e5c; }
+.dropdown-menu li:hover { background: var(--accent-2); color: #fff; }       /* ungu saat di-hover, bukan saat terpilih */
+.dropdown-menu li.sel { background: transparent; color: var(--text); font-weight: 700; }   /* item terpilih: tanpa warna latar */
+.dropdown-menu li.sel:hover { background: var(--accent-2); color: #fff; }
 /* submenu ruang: muncul di kanan item tempat */
 .sub-menu { display: none; position: absolute; left: 100%; top: -1px; min-width: 160px; margin: 0; padding: 0; list-style: none; z-index: 21;
-  background: #2a2d3d; border: 1px solid var(--panel-border); border-radius: 0 4px 4px 0; }
+  background: #2a2d3d; border: 1px solid #4b4e5c; border-radius: 0 4px 4px 0; }
 .dropdown-menu li:hover > .sub-menu, .dropdown-menu li.open-sub > .sub-menu { display: block; }
-.sub-menu li:hover { background: #353a50; }
-.sub-menu li.sel { background: var(--accent-2); }
+.sub-menu li:hover { background: #353a50; color: #fff; }
 
 /* ---------- Log aktivitas ---------- */
 .log-item { font-size: 11px; margin: 0 0 14px; line-height: 1.5; }
@@ -104,6 +113,16 @@
 .surat-body .note-box { margin-top: 16px; }
 .modal .actions { align-self: end; }
 
+/* Modal surat: panel biru tua besar di atas area konten (bukan kotak kecil di tengah), tombol di kanan bawah */
+#m-surat { background: rgba(5, 7, 33, .35); backdrop-filter: none; }
+.modal-close { position: absolute; top: 16px; right: 20px; width: 34px; height: 34px; border-radius: 50%; font-size: 24px; line-height: 1; color: var(--muted); transition: background var(--dur), color var(--dur); }
+.modal-close:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+#m-surat .modal.wide { position: relative; }
+@media (min-width: 901px) {
+  #m-surat { place-items: stretch; }
+  #m-surat .modal.wide { position: fixed; left: 251px; right: 62px; top: 121px; bottom: 48px; width: auto; min-height: 0; overflow: auto; }
+}
+
 /* ---------- Responsif ---------- */
 @media (max-width: 900px) {
   .grid.split { grid-template-columns: 1fr; }
@@ -113,3 +132,15 @@
   .app { grid-template-columns: 1fr; }
   .surat-body { grid-template-columns: 1fr; }
 }
+
+/* ---------- Profil kanan atas tidak ditampilkan di halaman admin (sesuai mockup) ---------- */
+.page-head .profile { display: none; }
+
+/* ---------- Dropdown Semua Status: panel bergradasi biru-ungu, item terpilih pil ungu ---------- */
+.dd-status .dropdown-menu { background: linear-gradient(180deg, #232855, #1a1f48); border: 1px solid #373d78; border-radius: 14px; padding: 4px; min-width: 100%; overflow: visible; }
+.dd-status .dropdown-menu li { padding: 9px 10px; border-radius: 10px; font-size: 12px; }
+.dd-status .dropdown-menu li + li { border-top: 1px solid #3a418a; border-radius: 0 0 10px 10px; }
+.dd-status .dropdown-menu li:hover, .dd-status .dropdown-menu li.sel { background: var(--accent); color: #fff; border-radius: 10px; font-weight: 600; }
+
+/* ---------- Tombol "Terbitkan Surat" di panel surat: pil kecil di kanan bawah ---------- */
+#btn-terbit { border-radius: var(--radius-pill); padding: 5px 16px; font-size: 11px; font-weight: 700; }
