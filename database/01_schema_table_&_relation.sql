@@ -39,6 +39,7 @@ CREATE TABLE public.users (
     nama_lengkap varchar(255) NOT NULL,
     no_hp varchar(20),
     role varchar(50) NOT NULL,
+    foto_profil varchar(255),
     id_organisasi uuid,
     id_gedung uuid,
     CONSTRAINT users_pkey PRIMARY KEY (id_user)
