@@ -24,6 +24,17 @@ $catatan       = trim($data['catatan'] ?? '');
 $id_approver   = $_SESSION['id_user'];
 $role_sekarang = $_SESSION['role'];
 
+// Validasi konfirmasi aksi / verifikasi dua langkah
+$konfirmasi = $data['konfirmasi_aksi'] ?? '';
+if ($konfirmasi !== 'YA') {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error", 
+        "message" => "Verifikasi aksi gagal! Mohon konfirmasi keputusan Anda terlebih dahulu."
+    ]);
+    exit;
+}
+
 // 4. Validasi input: pastikan id_reservasi dan action tidak kosong
 if (!$id_reservasi || !$action) {
     echo json_encode(["status" => "error", "message" => "Data tidak lengkap."]);

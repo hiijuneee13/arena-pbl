@@ -43,6 +43,12 @@ try {
     // 8. FETCH data reservasi yang menunggu persetujuan agar bisa dikirim ke frontend
     $data_pending = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Menyediakan path URL file PDF proposal untuk approver
+    foreach ($data_pending as &$item) {
+        $item['url_pdf'] = '../../uploads/' . $item['file_proposal'];
+    }
+    unset($item);
+
     // 9. Kirim data ke frontend
     echo json_encode([
         "status" => "success",
