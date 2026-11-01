@@ -1,6 +1,6 @@
 <?php
 // Mengatur zona waktu ke WIB (Asia/Jakarta)
-date_default_timezone_set('Asia/Jakarta'); 
+date_default_timezone_set('Asia/Jakarta');
 
 // Konfigurasi Database PostgreSQL
 $host = "localhost";
