@@ -47,6 +47,13 @@ JOIN users u ON r.id_user = u.id_user
 JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung
 WHERE r.status_akhir IN ('Pending', 'In-Progress');
 
+CREATE OR REPLACE VIEW v_approver_riwayat_reservasi AS
+SELECT r.id_reservasi, u.nama_lengkap AS nama_pemohon, g.nama_gedung, r.nama_acara, r.tgl_acara, r.jam_mulai, r.jam_selesai, r.posisi_approval, r.status_akhir 
+FROM reservasi r
+JOIN users u ON r.id_user = u.id_user
+JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung
+WHERE r.status_akhir IN ('Approved', 'Rejected');
+
 
 -- Satpam
 
