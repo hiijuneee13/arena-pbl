@@ -49,6 +49,10 @@
         id_reservasi: r.id_reservasi, nama_gedung: gedungName(r.id_gedung), nama_acara: r.nama_acara,
         tgl_acara: r.tgl_acara, jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai,
         posisi_approval: r.posisi_approval, status_akhir: r.status_akhir,
+        // [BELUM ADA di backend] catatan yang ditulis tiap approver (approval_log.catatan), urut dari yang paling awal
+        catatan: D.approval_log.filter((l) => l.id_reservasi === r.id_reservasi && l.catatan)
+          .sort((a, b) => (a.waktu_proses || '').localeCompare(b.waktu_proses || ''))
+          .map((l) => ({ tahap: l.tahap_approval, status: l.status, teks: l.catatan, waktu: l.waktu_proses })),
       }));
     return reply({ status: 'success', login_sebagai: u.nama, jumlah_riwayat: data.length, data });
   }

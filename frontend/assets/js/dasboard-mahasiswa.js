@@ -151,9 +151,11 @@
   }
 
   /* ---- Riwayat pengajuan ---- */
+  let riw = [];                                                  // hasil riwayat_reservasi (dipakai tombol "Lihat Catatan")
   async function renderRiwayat() {
     const res = await API.riwayatReservasi();
     if (res.status !== 'success') { $('list-riwayat').innerHTML = `<div class="card empty">${esc(res.message)}</div>`; return; }
+    riw = res.data;
     const d = res.data, hitung = (s) => d.filter((r) => r.status_akhir === s).length;
     $('stat-riwayat').innerHTML = [
       ['Total Pengajuan', d.length], ['Dalam Proses', hitung('In-Progress') + hitung('Pending')],
@@ -166,6 +168,7 @@
         <div class="meta"><span>${esc(r.nama_gedung)}</span><span>${esc(UI.fmtTgl(r.tgl_acara))}</span><span>${esc(UI.fmtRentang(r.jam_mulai, r.jam_selesai))}</span></div>
         ${UI.tracker(r)}
         <div class="meta"><span>${posisiText(r)}</span></div>
+        ${r.catatan && r.catatan.length ? `<button class="btn btn-ghost btn-sm" data-catatan="${esc(r.id_reservasi)}">Lihat Catatan</button> ` : ''}
         ${r.status_akhir === 'Approved' ? `<a class="btn btn-ghost btn-sm" href="verifikasi.html?id=${encodeURIComponent(r.id_reservasi)}" target="_blank" rel="noopener">Lihat Verifikasi Surat</a>` : ''}
       </div>`).join('') || '<div class="card empty">Belum ada pengajuan. Mulai dari menu "Ajukan Peminjaman".</div>';
   }
@@ -176,6 +179,17 @@
     return `Sedang menunggu keputusan <b>${esc(nama || r.posisi_approval)}</b>.`;
   }
   document.addEventListener('arena:view', (e) => { if (e.detail === 'riwayat') renderRiwayat(); });
+
+  /* ---- Lihat Catatan: catatan yang ditulis tiap approver pada pengajuan ---- */
+  const NAMA_APPROVER = { 'Presiden BEM': 'BEM', DosPem: 'Dosen Pembina', Kajur: 'Ketua Jurusan', Wadir: 'Wakil Direktur' };
+  const NAMA_KEPUTUSAN = { Approve: 'Disetujui', Revise: 'Revisi', Reject: 'Ditolak' };
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-catatan]'); if (!b) return;
+    const r = riw.find((x) => x.id_reservasi === b.dataset.catatan); if (!r) return;
+    $('cat-title').textContent = 'Catatan - ' + r.nama_acara;
+    $('cat-list').innerHTML = r.catatan.map((k) => `<div class="cat-item"><div class="cat-from">Catatan dari ${esc(NAMA_APPROVER[k.tahap] || k.tahap)} <span>${esc(NAMA_KEPUTUSAN[k.status] || k.status)}</span></div><div class="cat-note">${esc(k.teks)}</div></div>`).join('');
+    UI.modal.open('m-catatan');
+  });
 
   /* ---- Jadwal Acara: peminjaman semua organisasi (tempat sudah dipinjam atau masih kosong) ----
      API.jadwalAcara() [belum ada di backend]; diperbarui otomatis tiap 30 detik selama menu ini terbuka. */

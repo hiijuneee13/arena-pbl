@@ -27,3 +27,11 @@
 .cal .cell .badge { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; padding: 2px 8px; max-width: 100%; text-align: center; }
 .cal .cell .badge.wait { border-style: dashed; background: transparent; }          /* belum disetujui penuh, tapi slot sudah terpakai */
 @media (max-width: 900px) { .cal { gap: 6px; } .cal .cell { min-height: 70px; padding: 6px 4px; } }
+
+/* ---- Modal Lihat Catatan ---- */
+.catatan-modal { width: min(640px, 92vw); }
+.catatan-modal .actions { display: flex; justify-content: flex-end; }
+.cat-item + .cat-item { margin-top: 14px; }
+.cat-from { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+.cat-from span { color: var(--muted); font-weight: 500; margin-left: 6px; font-size: 11px; }
+.cat-note { background: #2a2d3a; border-radius: 14px; padding: 14px 16px; font-size: 13px; line-height: 1.5; }

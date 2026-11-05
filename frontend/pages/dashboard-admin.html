@@ -15,6 +15,7 @@
 </script>
 <style>
   body { background: #050820; color: #fff; }
+  select option { background: #0d1121; color: #fff; }
   .view { display: none; }
   .view.active { display: block; animation: up .35s both; }
   @keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -65,7 +66,7 @@
             <div data-filters class="flex flex-wrap gap-3"></div>
             <button data-goto="gedung" class="ml-auto rounded-[10px] border border-bord px-[18px] py-2 font-head text-[11px] font-medium hover:bg-surf">Selengkapnya &gt;</button>
           </div>
-          <div class="overflow-x-auto"><div id="tbl-dash" class="min-w-[520px]"></div></div>
+          <div class="overflow-x-auto"><div id="tbl-dash" class="min-w-[640px]"></div></div>
         </div>
 
         <div class="rounded-[18px] border border-bord bg-panel px-[22px] py-5">
@@ -101,7 +102,7 @@
       <div class="min-h-[calc(100vh-140px)] rounded-[18px] border border-bord bg-panel px-[22px] py-5">
         <h2 class="mb-3 font-head text-base font-bold">Managemen Ruang</h2>
         <div data-filters class="mb-3 flex flex-wrap gap-3"></div>
-        <div class="overflow-x-auto"><div id="tbl-full" class="min-w-[560px]"></div></div>
+        <div class="overflow-x-auto"><div id="tbl-full" class="min-w-[640px]"></div></div>
       </div>
     </section>
 
@@ -124,6 +125,44 @@
   </main>
 </div>
 
+<!-- ===== MODAL KELOLA RUANG ===== -->
+<div id="m-kelola" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#050820]/70 p-4" role="dialog" aria-modal="true" aria-labelledby="k-title">
+  <form id="k-form" novalidate class="relative max-h-full w-full max-w-[460px] overflow-y-auto rounded-[32px] border border-[#232a66] bg-navy px-8 py-7">
+    <button type="button" id="k-x" aria-label="Tutup" class="absolute right-5 top-4 h-8 w-8 rounded-full text-2xl leading-none text-muted hover:bg-white/10 hover:text-white">&times;</button>
+    <h3 id="k-title" class="font-head text-xl font-bold">Kelola Ruang</h3>
+    <p class="mt-1 text-[11px] text-muted">Ubah data ruang. Perubahan langsung tampil di tabel Managemen Ruang.</p>
+
+    <label for="k-n" class="mb-1.5 mt-5 block pl-2 font-head text-xs font-bold">Ruang</label>
+    <input id="k-n" type="text" maxlength="40" autocomplete="off" class="w-full rounded-full bg-[#2a2c38] px-5 py-2.5 font-head text-xs text-white outline-none focus:ring-2 focus:ring-acc/50">
+
+    <label for="k-t" class="mb-1.5 mt-4 block pl-2 font-head text-xs font-bold">Tempat/Gedung</label>
+    <select id="k-t" class="w-full rounded-full bg-[#2a2c38] px-4 py-2.5 font-head text-xs text-white outline-none focus:ring-2 focus:ring-acc/50"></select>
+
+    <fieldset class="mt-4">
+      <legend class="mb-1.5 pl-2 font-head text-xs font-bold">Status</legend>
+      <div class="flex flex-wrap gap-2">
+        <label class="cursor-pointer"><input type="radio" name="k-s" value="Aktif" class="peer sr-only"><span class="block rounded-full border border-bord px-4 py-1.5 font-head text-[11px] font-medium peer-checked:border-[#b49023] peer-checked:bg-[#342b24] peer-checked:text-[#f8bb42] peer-focus-visible:ring-2 peer-focus-visible:ring-acc/60">Aktif</span></label>
+        <label class="cursor-pointer"><input type="radio" name="k-s" value="Tidak aktif" class="peer sr-only"><span class="block rounded-full border border-bord px-4 py-1.5 font-head text-[11px] font-medium peer-checked:border-[#23806c] peer-checked:bg-[#132f35] peer-checked:text-[#25c281] peer-focus-visible:ring-2 peer-focus-visible:ring-acc/60">Tidak aktif</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="mt-4">
+      <legend class="mb-1.5 pl-2 font-head text-xs font-bold">Aktivitas</legend>
+      <div class="flex flex-wrap gap-2">
+        <label class="cursor-pointer"><input type="radio" name="k-a" value="1" class="peer sr-only"><span class="block rounded-full border border-bord px-4 py-1.5 font-head text-[11px] font-medium peer-checked:border-[#b49023] peer-checked:bg-[#342b24] peer-checked:text-[#f8bb42] peer-focus-visible:ring-2 peer-focus-visible:ring-acc/60">Sedang ada Kegiatan</span></label>
+        <label class="cursor-pointer"><input type="radio" name="k-a" value="0" class="peer sr-only"><span class="block rounded-full border border-bord px-4 py-1.5 font-head text-[11px] font-medium peer-checked:border-[#23806c] peer-checked:bg-[#132f35] peer-checked:text-[#25c281] peer-focus-visible:ring-2 peer-focus-visible:ring-acc/60">Tidak ada kegiatan</span></label>
+      </div>
+    </fieldset>
+
+    <div id="k-err" role="alert" class="mt-3 min-h-[16px] pl-2 text-[11px] text-[#ff6b6b]"></div>
+    <div class="mt-4 flex justify-end gap-3">
+      <button type="button" id="k-batal" class="rounded-full bg-[#9a9db8] px-5 py-1.5 font-head text-[11px] font-bold text-[#11163f] hover:bg-[#b0b3c9]">Batal</button>
+      <button type="submit" class="rounded-full bg-gradient-to-r from-[#6865f2] to-[#c787ff] px-6 py-1.5 font-head text-[11px] font-bold">Simpan</button>
+    </div>
+  </form>
+</div>
+<div id="toast" role="status" class="fixed bottom-5 right-5 z-[60] hidden rounded-xl border border-[#23806c] bg-panel px-4 py-3 text-xs"></div>
+
 <script src="../assets/js/data.js"></script>
 <script src="../assets/js/auth.js"></script>
 <script>
@@ -138,16 +177,23 @@ if (SESI) {
 <script>
 /* ---------------- DATA CONTOH (ganti dengan data dari backend) ---------------- */
 const STATS = [['Total Gedung', 40], ['Ruang Tersedia', 8], ['Pengajuan Aktif', 23], ['Selesai Bulan Ini', 23]];
-const RUANG = [                       // n = ruang, t = tempat/gedung, s = status: Blocked | Available | Pending
-  { n: 'Aula Utama',    t: 'Gedung AX',           s: 'Blocked' },
-  { n: 'RT 07',         t: 'Gedung Teknik Sipil', s: 'Available' },
-  { n: 'RT 05',         t: 'Gedung Teknik Sipil', s: 'Pending' },
-  { n: 'RT 01',         t: 'Gedung Teknik Sipil', s: 'Available' },
-  { n: 'Aula Utama',    t: 'Gedung Teknik Mesin', s: 'Pending' },
-  { n: 'Bengkel Utama', t: 'Gedung Teknik Mesin', s: 'Pending' },
+/* Managemen Ruang. n = ruang, t = tempat/gedung, s = status ('Aktif' | 'Tidak aktif'), a = aktivitas (true = Sedang ada Kegiatan)
+   Data bisa diubah lewat tombol "Kelola" dan disimpan di sessionStorage selama tab terbuka (ganti dengan API backend nanti). */
+const RUANG_AWAL = [
+  { id: 1, n: 'Aula Utama',    t: 'Gedung AX',           s: 'Tidak aktif', a: false },
+  { id: 2, n: 'RT 07',         t: 'Gedung Teknik Sipil', s: 'Tidak aktif', a: false },
+  { id: 3, n: 'RT 05',         t: 'Gedung Teknik Sipil', s: 'Aktif',       a: true  },
+  { id: 4, n: 'RT 01',         t: 'Gedung Teknik Sipil', s: 'Tidak aktif', a: false },
+  { id: 5, n: 'Aula Utama',    t: 'Gedung Teknik Mesin', s: 'Aktif',       a: true  },
+  { id: 6, n: 'Bengkel Utama', t: 'Gedung Teknik Mesin', s: 'Aktif',       a: true  },
 ];
-const TEMPAT = [['Semua Tempat', []], ['Gedung AX', []], ['Gedung Teknik Sipil', ['RT 07', 'RT 05', 'RT 01']], ['Gedung Teknik Mesin', []]];
-const STATUS = ['Semua Status', 'Blocked', 'Available', 'Pending'];
+const KEY_RUANG = 'arena_admin_ruang';
+let RUANG = (() => { try { return JSON.parse(sessionStorage.getItem(KEY_RUANG)) || RUANG_AWAL.map((r) => ({ ...r })); } catch (e) { return RUANG_AWAL.map((r) => ({ ...r })); } })();
+const simpanRuang = () => { try { sessionStorage.setItem(KEY_RUANG, JSON.stringify(RUANG)); } catch (e) { /* abaikan: data tetap ada selama halaman terbuka */ } };
+const TEMPAT_NAMA = ['Gedung AX', 'Gedung Teknik Sipil', 'Gedung Teknik Mesin'];
+// daftar "Semua Tempat" + ruang di setiap tempat (submenu muncul saat di-hover); selalu ikut data terbaru
+const tempatList = () => [['Semua Tempat', []], ...TEMPAT_NAMA.map((t) => [t, [...new Set(RUANG.filter((r) => r.t === t).map((r) => r.n))]])];
+const STATUS = ['Semua Status', 'Aktif', 'Tidak aktif'];
 const LOG = ['Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional'];
 const PENGAJUAN = Array.from({ length: 6 }, () => ({ ruang: 'Aula Utama', tempat: 'Gedung Teknik Sipil', tgl: '02 Oktober 2026',
   peminjam: 'Himpunan Mahasiswa Teknologi Informasi', kegiatan: 'Rapat Kerja HMJ' }));
@@ -155,12 +201,10 @@ const PENGAJUAN = Array.from({ length: 6 }, () => ({ ruang: 'Aula Utama', tempat
 /* ---------------- KOMPONEN KECIL ---------------- */
 const $ = (s, r = document) => r.querySelector(s);
 const GRAD = 'bg-gradient-to-r from-[#6865f2] to-[#c787ff]';
-const PILL = {
-  Blocked:   'bg-[#581b2e] border-[#802341] text-[#c22525]',
-  Available: 'bg-[#132f35] border-[#23806c] text-[#25c281]',
-  Pending:   'bg-[#342b24] border-[#b49023] text-[#f8bb42]',
-};
-const pill = (s) => `<span class="inline-block whitespace-nowrap rounded-full border px-[18px] py-[3px] text-[11px] font-medium ${PILL[s]}">${s}</span>`;
+const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const PILL_AMBER = 'bg-[#342b24] border-[#b49023] text-[#f8bb42]';    // Aktif / Sedang ada Kegiatan
+const PILL_GREEN = 'bg-[#132f35] border-[#23806c] text-[#25c281]';    // Tidak aktif / Tidak ada kegiatan
+const pill = (text, on) => `<span class="inline-block whitespace-nowrap rounded-full border px-4 py-[3px] text-[11px] font-medium ${on ? PILL_AMBER : PILL_GREEN}">${text}</span>`;
 const TH = 'border-b border-line px-3 py-2.5 text-left text-[11px] font-medium text-muted';
 const TD = 'border-b border-line px-3 py-[22px] text-[11px] font-medium align-middle';
 const table = (cols, head, body) => `<table class="w-full table-fixed border-collapse font-head">
@@ -174,7 +218,7 @@ const BTN = 'min-w-[130px] rounded-xl border border-bord px-3.5 py-2 text-left f
 function filterTempat() {
   const el = document.createElement('div'); el.className = 'relative';
   el.innerHTML = `<button class="${BTN}">${f.ruang || f.tempat}</button>
-    <ul class="menu-list absolute left-0 top-full z-20 mt-1.5 hidden min-w-full border border-[#4b4e5c] bg-[#0a0c16]">${TEMPAT.map(([t, kids]) => `
+    <ul class="menu-list absolute left-0 top-full z-20 mt-1.5 hidden min-w-full border border-[#4b4e5c] bg-[#0a0c16]">${tempatList().map(([t, kids]) => `
       <li data-t="${t}" class="group relative cursor-pointer whitespace-nowrap border-t border-[#4b4e5c] px-2.5 py-3 font-head text-xs font-medium first:border-t-0 hover:bg-[#c58cff] ${f.tempat === t && !f.ruang ? 'font-bold' : ''}">${t}
         ${kids.length ? `<ul class="absolute left-full top-[-1px] z-30 hidden min-w-[130px] border border-[#4b4e5c] bg-[#2a2d3d] group-hover:block">${kids.map((k) =>
           `<li data-t="${t}" data-r="${k}" class="whitespace-nowrap border-t border-[#4b4e5c] px-3.5 py-3 text-xs first:border-t-0 hover:bg-[#353a50]">${k}</li>`).join('')}</ul>` : ''}</li>`).join('')}
@@ -206,21 +250,19 @@ const filtered = () => RUANG.filter((r) => (f.tempat === 'Semua Tempat' || r.t =
   && (f.status === 'Semua Status' || r.s === f.status));
 const kosong = (n) => `<tr><td colspan="${n}" class="${TD} text-muted">Tidak ada ruang yang cocok dengan filter.</td></tr>`;
 
+// Tabel Managemen Ruang: Ruang | Tempat/Gedung | Status | Aktivitas | Kelola (dipakai Dashboard & Selengkapnya)
+const ruangTable = (rows, cols) => table(cols,
+  `<th class="${TH}">Ruang</th><th class="${TH}">Tempat/Gedung</th><th class="${TH}">Status</th><th class="${TH}">Aktivitas</th><th class="${TH}"></th>`,
+  rows.map((r) => `<tr><td class="${TD}">${esc(r.n)}</td><td class="${TD}">${esc(r.t)}</td>
+    <td class="${TD}">${pill(r.s, r.s === 'Aktif')}</td>
+    <td class="${TD}">${pill(r.a ? 'Sedang ada Kegiatan' : 'Tidak ada kegiatan', r.a)}</td>
+    <td class="${TD} pr-[19px] text-right"><button data-kelola="${r.id}" class="${GRAD} min-w-[84px] rounded-full px-[18px] py-[3px] font-head text-[10px] font-bold">Kelola</button></td></tr>`).join('') || kosong(5));
+
 function refresh() {
   document.querySelectorAll('[data-filters]').forEach((s) => { s.innerHTML = ''; s.append(filterTempat(), filterStatus()); });
   const rows = filtered();
-
-  // Dashboard: ringkas (4 baris), tombol Kelola outline
-  $('#tbl-dash').innerHTML = table([24.5, 18.5, 18, 39],
-    `<th class="${TH}">Ruang</th><th class="${TH}">Tempat/Gedung</th><th class="${TH} text-center">Status</th><th class="${TH}"></th>`,
-    rows.slice(0, 4).map((r) => `<tr><td class="${TD}">${r.n}</td><td class="${TD}">${r.t}</td><td class="${TD} text-center">${pill(r.s)}</td>
-      <td class="${TD} text-center"><button data-kelola class="rounded-full border border-bord px-[18px] py-[3px] font-head text-[10px] font-medium hover:bg-surf">Kelola</button></td></tr>`).join('') || kosong(4));
-
-  // Selengkapnya: penuh, tombol Kelola gradien
-  $('#tbl-full').innerHTML = table([30, 24, 24, 22],
-    `<th class="${TH}">Ruang</th><th class="${TH}">Tempat/Gedung</th><th class="${TH} text-center">Status</th><th class="${TH}"></th>`,
-    rows.map((r) => `<tr><td class="${TD}">${r.n}</td><td class="${TD}">${r.t}</td><td class="${TD} text-center">${pill(r.s)}</td>
-      <td class="${TD} pr-[27px] text-right"><button data-kelola class="${GRAD} min-w-[84px] rounded-full px-[18px] py-[3px] font-head text-[10px] font-bold">Kelola</button></td></tr>`).join('') || kosong(4));
+  $('#tbl-dash').innerHTML = ruangTable(rows.slice(0, 4), [19, 22, 17, 24, 18]);     // Dashboard: ringkas (4 baris)
+  $('#tbl-full').innerHTML = ruangTable(rows, [30, 18, 14, 26, 12]);                  // Selengkapnya: semua ruang
 }
 
 $('#stats').innerHTML = STATS.map(([l, v]) => `<div class="rounded-2xl border border-bord bg-panel px-6 py-5">
@@ -246,7 +288,7 @@ document.addEventListener('click', (e) => {
   const m = e.target.closest('[data-menu]'), g = e.target.closest('[data-goto]'), s = e.target.closest('[data-surat]'), k = e.target.closest('[data-kelola]');
   if (m) show(m.dataset.menu);
   if (g) show(g.dataset.goto);
-  if (k) { /* TODO: buka form kelola ruang (ubah status Blocked / Available / Pending) */ }
+  if (k) bukaKelola(+k.dataset.kelola);
   if (s) {
     const p = PENGAJUAN[+s.dataset.surat] || PENGAJUAN[0];
     if (!e.target.closest('[data-view="pengajuan"]')) show('pengajuan');
@@ -257,6 +299,42 @@ document.addEventListener('click', (e) => {
 });
 $('#surat-x').onclick = () => $('#surat').classList.add('hidden');
 $('#surat-ok').onclick = () => { /* TODO: panggil API terbitkan surat, lalu tutup panel */ $('#surat').classList.add('hidden'); };
+
+/* ---------------- KELOLA RUANG (edit) ---------------- */
+const toast = (msg) => {
+  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toast.id); toast.id = setTimeout(() => t.classList.add('hidden'), 2600);
+};
+let kelolaId = null;
+function bukaKelola(id) {
+  const r = RUANG.find((x) => x.id === id); if (!r) return;
+  kelolaId = id;
+  $('#k-n').value = r.n;
+  $('#k-t').innerHTML = TEMPAT_NAMA.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  $('#k-t').value = r.t;
+  $(`input[name="k-s"][value="${r.s}"]`).checked = true;
+  $(`input[name="k-a"][value="${r.a ? '1' : '0'}"]`).checked = true;
+  $('#k-err').textContent = '';
+  $('#m-kelola').classList.remove('hidden');
+  $('#k-n').focus();
+}
+const tutupKelola = () => { $('#m-kelola').classList.add('hidden'); kelolaId = null; };
+$('#k-x').onclick = tutupKelola;
+$('#k-batal').onclick = tutupKelola;
+$('#m-kelola').addEventListener('mousedown', (e) => { if (e.target === $('#m-kelola')) tutupKelola(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && kelolaId !== null) tutupKelola(); });
+$('#k-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const n = $('#k-n').value.trim().replace(/\s+/g, ' '), t = $('#k-t').value;
+  if (!n) { $('#k-err').textContent = 'Nama ruang tidak boleh kosong.'; $('#k-n').focus(); return; }
+  if (RUANG.some((x) => x.id !== kelolaId && x.t === t && x.n.toLowerCase() === n.toLowerCase())) {
+    $('#k-err').textContent = `Ruang "${n}" sudah ada di ${t}.`; $('#k-n').focus(); return;
+  }
+  const r = RUANG.find((x) => x.id === kelolaId);
+  Object.assign(r, { n, t, s: $('input[name="k-s"]:checked').value, a: $('input[name="k-a"]:checked').value === '1' });
+  if (f.ruang && !RUANG.some((x) => x.n === f.ruang && x.t === f.tempat)) f.ruang = null;   // filter ruang yang sudah tidak ada -> reset
+  simpanRuang(); tutupKelola(); refresh(); toast(`Ruang "${n}" berhasil diperbarui.`);
+});
 
 refresh();
 show('dashboard');
