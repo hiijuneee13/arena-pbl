@@ -31,6 +31,10 @@ EXECUTE FUNCTION fn_cegah_nonaktif_gedung();
 CREATE OR REPLACE FUNCTION fn_cegah_tabrakan_jadwal()
 RETURNS TRIGGER AS $$
 BEGIN
+    -- Mencegah mahasiswa mengajukan reservasi untuk waktu yang sudah lewat
+    IF NEW.tgl_acara < CURRENT_DATE OR (NEW.tgl_acara = CURRENT_DATE AND NEW.jam_selesai <= CURRENT_TIME) THEN
+        RAISE EXCEPTION 'Reservasi tidak dapat dibuat untuk waktu yang sudah lewat.';
+    END IF;
     -- Cek apakah ada reservasi di gedung dan tanggal yang sama
     -- yang statusnya sedang diproses atau sudah disetujui
     IF EXISTS (
