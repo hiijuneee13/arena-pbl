@@ -19,18 +19,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // 3. Tangkap data JSON dari Frontend
 $data = json_decode(file_get_contents('php://input'), true);
 $id_reservasi  = $data['id_reservasi'] ?? '';
-$action        = $data['action'] ?? ''; // isinya: 'approve' atau 'reject'
+$action        = $data['action'] ?? '';         // isinya: 'approve' atau 'reject'
 $catatan       = trim($data['catatan'] ?? '');
 $id_approver   = $_SESSION['id_user'];
 $role_sekarang = $_SESSION['role'];
 
-// Validasi konfirmasi aksi / verifikasi dua langkah
+
+// (Konfirmasi Aksi / Double Check) Lapisan pengaman backend (double check) untuk mencegah kesalahan klik. 
+// Proses approval akan ditolak jika parameter konfirmasi aksi bernilai selain 'YA'.
 $konfirmasi = $data['konfirmasi_aksi'] ?? '';
 if ($konfirmasi !== 'YA') {
     http_response_code(400);
     echo json_encode([
         "status" => "error", 
-        "message" => "Verifikasi aksi gagal! Mohon konfirmasi keputusan Anda terlebih dahulu."
+        "message" => "Verifikasi aksi gagal! Mohon konfirmasi keputusan Anda terlebih dahulu." 
     ]);
     exit;
 }

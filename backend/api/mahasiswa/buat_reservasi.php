@@ -50,7 +50,7 @@ if (strtotime($jam_selesai) === false || strtotime($jam_mulai) === false
     exit;
 }
 
-// 7.5. Tambah 1: Validasi tanggal reservasi tidak boleh di masa lalu
+// Validasi backend untuk menolak input tanggal reservasi di masa lalu dan memastikan hanya tanggal valid yg masuk ke database.
 $hari_ini = date('Y-m-d');
 if ($tgl_acara < $hari_ini) {
     echo json_encode(["status" => "error", "message" => "Gagal! Tanggal reservasi tidak boleh memilih tanggal di masa lalu."]);

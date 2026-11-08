@@ -20,28 +20,34 @@ if ($_SESSION['role'] !== 'Mahasiswa') {
 try {
     $id_user = $_SESSION['id_user'];
 
-    // 4. Query untuk mengambil riwayat reservasi mahasiswa 
-    // Menambahkan LEFT JOIN ke tabel approval untuk ambil catatan & tahap, serta ORDER BY tahap paling sedikit
-    $sql = "SELECT r.*, g.nama_gedung, a.tahap_ke, a.status_approval AS status_step, a.catatan AS catatan_approver
+   
+// Mengambil riwayat reservasi mahasiswa dan mengurutkannya secara cerdas 
+// menggunakan ORDER BY CASE: posisi aktif (DosPem,BEM,Kajur,Wadir) di atas, dan status selesai (Approved/Rejected) diposisikan paling bawah.
+    $sql = "SELECT r.id_reservasi, g.nama_gedung, r.nama_acara, r.tgl_acara,
+                   r.jam_mulai, r.jam_selesai, r.posisi_approval, r.status_akhir
             FROM reservasi r
             JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung
-            LEFT JOIN approval a ON r.id_reservasi = a.id_reservasi
             WHERE r.id_user = :id_user
-            ORDER BY COALESCE(a.tahap_ke, 1) ASC, r.tgl_acara DESC";
+            ORDER BY CASE
+                WHEN r.status_akhir IN ('Approved', 'Rejected') THEN 5
+                WHEN r.posisi_approval = 'DosPem' THEN 1
+                WHEN r.posisi_approval = 'Presiden BEM' THEN 2
+                WHEN r.posisi_approval = 'Kajur' THEN 3
+                WHEN r.posisi_approval = 'Wadir' THEN 4
+                ELSE 5 END ASC, r.tgl_acara DESC";
 
      // 5. Eksekusi query dan ambil hasilnya       
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':id_user' => $id_user]);
     $riwayat = $stmt->fetchAll();
 
-    // 6. Kirim data ke frontend
     echo json_encode([
         "status" => "success",
         "login_sebagai" => $_SESSION['nama'],
         "jumlah_riwayat" => count($riwayat),
         "data" => $riwayat
     ]);
-// 7. Tutup koneksi
+
 } catch (PDOException $e) {
     echo json_encode(["status" => "error", "message" => "Gagal mengambil data riwayat. Detail: " . $e->getMessage()]);
 }
