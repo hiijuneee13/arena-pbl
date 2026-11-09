@@ -10,6 +10,7 @@ if (isset($_SESSION['id_user'])) {
             "id_user" => $_SESSION['id_user'],
             "nama" => $_SESSION['nama'] ?? 'Mahasiswa',
             "email" => $_SESSION['email'] ?? '',
+            "username" => $_SESSION['username'] ?? '', // SCHEMA BARU: login memakai username
             "role" => $_SESSION['role'] ?? 'Mahasiswa'
         ]
     ]);

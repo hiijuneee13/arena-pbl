@@ -2,6 +2,8 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
+// SCHEMA BARU: fungsi bantu untuk label status dan posisi
+require_once '../../config/helpers.php';
 
 // 1. Gerbang keamanan: pastikan user sudah login
 if (!isset($_SESSION['id_user'])) {
@@ -23,23 +25,19 @@ try {
    
 // Mengambil riwayat reservasi mahasiswa dan mengurutkannya secara cerdas 
 // menggunakan ORDER BY CASE: posisi aktif (DosPem,BEM,Kajur,Wadir) di atas, dan status selesai (Approved/Rejected) diposisikan paling bawah.
-    $sql = "SELECT r.id_reservasi, g.nama_gedung, r.nama_acara, r.tgl_acara,
-                   r.jam_mulai, r.jam_selesai, r.posisi_approval, r.status_akhir
+// SCHEMA BARU: tahap dihitung dari jumlah tahap yang sudah disetujui (tabel reservasi_approval), tahap paling sedikit tampil lebih dulu.
+    $sql = "SELECT r.id AS id_reservasi, " . SQL_TEMPAT . " AS nama_gedung, r.nama_kegiatan AS nama_acara,
+                   " . SQL_TGL . " AS tgl_acara, " . SQL_JAM_MULAI . " AS jam_mulai, " . SQL_JAM_SELESAI . " AS jam_selesai,
+                   " . SQL_POSISI . " AS posisi_approval, r.status AS status_db
             FROM reservasi r
-            JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung
-            WHERE r.id_user = :id_user
-            ORDER BY CASE
-                WHEN r.status_akhir IN ('Approved', 'Rejected') THEN 5
-                WHEN r.posisi_approval = 'DosPem' THEN 1
-                WHEN r.posisi_approval = 'Presiden BEM' THEN 2
-                WHEN r.posisi_approval = 'Kajur' THEN 3
-                WHEN r.posisi_approval = 'Wadir' THEN 4
-                ELSE 5 END ASC, r.tgl_acara DESC";
+            WHERE r.organisasi_id = :id_user
+            ORDER BY CASE WHEN r.status IN ('disetujui', 'ditolak', 'dibatalkan_sistem') THEN 1 ELSE 0 END ASC,
+                     " . SQL_JUMLAH_SETUJU . " ASC, r.waktu_mulai DESC";
 
      // 5. Eksekusi query dan ambil hasilnya       
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':id_user' => $id_user]);
-    $riwayat = $stmt->fetchAll();
+    $riwayat = petakan_reservasi($stmt->fetchAll());
 
     echo json_encode([
         "status" => "success",
