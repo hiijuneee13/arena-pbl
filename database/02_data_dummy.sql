@@ -1,44 +1,112 @@
--- Untuk menjalankan sql script ini, buka terminal di vscode, lalu jalankan perintah berikut:
--- psql -U postgres -d arena_db -f datadummy.sql
 
+-- Dummy untuk demo
+-- Semua akun contoh memakai password: password123
+-- (hash bcrypt; PHP password_verify() bisa langsung memakainya)
 
--- A. Insert Gedung (Tidak memiliki Foreign Key)
-INSERT INTO public.gedung_fasilitas (id_gedung, nama_gedung, lokasi, fasilitas, kapasitas, status_aktif) VALUES
-('11111111-1111-1111-1111-111111111111', 'Graha Theater', 'Gedung Utama', 'AC, Sound System, Proyektor', 500, true),
-('22222222-2222-2222-2222-222222222222', 'Ruang Sidang Utama', 'Gedung Rektorat Lt.3', 'AC, Mic Meja, LED TV', 100, false);
+-- ---------- master ----------
+INSERT INTO jurusan (nama) VALUES ('Teknik Sipil'), ('Teknik Mesin');
 
--- B. Insert Users (Kosongkan id_organisasi dan id_gedung terlebih dahulu)
-INSERT INTO public.users (id_user, email, password, nama_lengkap, no_hp, role, id_organisasi, id_gedung) VALUES
-('a1111111-1111-1111-1111-111111111111', 'wadir@polinema.ac.id', 'password123', 'Bapak Wadir', '081234567890', 'Wadir', NULL, NULL),
-('a2222222-2222-2222-2222-222222222222', 'kajur.ti@polinema.ac.id', 'password123', 'Bapak Kajur TI', '081234567891', 'Kajur', NULL, NULL),
-('a3333333-3333-3333-3333-333333333333', 'dospem@polinema.ac.id', 'password123', 'Ibu Dosen Pembina', '081234567892', 'DosPem', NULL, NULL),
-('a4444444-4444-4444-4444-444444444444', 'admin@polinema.ac.id', 'password123', 'Budi Santoso', '081234567893', 'AdminTU', NULL, NULL),
-('a5555555-5555-5555-5555-555555555555', 'abhirama@student.polinema.ac.id', 'password123', 'Muhammad Abhirama Putra', '081234567894', 'Mahasiswa', NULL, NULL),
-('a6666666-6666-6666-6666-666666666666', 'siti.bem@student.polinema.ac.id', 'password123', 'Siti Pengurus BEM', '081234567895', 'Presiden BEM', NULL, NULL);
+INSERT INTO jabatan (nama, cakupan) VALUES
+  ('Dosen Pembimbing', 'organisasi'),
+  ('Ketua BEM',        'global'),
+  ('Ketua Jurusan',    'jurusan'),
+  ('Wakil Direktur',   'global');
 
--- C. Insert Jurusan (Menggunakan ID Kajur)
-INSERT INTO public.jurusan (id_jurusan, nama_jurusan, id_kajur) VALUES
-('b1111111-1111-1111-1111-111111111111', 'Teknologi Informasi', 'a2222222-2222-2222-2222-222222222222');
+-- ---------- akun ----------
+INSERT INTO users (username, password_hash, nama, role) VALUES
+  ('admin',       'x', 'Admin Kampus',            'admin'),
+  ('hima_sipil',  'x', 'HIMA Teknik Sipil',       'pengaju'),
+  ('ukm_musik',   'x', 'UKM Musik',               'pengaju'),
+  ('dospem_budi', 'x', 'Dr. Budi Santoso',        'approver'),
+  ('dospem_sari', 'x', 'Sari Wulandari, M.T.',    'approver'),
+  ('ketua_bem',   'x', 'Rizky Pratama',           'approver'),
+  ('kajur_sipil', 'x', 'Prof. Hendra Gunawan',    'approver'),
+  ('kajur_mesin', 'x', 'Dr. Ahmad Fauzi',         'approver'),
+  ('wadir',       'x', 'Dr. Lestari Wijaya',      'approver'),
+  ('satpam_andi', 'x', 'Andi (Satpam)',           'satpam'),
+  ('satpam_joko', 'x', 'Joko (Satpam)',           'satpam'),
+  ('satpam_rina', 'x', 'Rina (Satpam)',           'satpam');
 
--- D. Insert Organisasi (Menggunakan ID DosPem dan ID Jurusan)
-INSERT INTO public.organisasi (id_organisasi, nama_organisasi, tipe, id_dospem, id_jurusan) VALUES
-('c1111111-1111-1111-1111-111111111111', 'BEM Polinema', 'BEM', 'a3333333-3333-3333-3333-333333333333', 'b1111111-1111-1111-1111-111111111111');
+UPDATE users SET password_hash = '$2y$10$01bSKD0QhyRIA6gj1d7v1ePaohxEAPQQjfN1bZjNQHHtrmGggpQIO';
 
--- E. Update Users (Menautkan mahasiswa ke organisasi BEM)
-UPDATE public.users 
-SET id_organisasi = 'c1111111-1111-1111-1111-111111111111' 
-WHERE id_user IN ('a5555555-5555-5555-5555-555555555555', 'a6666666-6666-6666-6666-666666666666');
+-- profil approver (jurusan_id hanya diisi untuk Ketua Jurusan)
+INSERT INTO approver (user_id, jabatan_id, jurusan_id)
+SELECT u.id,
+       (SELECT id FROM jabatan WHERE nama = v.jabatan),
+       (SELECT id FROM jurusan WHERE nama = v.jurusan)
+  FROM (VALUES
+         ('dospem_budi', 'Dosen Pembimbing', NULL),
+         ('dospem_sari', 'Dosen Pembimbing', NULL),
+         ('ketua_bem',   'Ketua BEM',        NULL),
+         ('kajur_sipil', 'Ketua Jurusan',    'Teknik Sipil'),
+         ('kajur_mesin', 'Ketua Jurusan',    'Teknik Mesin'),
+         ('wadir',       'Wakil Direktur',   NULL)
+       ) AS v (uname, jabatan, jurusan)
+  JOIN users u ON u.username = v.uname;
 
--- F. Insert Reservasi
-INSERT INTO public.reservasi (id_reservasi, id_user, id_gedung, nama_acara, tgl_acara, jam_mulai, jam_selesai, qr_code_surat, status_akhir, posisi_approval, file_proposal) VALUES
-('d1111111-1111-1111-1111-111111111111', 'a5555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111', 'Seminar Nasional IT', '2026-11-10', '08:00:00', '15:00:00', 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=verifikasi_1', 'Approved', 'Selesai', 'proposal_seminar.pdf'),
-('d2222222-2222-2222-2222-222222222222', 'a5555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111', 'Makrab Angkatan', '2026-12-20', '18:00:00', '22:00:00', NULL, 'In-Progress', 'DosPem', 'proposal_makrab.pdf');
+INSERT INTO satpam (user_id) SELECT id FROM users WHERE role = 'satpam';
 
--- G. Insert Approval Log
-INSERT INTO public.approval_log (id_approval, id_reservasi, id_approver, tahap_approval, status, catatan, waktu_proses) VALUES
-('e1111111-1111-1111-1111-111111111111', 'd1111111-1111-1111-1111-111111111111', 'a3333333-3333-3333-3333-333333333333', 'DosPem', 'Approve', 'Disetujui, silakan lanjut', '2026-10-15 09:00:00'),
-('e2222222-2222-2222-2222-222222222222', 'd1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Wadir', 'Approve', 'Disetujui Wadir', '2026-10-16 10:30:00');
+INSERT INTO organisasi (user_id, nama, dosen_pembimbing_id)
+SELECT u.id, v.nama, d.id
+  FROM (VALUES
+         ('hima_sipil', 'Himpunan Mahasiswa Teknik Sipil', 'dospem_budi'),
+         ('ukm_musik',  'UKM Musik',                       'dospem_sari')
+       ) AS v (uname, nama, dospem)
+  JOIN users u ON u.username = v.uname
+  JOIN users d ON d.username = v.dospem;
 
--- H. Insert Riwayat Proposal
-INSERT INTO public.riwayat_proposal (id_riwayat, id_reservasi, file_url, revisi_ke, waktu_upload) VALUES
-('f1111111-1111-1111-1111-111111111111', 'd1111111-1111-1111-1111-111111111111', 'uploads/proposal_seminar.pdf', 0, '2026-10-14 08:00:00');
+-- ---------- tempat ----------
+INSERT INTO gedung (nama, jurusan_id, jam_buka, jam_tutup, wajib_proposal) VALUES
+  ('Gedung Sipil', (SELECT id FROM jurusan WHERE nama = 'Teknik Sipil'), '07:00', '21:00', TRUE),
+  ('Gedung Mesin', (SELECT id FROM jurusan WHERE nama = 'Teknik Mesin'), '07:00', '21:00', TRUE),
+  ('Graha',        NULL,                                                  '07:00', '22:00', TRUE);
+
+-- Gedung Sipil: 8 lantai x 3 ruangan (R.101 .. R.803)
+INSERT INTO lantai (gedung_id, nomor)
+SELECT g.id, n FROM gedung g, generate_series(1, 8) AS n WHERE g.nama = 'Gedung Sipil';
+
+INSERT INTO ruangan (gedung_id, lantai_id, nama, kapasitas)
+SELECT l.gedung_id, l.id, 'R.' || l.nomor || '0' || r, 40
+  FROM lantai l
+  JOIN gedung g ON g.id = l.gedung_id AND g.nama = 'Gedung Sipil'
+ CROSS JOIN generate_series(1, 3) AS r;
+
+-- Gedung Mesin: 2 lantai x 2 ruangan
+INSERT INTO lantai (gedung_id, nomor)
+SELECT g.id, n FROM gedung g, generate_series(1, 2) AS n WHERE g.nama = 'Gedung Mesin';
+
+INSERT INTO ruangan (gedung_id, lantai_id, nama, kapasitas)
+SELECT l.gedung_id, l.id, 'M.' || l.nomor || '0' || r, 30
+  FROM lantai l
+  JOIN gedung g ON g.id = l.gedung_id AND g.nama = 'Gedung Mesin'
+ CROSS JOIN generate_series(1, 2) AS r;
+
+-- Graha = gedung tunggal: tanpa lantai & ruangan (dipinjam utuh)
+
+-- ---------- alur persetujuan per gedung ----------
+INSERT INTO alur_persetujuan (gedung_id, urutan, jabatan_id)
+SELECT g.id, v.urutan, j.id
+  FROM (VALUES
+         ('Gedung Sipil', 1, 'Dosen Pembimbing'),
+         ('Gedung Sipil', 2, 'Ketua BEM'),
+         ('Gedung Sipil', 3, 'Ketua Jurusan'),
+         ('Gedung Sipil', 4, 'Wakil Direktur'),
+         ('Gedung Mesin', 1, 'Dosen Pembimbing'),
+         ('Gedung Mesin', 2, 'Ketua Jurusan'),
+         ('Graha',        1, 'Dosen Pembimbing'),
+         ('Graha',        2, 'Wakil Direktur')
+       ) AS v (gedung, urutan, jabatan)
+  JOIN gedung  g ON g.nama = v.gedung
+  JOIN jabatan j ON j.nama = v.jabatan;
+
+-- ---------- satpam jaga gedung ----------
+INSERT INTO satpam_gedung (satpam_id, gedung_id)
+SELECT u.id, g.id
+  FROM (VALUES
+         ('satpam_andi', 'Gedung Sipil'),
+         ('satpam_andi', 'Gedung Mesin'),
+         ('satpam_joko', 'Graha'),
+         ('satpam_rina', 'Gedung Mesin')
+       ) AS v (uname, gedung)
+  JOIN users  u ON u.username = v.uname
+  JOIN gedung g ON g.nama = v.gedung;
