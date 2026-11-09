@@ -2,6 +2,8 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
+// SCHEMA BARU: potongan SQL bantu untuk tanggal, jam, dan nama gedung
+require_once '../../config/helpers.php';
 
 // 1. Gerbang keamanan: hanya admin tu yg boleh mengakses halaman ini
 if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
@@ -12,13 +14,12 @@ if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
 
 try {
     // 2. Ambil daftar reservasi yang sudah di-ACC sepenuhnya, urutkan berdasarkan tanggal acara dan jam mulai
-    $sql = "SELECT r.id_reservasi, r.tgl_acara, r.jam_mulai, r.jam_selesai, r.nama_acara, 
-                   u.nama_lengkap AS penyelenggara, g.nama_gedung 
+    $sql = "SELECT r.id AS id_reservasi, " . SQL_TGL . " AS tgl_acara, " . SQL_JAM_MULAI . " AS jam_mulai, " . SQL_JAM_SELESAI . " AS jam_selesai,
+                   r.nama_kegiatan AS nama_acara, o.nama AS penyelenggara, " . SQL_TEMPAT . " AS nama_gedung 
             FROM reservasi r
-            JOIN users u ON r.id_user = u.id_user
-            JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung
-            WHERE r.status_akhir = 'Approved'
-            ORDER BY r.tgl_acara ASC, r.jam_mulai ASC";
+            JOIN organisasi o ON o.user_id = r.organisasi_id
+            WHERE r.status = 'disetujui'
+            ORDER BY r.waktu_mulai ASC";
             
     $stmt = $pdo->prepare($sql);
     $stmt->execute();

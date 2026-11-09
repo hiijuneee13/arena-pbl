@@ -2,6 +2,8 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
+// SCHEMA BARU: fungsi bantu untuk label status dan posisi
+require_once '../../config/helpers.php';
 
 // 1. Gerbang keamanan: hanya approver yg bisa mengakses halaman ini
 if (!isset($_SESSION['id_user'])) {
@@ -50,43 +52,39 @@ if (!in_array($action, ['approve', 'reject'], true)) {
     exit;
 }
 
-// 6. Validasi format id_reservasi: harus UUID
-if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id_reservasi)) {
+// 6. Validasi format id_reservasi: SCHEMA BARU: ID berupa angka (bukan UUID)
+if (!ctype_digit((string)$id_reservasi)) {
     http_response_code(400);
     echo json_encode(["status" => "error", "message" => "ID reservasi tidak valid."]);
     exit;
 }
 
-// 7. Urutan Hierarki Approver (DosPem -> Presiden BEM -> Kajur -> Wadir)
-$urutan = ['DosPem', 'Presiden BEM', 'Kajur', 'Wadir'];
-$index_sekarang = array_search($role_sekarang, $urutan, true);
-// Validasi role: pastikan role saat ini termasuk dalam urutan approver
-if ($index_sekarang === false) {
+// 7. Validasi role: SCHEMA BARU: urutan approver tidak lagi ditulis tetap di kode,
+//    tetapi dibaca dari tabel reservasi_approval (alur persetujuan per gedung).
+if (($_SESSION['role_db'] ?? '') !== 'approver') {
     http_response_code(403);
     echo json_encode(["status" => "error", "message" => "Role tidak memiliki wewenang."]);
     exit;
 }
-
-// Membuat UUID v4 supaya id_approval terisi walau kolom di database belum punya DEFAULT gen_random_uuid()
-function buat_uuid() {
-    $d = random_bytes(16);
-    $d[6] = chr((ord($d[6]) & 0x0f) | 0x40);
-    $d[8] = chr((ord($d[8]) & 0x3f) | 0x80);
-    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($d), 4));
+// SCHEMA BARU: menolak pengajuan wajib disertai catatan (aturan di database)
+if ($action === 'reject' && $catatan === '') {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "Catatan wajib diisi saat menolak pengajuan."]);
+    exit;
 }
 
 // 8. Proses approval/rejection dengan transaksi untuk menghindari race condition
 try {
     $pdo->beginTransaction();
 
-    // Ambil data reservasi untuk memastikan posisi_approval dan status_akhir sesuai
-    $stmt_cek = $pdo->prepare("SELECT posisi_approval, status_akhir
-                               FROM reservasi
-                               WHERE id_reservasi = :id_reservasi
-                               FOR UPDATE");
+    // Ambil data reservasi untuk memastikan status pengajuan masih diproses
+    $stmt_cek = $pdo->prepare("SELECT r.status AS status_db, " . SQL_POSISI . " AS posisi_approval
+                               FROM reservasi r
+                               WHERE r.id = :id_reservasi
+                               FOR UPDATE OF r");
     // Eksekusi query untuk mengambil data reservasi
     $stmt_cek->execute([':id_reservasi' => $id_reservasi]);
-    $reservasi = $stmt_cek->fetch();
+    $reservasi = petakan_reservasi_satu($stmt_cek->fetch());
 
     // 9. Validasi: pastikan reservasi ditemukan
     if (!$reservasi) {
@@ -97,8 +95,19 @@ try {
     }
 
     // 10. Validasi: pengajuan hanya boleh diproses oleh approver di tahap yang sedang berjalan
-    if ($reservasi['posisi_approval'] !== $role_sekarang
-        || !in_array($reservasi['status_akhir'], ['Pending', 'In-Progress'], true)) {
+    // SCHEMA BARU: tahap aktif milik approver ini = tahap berstatus 'menunggu' yang semua tahap sebelumnya sudah disetujui
+    $stmt_tahap = $pdo->prepare("SELECT a.id, a.urutan, j.nama AS jabatan
+                                 FROM reservasi_approval a
+                                 JOIN jabatan j ON j.id = a.jabatan_id
+                                 WHERE a.reservasi_id = :id_reservasi
+                                   AND a.approver_id = :id_approver
+                                   AND a.status = 'menunggu'
+                                   AND NOT EXISTS (SELECT 1 FROM reservasi_approval b
+                                                   WHERE b.reservasi_id = a.reservasi_id AND b.urutan < a.urutan AND b.status <> 'disetujui')");
+    $stmt_tahap->execute([':id_reservasi' => $id_reservasi, ':id_approver' => $id_approver]);
+    $tahap = $stmt_tahap->fetch();
+
+    if (!$tahap || $reservasi['status_akhir'] !== 'In-Progress') {
         $pdo->rollBack();
         http_response_code(403);
         echo json_encode([
@@ -111,55 +120,66 @@ try {
     }
 
     // 11. Tentukan status dan posisi selanjutnya
-    $status_akhir       = 'In-Progress';
-    $posisi_selanjutnya = $role_sekarang; // Default
+    $status_tahap = ($action === 'reject') ? 'ditolak' : 'disetujui';
+    $posisi_selanjutnya = label_jabatan($tahap['jabatan']); // Default
+    $kode_verifikasi = null;
 
-    // Jika ditolak, status_akhir menjadi 'Rejected' dan posisi tetap di role yang menolak
+    // 12. Update tahap persetujuan milik approver ini (tabel reservasi_approval)
+    $stmt_update = $pdo->prepare("UPDATE reservasi_approval SET status = :status, catatan = :catatan, acted_at = now() WHERE id = :id");
+    $stmt_update->execute([
+        ':status'  => $status_tahap,
+        ':catatan' => $catatan === '' ? null : $catatan,
+        ':id'      => $tahap['id']
+    ]);
+
+    // Jika ditolak, status reservasi menjadi 'ditolak' dan posisi tetap di jabatan yang menolak
     if ($action === 'reject') {
-        $status_akhir = 'Rejected';
-        // Posisi tetap di role yang menolak agar mahasiswa tahu mandeknya di mana
+        $stmt_res = $pdo->prepare("UPDATE reservasi SET status = 'ditolak', updated_at = now() WHERE id = :id");
+        $stmt_res->execute([':id' => $id_reservasi]);
+        $aksi_riwayat = 'tolak';
+        // Posisi tetap di jabatan yang menolak agar mahasiswa tahu mandeknya di mana
     } else { // approve
-        // Cek apakah ini approver terakhir (Wadir)
-        if ($index_sekarang === count($urutan) - 1) {
-            $status_akhir       = 'Approved';
+        $aksi_riwayat = 'setuju';
+        // Cek apakah masih ada tahap berikutnya yang menunggu
+        $stmt_next = $pdo->prepare("SELECT j.nama FROM reservasi_approval a JOIN jabatan j ON j.id = a.jabatan_id
+                                    WHERE a.reservasi_id = :id AND a.status = 'menunggu' ORDER BY a.urutan LIMIT 1");
+        $stmt_next->execute([':id' => $id_reservasi]);
+        $jabatan_next = $stmt_next->fetchColumn();
+
+        if ($jabatan_next === false) {
+            // Ini tahap terakhir: reservasi disetujui penuh, dan kode verifikasi (untuk QR) dibuat
+            $stmt_res = $pdo->prepare("UPDATE reservasi SET status = 'disetujui', kode_verifikasi = gen_random_uuid(), updated_at = now()
+                                       WHERE id = :id RETURNING kode_verifikasi");
+            $stmt_res->execute([':id' => $id_reservasi]);
+            $kode_verifikasi = $stmt_res->fetchColumn();
             $posisi_selanjutnya = 'Selesai';
+            $aksi_riwayat = 'disetujui_penuh';
         } else {
-            // Oper ke role selanjutnya (misal dari indeks 0 ke 1)
-            $posisi_selanjutnya = $urutan[$index_sekarang + 1];
+            // Oper ke jabatan selanjutnya
+            $posisi_selanjutnya = label_jabatan($jabatan_next);
         }
     }
 
-    // 12. Update tabel reservasi
-    $sql_update = "UPDATE reservasi
-                   SET posisi_approval = :posisi, status_akhir = :status
-                   WHERE id_reservasi = :id_reservasi";
-    $stmt_update = $pdo->prepare($sql_update);
-    $stmt_update->execute([
-        ':posisi'       => $posisi_selanjutnya,
-        ':status'       => $status_akhir,
-        ':id_reservasi' => $id_reservasi
-    ]);
-
-    // 13. Simpan log ke tabel approval_log agar terekam siapa yang acc/tolak
-    $sql_log = "INSERT INTO approval_log (id_approval, id_reservasi, id_approver, tahap_approval, status, catatan, waktu_proses)
-                VALUES (:id_log, :id_res, :id_app, :tahap, :status, :catatan, NOW())";
-    $stmt_log = $pdo->prepare($sql_log);
+    // 13. Simpan riwayat agar terekam siapa yang acc/tolak
+    $stmt_log = $pdo->prepare("INSERT INTO reservasi_riwayat (reservasi_id, aktor_id, aksi, catatan) VALUES (:id_res, :id_app, :aksi, :catatan)");
     $stmt_log->execute([
-        ':id_log'  => buat_uuid(),
         ':id_res'  => $id_reservasi,
         ':id_app'  => $id_approver,
-        ':tahap'   => $role_sekarang,
-        ':status'  => ucfirst($action), // Menjadi 'Approve' atau 'Reject'
-        ':catatan' => $catatan
+        ':aksi'    => $aksi_riwayat,
+        ':catatan' => $catatan === '' ? null : $catatan
     ]);
     // 14. Commit transaksi
     $pdo->commit();
     // 15. Kirim response sukses ke frontend
-    echo json_encode([
+    $respon = [
         "status"      => "success",
         "message"     => "Pengajuan berhasil di-" . $action,
         "next_posisi" => $posisi_selanjutnya
-    ]);
+    ];
+    if ($kode_verifikasi !== null) {
+        $respon["kode_verifikasi"] = $kode_verifikasi; // dipakai untuk QR surat izin
+    }
+    echo json_encode($respon);
 
 // 16. Tutup koneksi
 } catch (PDOException $e) {
