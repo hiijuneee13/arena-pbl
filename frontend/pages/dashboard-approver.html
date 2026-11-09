@@ -17,44 +17,45 @@
       <div class="stat-row">
         <div class="card stat"><div class="label">Menunggu Tinjauan Saya</div><div class="value" id="st-tunggu">0</div></div>
         <div class="card stat"><div class="label">Sudah Saya Setujui</div><div class="value" id="st-setuju">0</div></div>
+        <div class="card stat"><div class="label">Permintaan Revisi</div><div class="value" id="st-revisi">0</div></div>
         <div class="card stat"><div class="label">Sudah Saya Tolak</div><div class="value" id="st-tolak">0</div></div>
       </div>
-      <h2 class="section-title">Daftar Pengajuan Menunggu Tinjauan</h2>
+      <h2 class="section-title">Daftar Pengajuan Menunggu Giliran Tinjauan Anda</h2>
       <div id="list-dashboard"></div>
     </section>
 
-    <!-- Menu: Antrean Persetujuan (judul halaman diambil dari header: "Daftar Pengajuan Menunggu Tinjauan") -->
+    <!-- Menu: Antrean Persetujuan -->
     <section class="view" data-view="antrean">
+      <h2 class="section-title">Semua Antrean Persetujuan Giliran Anda</h2>
       <div id="list-antrean"></div>
     </section>
 
     <!-- Menu: Arsip Kegiatan (riwayat keputusan saya, dari approval_log) -->
     <section class="view" data-view="arsip">
       <div class="card arsip-card">
-        <h2 class="card-title">Jadwal Aktif Hari Ini</h2>
+        <h2 class="card-title">Arsip Riwayat Keputusan Persetujuan Saya</h2>
         <div class="table-wrap"><table class="table" id="tbl-arsip"></table></div>
       </div>
     </section>
 
-    <!-- Modal: lihat berkas PDF (kolom reservasi.file_proposal) -->
+    <!-- Modal: lihat berkas PDF proposal -->
     <div class="overlay" id="m-pdf"><div class="modal pdf-modal">
-      <h2 id="pdf-title">Proposal</h2>
-      <div class="preview" id="pdf-preview">[ Pratinjau PDF proposal - tempat embed &lt;iframe&gt; / pdf.js ]</div>
-      <div class="actions"><button class="btn" onclick="UI.modal.close('m-pdf')">Selesai lihat</button></div>
+      <h2 id="pdf-title">Proposal Kegiatan</h2>
+      <div class="preview" id="pdf-preview">[ Pratinjau PDF proposal resmi ]</div>
+      <div class="actions"><button class="btn btn-ghost" onclick="UI.modal.close('m-pdf')">Tutup Pratinjau</button></div>
     </div></div>
 
-    <!-- Modal konfirmasi keputusan (Disetujui / Ditolak) -->
+    <!-- Modal konfirmasi keputusan (Disetujui / Minta Revisi / Ditolak) -->
     <div class="overlay" id="m-confirm"><div class="modal confirm-modal">
-      <h2 id="cf-title">Anda memilih Disetujui</h2>
-      <p>Setelah anda memilih, status yg telah anda pilih akan dikirim kepada peminjam. Status yg telah terkirim tidak bisa diubah lagi, jadi pastikan lagi</p>
-      <p class="cf-extra" id="cf-extra" hidden>Anda berada di tahap terakhir. Jika disetujui, pengajuan diteruskan ke Admin TU untuk diterbitkan surat izinnya.</p>
-      <div class="cf-note" id="cf-note-wrap" hidden>
-        <label for="cf-note">Tambah Catatan</label>
-        <textarea class="textarea" id="cf-note" rows="1"></textarea>
+      <h2 id="cf-title">Konfirmasi Keputusan</h2>
+      <p id="cf-desc">Pastikan pertimbangan Anda sudah sesuai dengan regulasi peminjaman tempat kampus.</p>
+      <div class="cf-note" id="cf-note-wrap">
+        <label for="cf-note" id="cf-note-label">Catatan &amp; Alasan Keputusan</label>
+        <textarea class="textarea" id="cf-note" rows="3" placeholder="Tuliskan catatan arahan revisi atau pertimbangan persetujuan/penolakan..."></textarea>
       </div>
       <div class="actions">
-        <button class="btn btn-cancel" id="cf-cancel">cancel</button>
-        <button class="btn" id="cf-submit">submit</button>
+        <button class="btn btn-cancel" id="cf-cancel">Batal</button>
+        <button class="btn" id="cf-submit">Kirim Keputusan</button>
       </div>
     </div></div>
   </div>

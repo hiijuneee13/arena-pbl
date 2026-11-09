@@ -1,144 +1,102 @@
-/* Styling khusus Dashboard Approver (Kajur / Wadir / DosPem / Presiden BEM) - mengikuti desain Figma */
+/* Styling khusus Dashboard Approver (Kajur / Wadir / DosPem / Presiden BEM) - Light Theme */
 
-/* ---- Dashboard: 3 kartu statistik ---- */
-.stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; max-width: 93%; }
+/* ---- Dashboard: kartu statistik (4 kolom sejajar) ---- */
+.stat-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .stat-row .card + .card { margin-top: 0; }
-.stat-row .stat .label { font: 600 14px var(--font-head); }
-.stat-row .stat .value { font-size: 38px; margin-top: 10px; }
-.section-title { font-size: 16px; }
 
 /* ---- Kartu pengajuan ---- */
-.req + .req { margin-top: 22px; }
-.req { padding: 18px 20px 22px; }
-.req .meta { flex-wrap: wrap; gap: 36px; font-size: 11px; }
-.req .meta b { color: #fff; font-weight: 600; }
-.req .meta + .meta { margin-top: 8px; }
-.req .badge { top: 18px; right: 22px; padding: 1px 16px; background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
-
-/* ---- Tracker 4 tahap: garis hijau antar tahap yang sudah lewat ---- */
-.req .mini-steps { display: flex; justify-content: flex-start; max-width: 560px; margin: 14px 0 6px; }
-.req .mini-steps::before { display: none; }
-.req .mini-steps .ms { flex: 1 1 auto; gap: 8px; font-size: 11px; color: var(--muted); }
-.req .mini-steps .ms:last-child { flex: 0 0 auto; }
-.req .mini-steps .ms.now { color: var(--muted); }
-.req .mini-steps .ms:not(:last-child)::before {
-  content: ""; position: absolute; top: 8px; left: 17px; right: 0; height: 1px; background: var(--line);
-}
-.req .mini-steps .ms.done:not(:last-child)::before { background: var(--green); }
-.req .mini-steps .ms.done .dot { background: var(--green); color: #04210f; }
-.req .mini-steps .ms.now .dot { background: var(--grad-end); color: #fff; }
+.req + .req { margin-top: 16px; }
 
 /* ---- Tombol aksi ---- */
-.card-actions { display: flex; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
-.btn-pill { border-radius: var(--radius-pill); padding: 6px 18px; font-size: 11px; }
-.card-actions .btn-approve, .card-actions .btn-reject { min-width: 108px; }
-.btn-approve { background: #25b27f; color: #fff; }
-.btn-approve:hover { box-shadow: 0 8px 22px rgba(37, 178, 127, .4); }
-.btn-reject { background: #c03030; color: #fff; }
-.btn-reject:hover { box-shadow: 0 8px 22px rgba(192, 48, 48, .4); }
+.card-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.btn-pill { border-radius: var(--radius-pill); padding: 8px 20px; font-size: 12px; font-weight: 700; }
+.card-actions .btn-approve, .card-actions .btn-reject { min-width: 110px; }
+
+.btn-approve { 
+  background: var(--ok); 
+  color: #fff; 
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+}
+.btn-approve:hover { 
+  background: #047857; 
+  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.35); 
+}
+
+.btn-reject { 
+  background: var(--bad); 
+  color: #fff; 
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+}
+.btn-reject:hover { 
+  background: #B91C1C; 
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.35); 
+}
 
 /* ---- Arsip Kegiatan ---- */
-.arsip-card { padding: 16px 20px 8px; }
-.arsip-card .card-title { font-size: 16px; margin-bottom: 14px; }
-.arsip-card .table th { padding: 10px 6px 12px; font-size: 11px; }
-.arsip-card .table td { padding: 22px 6px; vertical-align: middle; }
-.arsip-card .table td:last-child { color: #fff; }
-.arsip-card .badge { min-width: 70px; text-align: center; padding: 2px 12px; }
+.arsip-card { padding: 18px 20px 8px; }
+.arsip-card .card-title { font-size: 17px; margin-bottom: 14px; color: var(--text-pure); }
+.arsip-card .table th { padding: 8px 8px; font-size: 12px; }
+.arsip-card .table td { padding: 14px 8px; vertical-align: middle; }
+.arsip-card .table td:last-child { color: var(--text-pure); }
+.arsip-card .badge { min-width: 76px; text-align: center; padding: 4px 12px; }
 
 /* ---- Modal konfirmasi (Disetujui / Ditolak) ---- */
-.confirm-modal { width: min(600px, 92vw); text-align: center; background: #0d1020; border: 0; border-radius: 24px; padding: 44px 40px 40px; justify-items: center; gap: 10px; box-shadow: 0 24px 60px rgba(0, 0, 0, .55); }
-.confirm-modal h2 { font: 700 30px var(--font-head); }
-.confirm-modal p { font: 500 13px/1.45 var(--font-head); max-width: 480px; margin: 0; }
-.confirm-modal .cf-note { width: 100%; max-width: 482px; text-align: left; margin-top: 14px; }
+.confirm-modal { 
+  width: min(580px, 92vw); 
+  text-align: center; 
+  background: #FFFFFF; 
+  border: 1px solid var(--line); 
+  border-radius: 24px; 
+  padding: 40px 36px; 
+  justify-items: center; 
+  gap: 12px; 
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2); 
+}
+.confirm-modal h2 { font: 700 26px var(--font-head); color: var(--text-pure); }
+.confirm-modal p { font: 500 13.5px/1.6 var(--font-body); max-width: 460px; margin: 0; color: var(--muted); }
+.confirm-modal .cf-note { width: 100%; max-width: 480px; text-align: left; margin-top: 14px; }
 .confirm-modal .cf-note[hidden] { display: none; }
-.confirm-modal .cf-note label { display: block; font: 600 14px var(--font-head); margin-bottom: 8px; }
-.confirm-modal .cf-note .textarea { min-height: 52px; background: #2a2d38; border: 0; border-radius: 20px; padding: 14px 18px; resize: vertical; }
-.confirm-modal .actions { justify-content: center; gap: 28px; margin-top: 22px; }
-.confirm-modal .btn { min-width: 150px; border-radius: var(--radius-pill); padding: 9px 20px; font-size: 18px; font-weight: 700; }
-.confirm-modal .btn-cancel { background: linear-gradient(90deg, #9396b4, #a3a6c6); color: #fff; }
+.confirm-modal .cf-note label { display: block; font: 600 13.5px var(--font-head); margin-bottom: 8px; color: var(--text-pure); }
+.confirm-modal .cf-note .textarea { 
+  min-height: 75px; 
+  background: #FFFFFF; 
+  border: 1px solid #CBD5E1; 
+  border-radius: 12px; 
+  padding: 12px 16px; 
+  resize: vertical; 
+}
+.confirm-modal .actions { justify-content: center; gap: 18px; margin-top: 20px; }
+.confirm-modal .btn { min-width: 140px; border-radius: var(--radius-pill); padding: 11px 26px; font-size: 15px; font-weight: 700; }
+.confirm-modal .btn-cancel { 
+  background: #F1F5F9; 
+  border: 1px solid #CBD5E1; 
+  color: #475569; 
+}
+.confirm-modal .btn-cancel:hover { background: #E2E8F0; color: #0F172A; }
 
-/* ---- Modal lihat PDF: hampir layar penuh ---- */
-.pdf-modal { width: min(1100px, 94vw); max-height: 92vh; }
-.pdf-modal .preview { min-height: 62vh; background: #11163f; border-radius: 28px; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
+/* ---- Modal lihat PDF ---- */
+.pdf-modal { width: min(1080px, 94vw); max-height: 92vh; }
+.pdf-modal .preview { 
+  min-height: 60vh; 
+  background: #F8FAFC; 
+  border: 1px solid #E2E8F0; 
+  border-radius: 20px; 
+  display: grid; 
+  place-items: center; 
+  color: var(--muted); 
+  font-size: 13.5px; 
+}
 .pdf-modal .actions { justify-content: flex-end; }
 
 @media (max-width: 900px) {
-  .stat-row { grid-template-columns: 1fr; max-width: 100%; }
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
-  .confirm-modal .actions { gap: 14px; }
+  .confirm-modal .actions { gap: 12px; }
   .confirm-modal .btn { min-width: 120px; }
 }
 
-/* ---- Perapian kecil ---- */
 .arsip-card .table td:nth-child(3), .arsip-card .table td:nth-child(5),
 .arsip-card .table th:nth-child(3), .arsip-card .table th:nth-child(5) { white-space: nowrap; }
-.arsip-card .table td:last-child { min-width: 200px; }
+.arsip-card .table td:last-child { min-width: 180px; }
 .sidebar-foot .help { text-align: left; }
-.stat-row .stat .label { font-size: 13px; }
-
-/* =====================================================================
-   Penyesuaian ke desain Figma (frame 1440px): sidebar ramping, font Montserrat,
-   menu tanpa blok ungu, tracker lebar. Hanya berlaku di halaman approver.
-   ===================================================================== */
-.app { grid-template-columns: 214px minmax(0, 1fr); gap: 30px; padding: 12px 12px 12px 10px; }
-.app .sidebar { height: calc(100vh - 24px); top: 12px; padding: 16px; gap: 12px; border-radius: 16px; }
-.app .main { padding: 6px 34px 40px 0; }
-
-.app .brand { gap: 12px; margin: 4px 0 14px 4px; font: 800 25px var(--font-head); }
-.app .brand-logo { width: 40px; height: 40px; border-radius: 10px; font-size: 22px; }
-.app .menu-item { padding: 8px 14px 8px 28px; font-size: 13px; background: #151a2e; border-radius: 9px; box-shadow: none; }
-.app .menu-item.active { background: #151a2e; color: #fff; border-color: var(--accent-soft); box-shadow: none; }   /* penanda aktif tipis (tanpa blok ungu) */
-.sidebar-foot { padding-left: 14px; }
-.sidebar-foot .logout { color: var(--danger); }
-
-/* Font Montserrat di header & konten (menu sidebar tetap Inter seperti desain) */
-.page-head, .stat, .section-title, .req, .arsip-card, .confirm-modal, .pdf-modal { font-family: var(--font-head); }
-.page-title { font-size: 26px; font-weight: 700; }
-.page-sub { font-size: 10px; margin-bottom: 14px; }
-
-/* Kartu statistik: lebar tetap 342px seperti desain */
-.stat-row { grid-template-columns: repeat(3, minmax(0, 342px)); gap: 18px; max-width: none; }
-.stat-row .card { padding: 18px 22px 22px; }
-.stat-row .stat .label { font-size: 15px; font-weight: 500; }
-.stat-row .stat .value { font-size: 40px; margin-top: 14px; }
-.section-title { margin: 26px 0 14px; }
-
-/* Tracker lebih lebar */
-.req .mini-steps { max-width: 700px; }
-.card-actions .btn-pill:first-child { min-width: 122px; }
-
-/* Arsip: lebar kolom mengikuti desain */
-.arsip-card .table { table-layout: fixed; }
-.arsip-card .table th:nth-child(1) { width: 17%; } .arsip-card .table th:nth-child(2) { width: 23%; }
-.arsip-card .table th:nth-child(3) { width: 12%; } .arsip-card .table th:nth-child(4) { width: 11%; }
-.arsip-card .table th:nth-child(5) { width: 11%; }
-.arsip-card .table td:last-child { min-width: 0; }
-
-@media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; gap: 12px; padding: 12px; }
-  .app .sidebar { position: static; height: auto; }
-  .app .main { padding-right: 0; }
-  .stat-row { grid-template-columns: 1fr; }
-}
-
-/* ---- Tahap akhir penyesuaian desain ---- */
-.app .menu-item.active { border-color: rgba(181, 124, 255, .45); }
-
-/* Arsip: teks & badge lebih ringan seperti desain */
-.arsip-card .table td { font-size: 11.5px; font-weight: 500; }
-.arsip-card .badge { font-weight: 500; font-size: 11px; }
-
-/* Modal konfirmasi: lebih lebar, tanpa blur, terpusat di area konten (bukan di seluruh layar) */
-#m-confirm { background: rgba(2, 3, 16, .25); backdrop-filter: none; padding-left: 254px; }
-.confirm-modal { width: min(776px, 100%); padding: 56px 48px 50px; border-radius: 26px; }
-.confirm-modal h2 { font-size: 34px; }
-.confirm-modal p { max-width: none; font-size: 14px; font-weight: 500; }
-.confirm-modal .cf-note { max-width: 600px; }
-.confirm-modal .actions { gap: 54px; margin-top: 30px; }
-.confirm-modal .btn { min-width: 195px; padding: 11px 20px; font-size: 20px; }
-@media (max-width: 900px) { #m-confirm { padding-left: 0; } .confirm-modal { padding: 36px 24px; } }
-
-.confirm-modal .cf-extra { color: var(--subtle); font-size: 12px; }
-.confirm-modal .cf-extra[hidden] { display: none; }
-.sidebar-foot .help { padding: 0; }

@@ -1,41 +1,64 @@
 :root {
-  --page: #050820;
-  --panel: #101526;
-  --surface: #0d1121;
-  --surface-2: #171b2b;
+  /* =====================================================================
+     PALET WARNA: DOMINAN PUTIH, BIRU ROYAL & HITAM ARANG (SLATE)
+     Sangat Bersih, Kontras Tinggi, Modern & Ramah untuk Semua Usia
+     ===================================================================== */
+  
+  /* Latar & Permukaan (Dominan Putih & Off-White Bersih) */
+  --page: #F8FAFC;          /* Slate-50: Latar belakang bersih, kontras nyaman */
+  --panel: #FFFFFF;         /* Putih Murni untuk Kartu & Panel Konten */
+  --surface: #FFFFFF;       /* Navigasi / Sidebar */
+  --surface-2: #F1F5F9;     /* Slate-100: Hover latar sekunder */
+  --surface-3: #E2E8F0;     /* Slate-200: Garis pemisah tegas */
 
-  --field: #2a2d38;
+  /* Form & Input */
+  --field: #FFFFFF;         /* Input putih bersih dengan bingkai jelas */
+  --field-focus: #FFFFFF;
 
-  --text: #ffffff;
-  --muted: #94a3b8;
-  --subtle: #a7b0c8;
-  --placeholder: #92949a;
+  /* Tipografi Kontras Tinggi */
+  --text: #0F172A;          /* Slate-900: Hitam arang pekat beresolusi tajam */
+  --text-pure: #020617;     /* Slate-950: Judul utama */
+  --muted: #475569;         /* Slate-600: Teks keterangan abu tua jelas */
+  --subtle: #64748B;        /* Slate-500: Label pembantu */
+  --placeholder: #94A3B8;   /* Slate-400: Placeholder form */
 
-  --accent: #ad79fa;
-  --grad-start: #6865f2;
-  --grad-end: #c787ff;
+  /* Aksen Utama: BIRU ROYAL & SAPPHIRE */
+  --accent: #2563EB;        /* Blue-600 */
+  --accent-soft: #3B82F6;   /* Blue-500 */
+  --accent-hover: #1D4ED8;  /* Blue-700 */
+  --accent-glow: rgba(37, 99, 235, 0.18);
+  
+  --grad-start: #1D4ED8;
+  --grad-mid: #2563EB;
+  --grad-end: #3B82F6;
 
-  --mark-start: #6965f2;
-  --mark-end: #c080fd;
+  --mark-start: #1D4ED8;
+  --mark-end: #0284C7;
 
-  --btn-border: #353747;
-  --sidebar-border: #383a46;
-  --panel-border: #353747;
-  --line: #414551;
+  /* Garis, Frame & Border */
+  --btn-border: #CBD5E1;    /* Slate-300 */
+  --sidebar-border: #E2E8F0;/* Slate-200 */
+  --panel-border: #E2E8F0;  /* Slate-200 */
+  --line: #E2E8F0;          /* Slate-200 */
 
-  --danger: #c70101;
+  /* Aksen Status Sukses: HIJAU EMERALD */
+  --green-bg: #ECFDF5;      /* Emerald-50 */
+  --green-border: #A7F3D0;  /* Emerald-200 */
+  --green: #059669;         /* Emerald-600 */
+  --green-hover: #047857;
 
-  --red-bg: #581b2e;
-  --red-border: #802341;
-  --red: #c22525;
+  /* Status Peringatan / Menunggu (Amber) */
+  --amber-bg: #FFFBEB;      /* Amber-50 */
+  --amber-border: #FDE68A;  /* Amber-200 */
+  --amber: #D97706;         /* Amber-600 */
 
-  --green-bg: #132f35;
-  --green-border: #23806c;
-  --green: #25c281;
+  /* Status Bahaya / Ditolak (Crimson Red) */
+  --danger: #DC2626;        /* Red-600 */
+  --red-bg: #FEF2F2;        /* Red-50 */
+  --red-border: #FECACA;    /* Red-200 */
+  --red: #DC2626;
 
-  --amber-bg: #342b24;
-  --amber-border: #b49023;
-  --amber: #f8bb42;
-
-  --font-main: "Montserrat", sans-serif;
+  /* Tipografi */
+  --font-main: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }

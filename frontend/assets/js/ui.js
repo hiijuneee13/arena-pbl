@@ -90,16 +90,24 @@
     return now > end ? 'Selesai' : now >= start ? 'Sedang Berlangsung' : 'Akan Datang';
   }
 
-  /* Penelusur 4 tahap approval dari posisi_approval + status_akhir.
+  /* Penelusur tahap approval dari tahap_ke/total_tahap + status_akhir.
      done = sudah lewat, now = sedang di tahap ini, rej = ditolak di tahap ini */
   function tracker(r, labels) {
-    const urutan = global.DATA.URUTAN, idx = urutan.indexOf(r.posisi_approval), L = labels || global.DATA.LABEL_TAHAP;
-    return '<div class="mini-steps">' + urutan.map((t, i) => {
+    // Alur approval dinamis per gedung (2 atau 3 tahap): nama tahap diambil dari DATA.alur_gedung bila tersedia
+    const gid = (r.tempat && r.tempat[0] && r.tempat[0].id_gedung) || r.id_gedung;
+    const alur = (global.DATA && global.DATA.alur_gedung && global.DATA.alur_gedung[gid]) || [];
+    const total = Number(r.total_tahap) || alur.length || 2;
+    const idx = Math.max(0, (Number(r.tahap_ke) || 1) - 1);
+    const sekarang = r.nama_tahap || r.nama_tahap_sekarang || r.posisi_approval;           // nama tahap yang sedang berjalan (cadangan bila alur gedung tidak diketahui)
+    const alurCocok = alur.length === total;                                               // nama alur dipakai hanya bila jumlah tahapnya sama
+    const nama = (i) => (labels && labels[i]) || (alurCocok && alur[i] && alur[i].nama_tahap)
+      || (i === idx && sekarang && sekarang !== 'Selesai' ? sekarang : `Tahap ${i + 1}`);
+    return '<div class="mini-steps">' + Array.from({ length: total }, (_, i) => {
       let cls = '';
       if (r.status_akhir === 'Approved') cls = 'done';
       else if (r.status_akhir === 'Rejected') cls = i < idx ? 'done' : i === idx ? 'rej' : '';
       else cls = i < idx ? 'done' : i === idx ? 'now' : '';
-      return `<div class="ms ${cls}"><span class="dot">${i + 1}</span>${esc(L[t])}</div>`;
+      return `<div class="ms ${cls}"><span class="dot">${i + 1}</span>${esc(nama(i))}</div>`;
     }).join('') + '</div>';
   }
 

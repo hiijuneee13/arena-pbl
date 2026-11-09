@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Masuk - ARENA</title>
 
-    <!-- Font Montserrat -->
+    <!-- Google Fonts: Inter & Montserrat -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- CSS Login -->
     <link rel="stylesheet" href="assets/css/pages/login.css">
@@ -19,73 +18,151 @@
 
     <main class="card">
 
-        <!-- PANEL KIRI -->
+        <!-- PANEL KIRI (HERO) -->
         <section class="hero">
-
             <div class="brand">
                 <span class="brand-mark">A</span>
-
                 <div class="brand-text">
                     <span class="brand-name">ARENA</span>
-                    <span class="brand-sub">Student Portal</span>
+                    <span class="brand-sub">Sistem Reservasi Gedung Kampus</span>
                 </div>
             </div>
 
             <div class="hero-copy">
+                <div class="hero-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>
+                    Portal Terpadu Polinema
+                </div>
                 <blockquote class="hero-quote">
-                    “Satu pintu untuk setiap pengajuan kegiatan - dari proposal sampai persetujuan.”
+                    &#8220;Satu pintu untuk setiap pengajuan kegiatan — dari proposal sampai persetujuan.&#8221;
                 </blockquote>
-
                 <p class="hero-note">
-                    Kelola aktivitas organisasi kampus dengan alur yang lebih jelas, cepat, dan transparan.
+                    Kelola aktivitas organisasi kampus dengan alur berjenjang yang lebih transparan, cepat, dan bebas bentrok jadwal.
                 </p>
+
+                <div class="hero-features">
+                    <div class="hero-feature-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                        Persetujuan Estafet Digital
+                    </div>
+                    <div class="hero-feature-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                        Surat Izin Ber-QR Valid
+                    </div>
+                    <div class="hero-feature-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                        Sinkronisasi Jadwal Satpam
+                    </div>
+                </div>
             </div>
 
+            <div class="hero-footer">
+                <span>&copy; 2026 ARENA Kelompok 4 PBL</span>
+                <span>SIB 2F Polinema</span>
+            </div>
         </section>
 
-        <!-- PANEL KANAN -->
+        <!-- PANEL KANAN (FORM) -->
         <section class="panel">
+            <form class="form" id="loginForm" novalidate>
+                <p class="eyebrow">Selamat Datang Kembali</p>
+                <h1 class="title">Masuk ke Akun</h1>
 
-            <form class="form" id="loginForm">
+                <!-- Error Alert Box -->
+                <div class="login-error-box" id="errorBox" role="alert">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span id="errorMessage">Email atau password salah!</span>
+                </div>
 
-                <p class="eyebrow">SELAMAT DATANG KEMBALI</p>
-
-                <h1 class="title">Masuk ke Akun Kamu</h1>
-
-                <div class="field">
-                    <label for="email">Alamat email</label>
-
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="Masukkan email anda"
-                        autocomplete="email"
-                        required
-                    >
+                <!-- Success Alert Box -->
+                <div class="login-success-box" id="successBox" role="status" style="display:none;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                    <span id="successMessage"></span>
                 </div>
 
                 <div class="field">
-                    <label for="password">Kata sandi</label>
-
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Masukkan kata sandi anda"
-                        autocomplete="current-password"
-                        required
-                    >
+                    <label for="email">Alamat Email</label>
+                    <div class="input-wrap">
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="nama@arena.ac.id"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
                 </div>
 
-                <p id="loginError" style="color:#ff6b81;font-size:13px;margin-bottom:8px;min-height:18px;"></p>
+                <div class="field">
+                    <label for="password">Kata Sandi</label>
+                    <div class="input-wrap">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Masukkan kata sandi"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <button type="button" class="toggle-pwd" id="togglePassword" aria-label="Lihat kata sandi">
+                            <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
 
-                <button class="btn" type="submit" id="btnMasuk">
-                    Masuk &gt;
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        <span>Ingat saya di perangkat ini</span>
+                    </label>
+                    <button type="button" class="forgot-link" id="btnForgot">Lupa kata sandi?</button>
+                </div>
+
+                <button class="btn-submit" type="submit" id="btnMasuk">
+                    <span>Masuk ke Sistem</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </button>
-
             </form>
 
+            <!-- MODAL: LUPA / RESET KATA SANDI -->
+            <div class="forgot-overlay" id="forgotOverlay">
+                <div class="forgot-modal">
+                    <button type="button" class="forgot-close" id="forgotClose" aria-label="Tutup">&times;</button>
+                    <h2 class="forgot-title">Atur Ulang Kata Sandi</h2>
+                    <p class="forgot-desc">Masukkan alamat email terdaftar dan kata sandi baru untuk akun Anda.</p>
+                    
+                    <div class="field">
+                        <label for="forgotEmail">Alamat Email Terdaftar</label>
+                        <div class="input-wrap">
+                            <input type="email" id="forgotEmail" placeholder="nama@arena.ac.id" autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="forgotNewPwd">Kata Sandi Baru</label>
+                        <div class="input-wrap">
+                            <input type="password" id="forgotNewPwd" placeholder="Minimal 6 karakter" autocomplete="new-password">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="forgotConfirmPwd">Konfirmasi Kata Sandi Baru</label>
+                        <div class="input-wrap">
+                            <input type="password" id="forgotConfirmPwd" placeholder="Ulangi kata sandi baru" autocomplete="new-password">
+                        </div>
+                    </div>
+
+                    <div id="forgotErrorMsg" style="display:none; color:#DC2626; font-size:12.5px; font-weight:600; margin-bottom:12px; padding:8px 12px; background:#FEF2F2; border:1px solid #FECACA; border-radius:8px;"></div>
+
+                    <div class="forgot-actions">
+                        <button type="button" class="btn-submit" id="btnResetPwd">
+                            <span>Simpan Kata Sandi</span>
+                        </button>
+                        <button type="button" class="btn-cancel" id="btnCancelReset">Batal</button>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
@@ -95,28 +172,148 @@
     <script>
         const form = document.getElementById("loginForm");
         const btn = document.getElementById("btnMasuk");
-        const errorBox = document.getElementById("loginError");
+        const errorBox = document.getElementById("errorBox");
+        const errorMessage = document.getElementById("errorMessage");
+        const successBox = document.getElementById("successBox");
+        const successMessage = document.getElementById("successMessage");
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const togglePwd = document.getElementById("togglePassword");
+        const eyeIcon = document.getElementById("eyeIcon");
 
+        // Toggle Password Visibility
+        togglePwd.addEventListener("click", () => {
+            const isPassword = passwordInput.type === "password";
+            passwordInput.type = isPassword ? "text" : "password";
+            eyeIcon.innerHTML = isPassword
+                ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+                : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        });
+
+        // ---- LUPA KATA SANDI MODAL ----
+        const forgotOverlay = document.getElementById("forgotOverlay");
+        const forgotClose = document.getElementById("forgotClose");
+        const forgotEmail = document.getElementById("forgotEmail");
+        const forgotNewPwd = document.getElementById("forgotNewPwd");
+        const forgotConfirmPwd = document.getElementById("forgotConfirmPwd");
+        const forgotErrorMsg = document.getElementById("forgotErrorMsg");
+        const btnResetPwd = document.getElementById("btnResetPwd");
+        const btnCancelReset = document.getElementById("btnCancelReset");
+        const btnForgot = document.getElementById("btnForgot");
+
+        btnForgot.addEventListener("click", () => {
+            forgotOverlay.classList.add("active");
+            forgotEmail.value = emailInput.value || "";
+            forgotNewPwd.value = "";
+            forgotConfirmPwd.value = "";
+            forgotErrorMsg.style.display = "none";
+            forgotEmail.focus();
+        });
+        forgotClose.addEventListener("click", () => forgotOverlay.classList.remove("active"));
+        btnCancelReset.addEventListener("click", () => forgotOverlay.classList.remove("active"));
+        forgotOverlay.addEventListener("click", (e) => {
+            if (e.target === forgotOverlay) forgotOverlay.classList.remove("active");
+        });
+
+        btnResetPwd.addEventListener("click", () => {
+            const em = forgotEmail.value.trim();
+            const newPwd = forgotNewPwd.value;
+            const confirmPwd = forgotConfirmPwd.value;
+            forgotErrorMsg.style.display = "none";
+
+            if (!em) {
+                forgotErrorMsg.textContent = "Alamat email wajib diisi!";
+                forgotErrorMsg.style.display = "block";
+                forgotEmail.focus();
+                return;
+            }
+
+            if (!newPwd || newPwd.length < 6) {
+                forgotErrorMsg.textContent = "Kata sandi baru minimal harus 6 karakter!";
+                forgotErrorMsg.style.display = "block";
+                forgotNewPwd.focus();
+                return;
+            }
+
+            if (newPwd !== confirmPwd) {
+                forgotErrorMsg.textContent = "Konfirmasi kata sandi tidak cocok!";
+                forgotErrorMsg.style.display = "block";
+                forgotConfirmPwd.focus();
+                return;
+            }
+
+            // Cari akun di daftar ACCOUNTS atau DATA.users
+            const acc = Auth.ACCOUNTS.find(a => a.email.toLowerCase() === em.toLowerCase() || (a.dataEmail && a.dataEmail.toLowerCase() === em.toLowerCase()));
+            const usr = typeof DATA !== 'undefined' && DATA.users ? DATA.users.find(u => u.email.toLowerCase() === em.toLowerCase()) : null;
+
+            if (!acc && !usr) {
+                forgotErrorMsg.textContent = "Email tidak terdaftar dalam sistem!";
+                forgotErrorMsg.style.display = "block";
+                forgotEmail.focus();
+                return;
+            }
+
+            // Simpan kata sandi baru
+            const resetEmail = acc ? acc.email : em;
+            if (Auth.setPassword) Auth.setPassword(resetEmail, newPwd);
+            if (acc && acc.dataEmail && Auth.setPassword) Auth.setPassword(acc.dataEmail, newPwd);
+
+            forgotOverlay.classList.remove("active");
+            errorBox.classList.remove("active");
+            successMessage.textContent = "Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.";
+            successBox.style.display = "flex";
+            emailInput.value = resetEmail;
+            passwordInput.value = newPwd;
+            btn.focus();
+
+            setTimeout(() => { successBox.style.display = "none"; }, 8000);
+        });
+
+        // Form Submit
         form.addEventListener("submit", function (event) {
             event.preventDefault();
-            errorBox.textContent = "";
-            btn.disabled = true;
-            btn.textContent = "Memproses...";
+            errorBox.classList.remove("active");
+            successBox.style.display = "none";
+            form.classList.remove("shake");
 
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                errorMessage.textContent = "Email dan kata sandi wajib diisi!";
+                errorBox.classList.add("active");
+                form.classList.add("shake");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<span>Memverifikasi...</span>`;
 
             Auth.login(email, password)
                 .then(function (user) {
-                    window.location.href = user.roleMeta.home;
+                    btn.innerHTML = `<span>Berhasil! Mengalihkan...</span>`;
+                    setTimeout(() => {
+                        let target = 'pages/dashboard-mahasiswa.html';
+                        if (user && user.roleMeta && user.roleMeta.home) {
+                            target = user.roleMeta.home;
+                        } else if (user && (user.role === 'Approver' || ['Presiden BEM', 'DosPem', 'Kajur', 'Wadir'].includes(user.role))) {
+                            target = 'pages/dashboard-approver.html';
+                        } else if (user && (user.role === 'Admin' || user.role === 'AdminTU')) {
+                            target = 'pages/dashboard-admin.html';
+                        } else if (user && user.role === 'Satpam') {
+                            target = 'pages/dasboard-satpam.html';
+                        }
+                        window.location.href = target;
+                    }, 250);
                 })
                 .catch(function (err) {
-                    errorBox.textContent = err.message;
+                    errorMessage.textContent = err.message || "Terjadi kesalahan saat masuk.";
+                    errorBox.classList.add("active");
+                    form.classList.add("shake");
                     btn.disabled = false;
-                    btn.innerHTML = "Masuk &gt;";
+                    btn.innerHTML = `<span>Masuk ke Sistem</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
                 });
         });
     </script>
-
 </body>
 </html>

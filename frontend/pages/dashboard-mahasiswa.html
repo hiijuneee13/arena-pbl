@@ -17,52 +17,89 @@
     <!-- Menu: Ajukan Peminjaman (wizard 5 langkah, memakai POST buat_reservasi.php) -->
     <section class="view" data-view="ajukan">
 
-      <!-- STEPPER 5 LANGKAH (dibuat oleh dasboard-mahasiswa.js agar mudah diubah) -->
+      <!-- STEPPER 5 LANGKAH -->
       <div class="stepper" id="stepper"></div>
 
       <div class="card" id="wizard">
-        <!-- LANGKAH 1: Unduh templat (mengikuti organisasi.tipe: BEM / HMJ / UKM) -->
+        <!-- LANGKAH 1: Unduh Surat Peminjaman Tempat -->
         <div class="step-panel" data-step="1">
           <div class="template-box">
-            <div><h2 id="tpl-title">Template Proposal Peminjaman Tempat</h2>
-              <p>Unduh template nya dan sesuaikan dengan kegiatan mu</p></div>
-            <button class="btn" id="btn-unduh">Unduh Docx.</button>
+            <div class="template-info">
+              <div class="template-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <div>
+                <h2 id="tpl-title">Surat Peminjaman Tempat</h2>
+                <p>Unduh dokumen resmi format surat peminjaman tempat dan sesuaikan dengan kegiatan organisasimu sebelum diajukan.</p>
+              </div>
+            </div>
+            <button class="btn btn-download" id="btn-unduh">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Unduh Surat (.docx)
+            </button>
           </div>
         </div>
 
-        <!-- LANGKAH 2: Data kegiatan (kolom reservasi.nama_acara) -->
+        <!-- LANGKAH 2: Data Kegiatan & Penanggung Jawab Acara -->
         <div class="step-panel" data-step="2">
-          <div class="field"><label for="f-nama">Nama Kegiatan</label><input class="input" id="f-nama" maxlength="255" placeholder="Dies Natalis Jurusan Teknologi Informasi"></div>
+          <div class="field"><label for="f-nama">Nama Kegiatan</label><input class="input" id="f-nama" maxlength="255" placeholder="Contoh: Seminar Nasional Teknologi & Expo Riset 2026"></div>
+          
+          <div class="field"><label for="f-deskripsi">Deskripsi Singkat Acara</label><textarea class="textarea" id="f-deskripsi" rows="2" placeholder="Jelaskan ringkasan tujuan dan target peserta kegiatan"></textarea></div>
+
+          <div class="grid cols-2">
+            <div class="field"><label for="f-pj-nama">Penanggung Jawab Acara (Ketua Pelaksana)</label><input class="input" id="f-pj-nama" placeholder="Nama Lengkap Ketua Pelaksana"></div>
+            <div class="field"><label for="f-pj-kontak">Kontak WhatsApp / HP Penanggung Jawab</label><input class="input" id="f-pj-kontak" placeholder="08xxxxxxxxxx"></div>
+          </div>
+
           <div class="grid cols-2">
             <div class="field"><label for="f-org">Organisasi Pelaksana</label><input class="input" id="f-org" readonly></div>
-            <div class="field"><label for="f-pemohon">Pemohon</label><input class="input" id="f-pemohon" readonly></div>
+            <div class="field"><label for="f-pemohon">Akun Pemohon</label><input class="input" id="f-pemohon" readonly></div>
           </div>
-          <p class="hint">Data peserta dan deskripsi acara cukup ditulis di dalam proposal PDF.</p>
         </div>
 
-        <!-- LANGKAH 3: Gedung & jadwal (id_gedung, tgl_acara, jam_mulai, jam_selesai) -->
+        <!-- LANGKAH 3: Gedung & Jadwal (Dukungan Multi-Hari & Multi-Tempat) -->
         <div class="step-panel" data-step="3">
           <div class="grid cols-2">
-            <div class="field"><label>Tempat</label><div id="dd-tempat"></div><p class="hint" id="info-gedung"></p></div>
-            <div class="field"><label for="f-tgl">Tanggal Kegiatan</label><input class="input" id="f-tgl" type="date"></div>
+            <div class="field">
+              <label>Pilih Gedung</label>
+              <div id="dd-tempat"></div>
+              <p class="hint" id="info-gedung"></p>
+            </div>
+            <div class="field">
+              <label>Pilihan Ruangan / Gedung Utuh</label>
+              <div id="dd-ruangan"></div>
+              <p class="hint" id="info-ruangan"></p>
+            </div>
+          </div>
+
+          <div class="grid cols-2">
+            <div class="field"><label for="f-tgl-mulai">Tanggal Mulai Kegiatan</label><input class="input" id="f-tgl-mulai" type="date"></div>
+            <div class="field"><label for="f-tgl-selesai">Tanggal Selesai (Bisa Multi-Hari)</label><input class="input" id="f-tgl-selesai" type="date"></div>
+          </div>
+
+          <div class="grid cols-2">
             <div class="field"><label for="f-mulai">Jam Mulai</label><input class="input" id="f-mulai" type="time"></div>
             <div class="field"><label for="f-selesai">Jam Selesai</label><input class="input" id="f-selesai" type="time"></div>
           </div>
-          <p class="hint" id="jadwal-hint">Pilih tempat dan tanggal untuk melihat jadwal yang sudah terpakai.</p>
+
+          <div class="card" style="padding:14px 18px; background:#F8FAFC; border-color:#CBD5E1; margin-top:8px;">
+            <p class="hint" id="jadwal-hint" style="font-weight:600; color:#1E3A8A;">Pilih tempat dan tanggal untuk melihat ketersediaan & jam operasional.</p>
+          </div>
         </div>
 
-        <!-- LANGKAH 4: Upload proposal PDF (maks. 5MB, divalidasi backend) -->
+        <!-- LANGKAH 4: Upload Proposal PDF (Versioning) -->
         <div class="step-panel" data-step="4">
-          <p class="lbl">Unggah Proposal (Format PDF, maksimal 5MB, sesuai template yg telah diberikan)</p>
+          <p class="lbl">Unggah Proposal Resmi (Format PDF, maksimal 5MB, sesuai surat peminjaman tempat)</p>
           <label class="dropzone" id="dropzone">
             <input type="file" id="f-file" accept="application/pdf" hidden>
-            <span id="dz-text">Seret file, atau klik untuk unggah</span>
+            <span id="dz-text">Seret file proposal, atau klik untuk memilih file</span>
           </label>
+          <p class="hint" id="proposal-hint" style="margin-top:8px;">Gedung tertentu mewajibkan proposal untuk persetujuan pimpinan.</p>
         </div>
 
         <!-- LANGKAH 5: Konfirmasi -->
         <div class="step-panel" data-step="5">
-          <p class="lbl">Konfirmasi Pengajuan</p>
+          <p class="lbl">Konfirmasi &amp; Ringkasan Pengajuan</p>
           <div class="confirm-box" id="confirm-box"></div>
         </div>
 
@@ -80,7 +117,7 @@
       <div id="list-riwayat"></div>
     </section>
 
-    <!-- Menu: Jadwal Acara (semua organisasi: lihat tempat yang sudah dipinjam atau masih kosong) -->
+    <!-- Menu: Jadwal Acara -->
     <section class="view" data-view="jadwal">
       <div class="card">
         <div class="card-title">Jadwal Aktif Hari Ini</div>
@@ -98,13 +135,46 @@
       </div>
     </section>
 
-
     <!-- Modal: catatan dari approver -->
     <div class="overlay" id="m-catatan"><div class="modal catatan-modal">
-      <h2 id="cat-title">Catatan Approver</h2>
+      <div class="cat-event" id="cat-title"></div>
       <div id="cat-list"></div>
       <div class="actions"><button class="btn" onclick="UI.modal.close('m-catatan')">Selesai</button></div>
     </div></div>
+
+    <!-- Modal: Kirim Revisi Proposal (Alur lanjut dari approver peminta) -->
+    <div class="overlay" id="m-revisi">
+      <div class="modal" style="max-width:560px;">
+        <h2>Kirim Revisi Proposal</h2>
+        <p class="hint" id="revisi-catatan-approver" style="background:#FFFBEB; border:1px solid #FDE68A; padding:12px; border-radius:10px; color:#B45309;"></p>
+        <div class="field">
+          <label for="rev-file">Pilih Berkas Proposal Baru (PDF, Maks 5MB)</label>
+          <input class="input" type="file" id="rev-file" accept="application/pdf">
+        </div>
+        <div class="field">
+          <label for="rev-note">Catatan Penjelasan Perubahan Revisi</label>
+          <textarea class="textarea" id="rev-note" rows="3" placeholder="Contoh: Sudah diperbaiki susunan rundown kegiatan dan daftar panitia"></textarea>
+        </div>
+        <div class="step-actions" style="margin-top:14px;">
+          <button class="btn btn-ghost" onclick="UI.modal.close('m-revisi')">Batal</button>
+          <button class="btn" id="btn-submit-revisi">Kirim Revisi &gt;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: QR Code Surat Izin Resmi -->
+    <div class="overlay" id="m-qr-surat">
+      <div class="modal narrow" style="max-width:440px; text-align:center;">
+        <h2>Surat Izin Resmi (QR Code)</h2>
+        <p class="hint">Tunjukkan QR Code ini kepada Satpam di lokasi gedung tugas.</p>
+        <div id="qr-box" style="margin:20px auto; display:grid; place-items:center;"></div>
+        <div id="qr-detail" style="text-align:left; font-size:12.5px; line-height:1.6; margin-bottom:16px;"></div>
+        <div class="step-actions" style="justify-content:center;">
+          <button class="btn btn-ghost" onclick="UI.modal.close('m-qr-surat')">Tutup</button>
+          <a class="btn" id="btn-verif-link" target="_blank" rel="noopener">Buka Verifikasi</a>
+        </div>
+      </div>
+    </div>
 
   </div>
 

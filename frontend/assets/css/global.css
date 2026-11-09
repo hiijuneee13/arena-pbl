@@ -1,16 +1,16 @@
 :root {
-  --bg-main: #0B0E17;
-  --bg-card: #131826;
-  --sidebar-bg: #0D111D;
-  --text-primary: #FFFFFF;
-  --text-secondary: #94A3B8;
-  --accent-purple: #7C3AED;
-  --accent-hover: #6D28D9;
-  --badge-green-bg: rgba(16, 185, 129, 0.1);
-  --badge-green-text: #10B981;
-  --badge-yellow-bg: rgba(245, 158, 11, 0.1);
-  --badge-yellow-text: #F59E0B;
-  --badge-red-bg: rgba(239, 68, 68, 0.1);
-  --badge-red-text: #EF4444;
-  --border-color: #1E293B;
+  --bg-main: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --sidebar-bg: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --accent-blue: #2563EB;
+  --accent-hover: #1D4ED8;
+  --badge-green-bg: #ECFDF5;
+  --badge-green-text: #059669;
+  --badge-yellow-bg: #FFFBEB;
+  --badge-yellow-text: #D97706;
+  --badge-red-bg: #FEF2F2;
+  --badge-red-text: #DC2626;
+  --border-color: #E2E8F0;
 }

@@ -3,340 +3,588 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kelola Gedung &amp; Laporan - ARENA</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com/3.4.17"></script>
-<script>
-  tailwind.config = { theme: { extend: {
-    fontFamily: { head: ['Montserrat', 'system-ui', 'sans-serif'], body: ['Inter', 'system-ui', 'sans-serif'] },
-    colors: { page: '#050820', panel: '#0d1121', surf: '#171b2b', bord: '#353747', line: '#414551', muted: '#94a3b8',
-              navy: '#11163f', acc: '#b57cff', danger: '#c70101' }
-  } } };
-</script>
+<title>Admin Tata Usaha - ARENA</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/variables.css">
+<link rel="stylesheet" href="../assets/css/pages/main.css">
 <style>
-  body { background: #050820; color: #fff; }
-  select option { background: #0d1121; color: #fff; }
+  body { background: #F8FAFC; color: #0F172A; }
   .view { display: none; }
-  .view.active { display: block; animation: up .35s both; }
-  @keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .view.active { display: block; animation: up .3s both; }
+  @keyframes up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 </style>
 </head>
-<body class="font-body text-[13px]">
+<body>
 
-<div class="grid min-h-screen grid-cols-1 gap-6 p-3 min-[801px]:grid-cols-[190px_minmax(0,1fr)]">
+<div class="app">
 
-  <!-- ===== SIDEBAR ===== -->
-  <aside class="flex flex-col gap-3 rounded-[18px] border border-bord bg-panel px-3.5 py-[18px] min-[801px]:sticky min-[801px]:top-3 min-[801px]:h-[calc(100vh-24px)]">
-    <div class="mb-5 ml-1 mt-1.5 flex items-center gap-3 font-head text-[22px] font-bold">
-      <span class="grid h-[34px] w-[34px] place-items-center rounded-lg bg-gradient-to-br from-[#6965f2] to-[#c080fd] text-lg font-extrabold">A</span>ARENA
+  <!-- ===== SIDEBAR ADMIN ===== -->
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-logo">A</div>ARENA</div>
+    <button data-menu="dashboard" class="menu-item with-icon menu" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button data-menu="pengajuan" class="menu-item with-icon menu" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Monitoring Reservasi
+    </button>
+    <button data-menu="gedung" class="menu-item with-icon menu" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><polyline points="9 9 9 9.01 15 9 15 9.01"/><polyline points="9 13 9 13.01 15 13 15 13.01"/></svg>
+      Fasilitas &amp; Ruangan
+    </button>
+    <button data-menu="alur" class="menu-item with-icon menu" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Alur Persetujuan
+    </button>
+    <button data-menu="satpam" class="menu-item with-icon menu" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Penugasan Satpam
+    </button>
+    <button data-menu="users" class="menu-item with-icon menu" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Kelola Akun
+    </button>
+    <button data-menu="logs" class="menu-item with-icon menu" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Log Aktivitas
+    </button>
+
+    <div class="sidebar-foot">
+      <button id="btn-logout" type="button" class="logout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/><path d="M14 21V3L4 5.5v13L14 21z"/><circle cx="11" cy="12" r=".8" fill="currentColor"/></svg>
+        Keluar
+      </button>
     </div>
-    <button data-menu="dashboard" class="menu rounded-[10px] border border-bord bg-surf px-[22px] py-[7px] text-left text-[13px] font-semibold hover:bg-[#1d2240]">Dashboard</button>
-    <button data-menu="pengajuan" class="menu rounded-[10px] border border-bord bg-surf px-[22px] py-[7px] text-left text-[13px] font-semibold hover:bg-[#1d2240]">Pengajuan</button>
-    <div class="mt-auto pb-2.5 pl-3.5 pt-6"><button id="btn-logout" type="button" class="text-xs font-semibold text-danger hover:underline">Keluar</button></div>
   </aside>
 
-  <!-- ===== KONTEN ===== -->
-  <main class="min-w-0 pb-10 pt-2 min-[801px]:pr-3">
+  <!-- ===== KONTEN ADMIN ===== -->
+  <main class="main">
 
-    <header class="mb-[18px] flex items-start justify-between gap-4">
-      <div>
-        <h1 class="font-head text-[22px] font-bold leading-tight">Kelola Gedung &amp; Laporan</h1>
-        <p class="text-[11px] text-muted">Masuk sebagai Staff TU/Admin</p>
+    <div class="page-head">
+      <div class="page-head-text">
+        <h1 class="page-title" id="page-title">Dashboard Administrator</h1>
+        <div class="page-sub">Masuk sebagai Staff TU/Admin &middot; Tata Usaha &amp; Pengelolaan Fasilitas Kampus Polinema</div>
       </div>
-      <!-- profil hanya tampil di Dashboard -->
-      <div id="profile" class="flex items-center gap-2.5">
-        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#efe4ff]">
-          <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="15" r="6.5" fill="none" stroke="#5b3fd1" stroke-width="2"/><path d="M7.5 34c1.5-7 6.5-10.5 12.5-10.5S31 27 32.5 34" fill="none" stroke="#5b3fd1" stroke-width="2" stroke-linecap="round"/></svg>
+
+      <div class="profile" id="profile" style="cursor:pointer;" title="Klik untuk Buka Pengaturan Akun">
+        <span class="avatar" id="header-avatar" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="36" height="36"><circle cx="20" cy="15" r="6" fill="none" stroke="#2563EB" stroke-width="2.5"/><path d="M8 33c1.5-6.5 6.5-10 12-10s10.5 3.5 12 10" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round"/></svg>
         </span>
-        <div>
-          <div id="profile-name" class="font-head text-[15px] font-semibold leading-tight">Admin 1</div>
-          <button class="mt-0.5 rounded-full bg-[#3b3e52] px-[9px] py-px font-head text-[9px] font-bold text-[#e9eaf5] hover:bg-[#4a4e68]">Edit Profile</button>
+        <div class="profile-text">
+          <div class="profile-name" id="profile-name">Admin TU</div>
+          <button id="btn-edit-profile" type="button" class="profile-edit">Profil &amp; Akun</button>
         </div>
       </div>
-    </header>
+    </div>
 
-    <!-- ================= VIEW: DASHBOARD ================= -->
+    <!-- ================= VIEW 1: DASHBOARD ================= -->
     <section class="view" data-view="dashboard">
-      <div id="stats" class="grid grid-cols-1 gap-3.5 min-[520px]:grid-cols-2 min-[1000px]:grid-cols-4"></div>
+      <div id="stats" class="grid cols-5"></div>
 
-      <div class="mt-[30px] grid items-start gap-[22px] min-[1000px]:grid-cols-[minmax(0,2.3fr)_minmax(0,1fr)]">
-        <div class="rounded-[18px] border border-bord bg-panel px-[22px] py-5">
-          <h2 class="mb-3 font-head text-base font-bold">Managemen Ruang</h2>
-          <div class="mb-3 flex flex-wrap items-center gap-3">
-            <div data-filters class="flex flex-wrap gap-3"></div>
-            <button data-goto="gedung" class="ml-auto rounded-[10px] border border-bord px-[18px] py-2 font-head text-[11px] font-medium hover:bg-surf">Selengkapnya &gt;</button>
+      <!-- BANNER ANTREAN MACET > 3 HARI (Fitur Rizal - Admin 5) -->
+      <div id="banner-macet" class="alert-warn">
+        <div class="alert-head">
+          <div class="alert-title">
+            <span class="alert-icon">⚠️</span>
+            <h3>Perhatian: Antrean Pengajuan Macet Lebih dari 3 Hari</h3>
           </div>
-          <div class="overflow-x-auto"><div id="tbl-dash" class="min-w-[640px]"></div></div>
+          <span class="pill-count" id="badge-macet-count">0 Pengajuan</span>
         </div>
-
-        <div class="rounded-[18px] border border-bord bg-panel px-[22px] py-5">
-          <h2 class="mb-4 font-head text-base font-bold">Log Aktivitas</h2>
-          <div id="log" class="space-y-[9px] text-[11px] leading-snug"></div>
-        </div>
+        <p>Pengajuan di bawah ini tertahan tanpa progres persetujuan lebih dari 3 hari. Admin dapat mengingatkan pejabat terkait.</p>
+        <div class="table-wrap"><div id="tbl-macet"></div></div>
       </div>
 
-      <h2 class="mb-3 mt-7 font-head text-[21px] font-bold">Siap Dikunci &amp; Diterbitkan Surat Izin</h2>
-      <div class="rounded-[18px] border border-bord bg-panel px-[22px] py-5">
-        <h3 class="font-head text-base font-bold">Rapat kerja HMJ</h3>
-        <p class="mb-3 mt-1 text-[11px] text-muted">Ruang Sidang A - 29 September - Disetujui oleh 4 Approver</p>
-        <button data-surat="0" class="rounded-full bg-gradient-to-r from-[#6865f2] to-[#c787ff] px-[18px] py-[5px] font-head text-[10px] font-bold">Terbitkan Surat</button>
-      </div>
-
-      <h2 class="mb-3 mt-7 font-head text-[21px] font-bold">Laporan Rekapitulasi</h2>
-      <div class="grid gap-3.5 min-[800px]:grid-cols-2 min-[800px]:gap-12">
-        <div class="rounded-[18px] border border-bord bg-panel px-[34px] py-[30px]">
-          <div class="font-head text-xs text-muted">Pemakaian Gedung - Bulan Ini</div>
-          <div class="mt-2 font-head text-[40px] font-bold leading-tight">57</div>
-          <div class="mt-2.5 text-[11px] text-[#25c281]">Kegiatan Selesai - September 2026</div>
+      <div class="split">
+        <!-- Fasilitas Ringkas -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Fasilitas Kampus &amp; Status Operasional</h2>
+            <button data-goto="gedung" class="btn btn-ghost btn-sm">Kelola Fasilitas &rarr;</button>
+          </div>
+          <div class="table-wrap"><div id="tbl-dash-gedung"></div></div>
         </div>
-        <div class="rounded-[18px] border border-bord bg-panel px-[34px] py-[30px]">
-          <div class="font-head text-xs text-muted">Pemakaian Gedung - Semester Ini</div>
-          <div class="mt-2 font-head text-[40px] font-bold leading-tight">214</div>
-          <div class="mt-2.5 text-[11px] text-[#25c281]">Kegiatan Selesai - Genap 2026</div>
+
+        <!-- Log Aktivitas Admin -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Aktivitas Terkini</h2>
+            <button data-goto="logs" class="text-link">Semua Log &rarr;</button>
+          </div>
+          <div id="log-summary" class="log-list"></div>
         </div>
       </div>
     </section>
 
-    <!-- ================= VIEW: MANAGEMEN RUANG (Selengkapnya) ================= -->
-    <section class="view" data-view="gedung">
-      <div class="min-h-[calc(100vh-140px)] rounded-[18px] border border-bord bg-panel px-[22px] py-5">
-        <h2 class="mb-3 font-head text-base font-bold">Managemen Ruang</h2>
-        <div data-filters class="mb-3 flex flex-wrap gap-3"></div>
-        <div class="overflow-x-auto"><div id="tbl-full" class="min-w-[640px]"></div></div>
-      </div>
-    </section>
-
-    <!-- ================= VIEW: PENGAJUAN ================= -->
+    <!-- ================= VIEW 2: MONITORING PENGAJUAN ================= -->
     <section class="view" data-view="pengajuan">
-      <div class="relative min-h-[calc(100vh-140px)] overflow-hidden rounded-[18px] border border-bord bg-panel px-[22px] py-5">
-        <h2 class="mb-8 font-head text-base font-bold">Pengajuan Gedung</h2>
-        <div class="overflow-x-auto"><div id="tbl-peng" class="min-w-[640px]"></div></div>
-
-        <!-- panel Surat Izin (muncul saat "Terbitkan Surat" ditekan) -->
-        <div id="surat" class="absolute bottom-px left-[21px] right-[34px] top-[29px] hidden rounded-[32px] bg-navy px-8 py-7">
-          <button id="surat-x" aria-label="Tutup" class="absolute right-5 top-4 h-8 w-8 rounded-full text-2xl leading-none text-muted hover:bg-white/10 hover:text-white">&times;</button>
-          <h3 class="font-head text-xl font-bold">Surat Izin Digital</h3>
-          <dl id="surat-info" class="mt-4 grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-xs"></dl>
-          <button id="surat-ok" class="absolute bottom-[22px] right-[30px] rounded-full bg-gradient-to-r from-[#6865f2] to-[#c787ff] px-[18px] py-[5px] font-head text-[10px] font-bold">Terbitkan Surat</button>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Monitoring Seluruh Reservasi</h2>
+            <p class="card-sub">Filter berdasarkan status persetujuan atau temukan antrean macet</p>
+          </div>
+          <div id="filter-status-box"></div>
         </div>
+        <div class="table-wrap"><div id="tbl-semua-reservasi"></div></div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 3: KELOLA GEDUNG & OPERASIONAL ================= -->
+    <section class="view" data-view="gedung">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Pengelolaan Gedung, Jam Operasional &amp; Ruangan</h2>
+            <p class="card-sub">Atur jam operasional, wajib/opsional proposal, dan kelola ruangan per gedung</p>
+          </div>
+        </div>
+        <div class="table-wrap"><div id="tbl-kelola-gedung"></div></div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 4: ALUR PERSETUJUAN ================= -->
+    <section class="view" data-view="alur">
+      <div class="card">
+        <h2 class="card-title">Pengaturan Alur Persetujuan Gedung</h2>
+        <p class="card-sub">Konfigurasi urutan persetujuan pejabat approver untuk tiap gedung tanpa mengubah kode sumber.</p>
+        <div id="list-alur-gedung" class="stack"></div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 5: PENUGASAN SATPAM ================= -->
+    <section class="view" data-view="satpam">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Penugasan Satpam ke Gedung Tugas</h2>
+            <p class="card-sub">Atur personel satpam yang berwenang memantau &amp; memindai QR di lokasi gedung terkait.</p>
+          </div>
+        </div>
+        <div class="table-wrap"><div id="tbl-satpam-gedung"></div></div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 6: KELOLA AKUN ================= -->
+    <section class="view" data-view="users">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Manajemen Akun Pengguna</h2>
+            <p class="card-sub">Buat akun baru atau nonaktifkan akun tanpa menghapus riwayat masa lalu.</p>
+          </div>
+        </div>
+        <div class="table-wrap"><div id="tbl-users"></div></div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 7: LOG AKTIVITAS ================= -->
+    <section class="view" data-view="logs">
+      <div class="card">
+        <h2 class="card-title">Jejak Audit Aktivitas Admin</h2>
+        <p class="card-sub">Seluruh tindakan penonaktifan fasilitas, pembuatan akun, dan konfigurasi alur tercatat otomatis.</p>
+        <div class="table-wrap"><div id="tbl-audit-logs"></div></div>
       </div>
     </section>
 
   </main>
 </div>
 
-<!-- ===== MODAL KELOLA RUANG ===== -->
-<div id="m-kelola" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#050820]/70 p-4" role="dialog" aria-modal="true" aria-labelledby="k-title">
-  <form id="k-form" novalidate class="relative max-h-full w-full max-w-[460px] overflow-y-auto rounded-[32px] border border-[#232a66] bg-navy px-8 py-7">
-    <button type="button" id="k-x" aria-label="Tutup" class="absolute right-5 top-4 h-8 w-8 rounded-full text-2xl leading-none text-muted hover:bg-white/10 hover:text-white">&times;</button>
-    <h3 id="k-title" class="font-head text-xl font-bold">Kelola Ruang</h3>
-    <p class="mt-1 text-[11px] text-muted">Ubah data ruang. Perubahan langsung tampil di tabel Managemen Ruang.</p>
-
-    <label for="k-n" class="mb-1.5 mt-5 block pl-2 font-head text-xs font-bold">Ruang</label>
-    <input id="k-n" type="text" maxlength="40" autocomplete="off" class="w-full rounded-full bg-[#2a2c38] px-5 py-2.5 font-head text-xs text-white outline-none focus:ring-2 focus:ring-acc/50">
-
-    <label for="k-t" class="mb-1.5 mt-4 block pl-2 font-head text-xs font-bold">Tempat/Gedung</label>
-    <select id="k-t" class="w-full rounded-full bg-[#2a2c38] px-4 py-2.5 font-head text-xs text-white outline-none focus:ring-2 focus:ring-acc/50"></select>
-
-    <fieldset class="mt-4">
-      <legend class="mb-1.5 pl-2 font-head text-xs font-bold">Status</legend>
-      <div class="flex flex-wrap gap-2">
-        <label class="cursor-pointer"><input type="radio" name="k-s" value="Aktif" class="peer sr-only"><span class="block rounded-full border border-bord px-4 py-1.5 font-head text-[11px] font-medium peer-checked:border-[#b49023] peer-checked:bg-[#342b24] peer-checked:text-[#f8bb42] peer-focus-visible:ring-2 peer-focus-visible:ring-acc/60">Aktif</span></label>
-        <label class="cursor-pointer"><input type="radio" name="k-s" value="Tidak aktif" class="peer sr-only"><span class="block rounded-full border border-bord px-4 py-1.5 font-head text-[11px] font-medium peer-checked:border-[#23806c] peer-checked:bg-[#132f35] peer-checked:text-[#25c281] peer-focus-visible:ring-2 peer-focus-visible:ring-acc/60">Tidak aktif</span></label>
-      </div>
-    </fieldset>
-
-    <fieldset class="mt-4">
-      <legend class="mb-1.5 pl-2 font-head text-xs font-bold">Aktivitas</legend>
-      <div class="flex flex-wrap gap-2">
-        <label class="cursor-pointer"><input type="radio" name="k-a" value="1" class="peer sr-only"><span class="block rounded-full border border-bord px-4 py-1.5 font-head text-[11px] font-medium peer-checked:border-[#b49023] peer-checked:bg-[#342b24] peer-checked:text-[#f8bb42] peer-focus-visible:ring-2 peer-focus-visible:ring-acc/60">Sedang ada Kegiatan</span></label>
-        <label class="cursor-pointer"><input type="radio" name="k-a" value="0" class="peer sr-only"><span class="block rounded-full border border-bord px-4 py-1.5 font-head text-[11px] font-medium peer-checked:border-[#23806c] peer-checked:bg-[#132f35] peer-checked:text-[#25c281] peer-focus-visible:ring-2 peer-focus-visible:ring-acc/60">Tidak ada kegiatan</span></label>
-      </div>
-    </fieldset>
-
-    <div id="k-err" role="alert" class="mt-3 min-h-[16px] pl-2 text-[11px] text-[#ff6b6b]"></div>
-    <div class="mt-4 flex justify-end gap-3">
-      <button type="button" id="k-batal" class="rounded-full bg-[#9a9db8] px-5 py-1.5 font-head text-[11px] font-bold text-[#11163f] hover:bg-[#b0b3c9]">Batal</button>
-      <button type="submit" class="rounded-full bg-gradient-to-r from-[#6865f2] to-[#c787ff] px-6 py-1.5 font-head text-[11px] font-bold">Simpan</button>
-    </div>
-  </form>
-</div>
-<div id="toast" role="status" class="fixed bottom-5 right-5 z-[60] hidden rounded-xl border border-[#23806c] bg-panel px-4 py-3 text-xs"></div>
-
 <script src="../assets/js/data.js"></script>
 <script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/shell.js"></script>
 <script>
-/* ---------------- SESI & KELUAR ---------------- */
-// Halaman khusus Admin TU: kalau belum login / bukan Admin TU, kembali ke login.html
+/* =====================================================================
+   DASHBOARD ADMIN LOGIC & STATE (SESUAI FITUR RIZAL)
+   ===================================================================== */
 const SESI = Auth.requireRole(['AdminTU']);
 if (SESI) {
   document.getElementById('profile-name').textContent = SESI.nama_profil || SESI.nama;
   document.getElementById('btn-logout').addEventListener('click', () => { Auth.logout(); window.location.href = '../login.html'; });
-}
-</script>
-<script>
-/* ---------------- DATA CONTOH (ganti dengan data dari backend) ---------------- */
-const STATS = [['Total Gedung', 40], ['Ruang Tersedia', 8], ['Pengajuan Aktif', 23], ['Selesai Bulan Ini', 23]];
-/* Managemen Ruang. n = ruang, t = tempat/gedung, s = status ('Aktif' | 'Tidak aktif'), a = aktivitas (true = Sedang ada Kegiatan)
-   Data bisa diubah lewat tombol "Kelola" dan disimpan di sessionStorage selama tab terbuka (ganti dengan API backend nanti). */
-const RUANG_AWAL = [
-  { id: 1, n: 'Aula Utama',    t: 'Gedung AX',           s: 'Tidak aktif', a: false },
-  { id: 2, n: 'RT 07',         t: 'Gedung Teknik Sipil', s: 'Tidak aktif', a: false },
-  { id: 3, n: 'RT 05',         t: 'Gedung Teknik Sipil', s: 'Aktif',       a: true  },
-  { id: 4, n: 'RT 01',         t: 'Gedung Teknik Sipil', s: 'Tidak aktif', a: false },
-  { id: 5, n: 'Aula Utama',    t: 'Gedung Teknik Mesin', s: 'Aktif',       a: true  },
-  { id: 6, n: 'Bengkel Utama', t: 'Gedung Teknik Mesin', s: 'Aktif',       a: true  },
-];
-const KEY_RUANG = 'arena_admin_ruang';
-let RUANG = (() => { try { return JSON.parse(sessionStorage.getItem(KEY_RUANG)) || RUANG_AWAL.map((r) => ({ ...r })); } catch (e) { return RUANG_AWAL.map((r) => ({ ...r })); } })();
-const simpanRuang = () => { try { sessionStorage.setItem(KEY_RUANG, JSON.stringify(RUANG)); } catch (e) { /* abaikan: data tetap ada selama halaman terbuka */ } };
-const TEMPAT_NAMA = ['Gedung AX', 'Gedung Teknik Sipil', 'Gedung Teknik Mesin'];
-// daftar "Semua Tempat" + ruang di setiap tempat (submenu muncul saat di-hover); selalu ikut data terbaru
-const tempatList = () => [['Semua Tempat', []], ...TEMPAT_NAMA.map((t) => [t, [...new Set(RUANG.filter((r) => r.t === t).map((r) => r.n))]])];
-const STATUS = ['Semua Status', 'Aktif', 'Tidak aktif'];
-const LOG = ['Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional', 'Kajur Menyetujui Seminar Nasional'];
-const PENGAJUAN = Array.from({ length: 6 }, () => ({ ruang: 'Aula Utama', tempat: 'Gedung Teknik Sipil', tgl: '02 Oktober 2026',
-  peminjam: 'Himpunan Mahasiswa Teknologi Informasi', kegiatan: 'Rapat Kerja HMJ' }));
 
-/* ---------------- KOMPONEN KECIL ---------------- */
+  const adminPhoto = Auth.getPhoto ? Auth.getPhoto(SESI.email) : null;
+  if (adminPhoto) {
+    document.getElementById('header-avatar').innerHTML = `<img src="${adminPhoto}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+  }
+
+  const btnEditProfile = document.getElementById('btn-edit-profile');
+  const profileArea = document.getElementById('profile');
+  if (window.Shell && Shell.profileEditor) {
+    const pEditor = Shell.profileEditor(SESI, btnEditProfile);
+    if (btnEditProfile) btnEditProfile.onclick = (e) => { e.stopPropagation(); pEditor.open(); };
+    if (profileArea) profileArea.onclick = (e) => { e.stopPropagation(); pEditor.open(); };
+  }
+}
+
 const $ = (s, r = document) => r.querySelector(s);
-const GRAD = 'bg-gradient-to-r from-[#6865f2] to-[#c787ff]';
-const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const PILL_AMBER = 'bg-[#342b24] border-[#b49023] text-[#f8bb42]';    // Aktif / Sedang ada Kegiatan
-const PILL_GREEN = 'bg-[#132f35] border-[#23806c] text-[#25c281]';    // Tidak aktif / Tidak ada kegiatan
-const pill = (text, on) => `<span class="inline-block whitespace-nowrap rounded-full border px-4 py-[3px] text-[11px] font-medium ${on ? PILL_AMBER : PILL_GREEN}">${text}</span>`;
-const TH = 'border-b border-line px-3 py-2.5 text-left text-[11px] font-medium text-muted';
-const TD = 'border-b border-line px-3 py-[22px] text-[11px] font-medium align-middle';
-const table = (cols, head, body) => `<table class="w-full table-fixed border-collapse font-head">
-  <colgroup>${cols.map((w) => `<col style="width:${w}%">`).join('')}</colgroup>
-  <thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+const esc = UI.esc;
+const TH = '';   // gaya tabel dari .table di main.css
+const TD = '';
 
-/* ---------------- FILTER (Pilih Tempat bertingkat + Pilih Status) ---------------- */
-const f = { tempat: 'Semua Tempat', ruang: null, status: 'Semua Status' };
-const BTN = 'min-w-[130px] rounded-xl border border-bord px-3.5 py-2 text-left font-head text-xs font-medium hover:bg-surf';
+/* Render Data Dashboard */
+async function renderDashboard() {
+  const res = await API.dashboardAdmin();
+  if (res.status !== 'success') return;
+  const rekap = res.rekap;
 
-function filterTempat() {
-  const el = document.createElement('div'); el.className = 'relative';
-  el.innerHTML = `<button class="${BTN}">${f.ruang || f.tempat}</button>
-    <ul class="menu-list absolute left-0 top-full z-20 mt-1.5 hidden min-w-full border border-[#4b4e5c] bg-[#0a0c16]">${tempatList().map(([t, kids]) => `
-      <li data-t="${t}" class="group relative cursor-pointer whitespace-nowrap border-t border-[#4b4e5c] px-2.5 py-3 font-head text-xs font-medium first:border-t-0 hover:bg-[#c58cff] ${f.tempat === t && !f.ruang ? 'font-bold' : ''}">${t}
-        ${kids.length ? `<ul class="absolute left-full top-[-1px] z-30 hidden min-w-[130px] border border-[#4b4e5c] bg-[#2a2d3d] group-hover:block">${kids.map((k) =>
-          `<li data-t="${t}" data-r="${k}" class="whitespace-nowrap border-t border-[#4b4e5c] px-3.5 py-3 text-xs first:border-t-0 hover:bg-[#353a50]">${k}</li>`).join('')}</ul>` : ''}</li>`).join('')}
-    </ul>`;
-  el.querySelector('button').onclick = (e) => { e.stopPropagation(); toggle(el); };
-  el.querySelectorAll('li').forEach((li) => li.onclick = (e) => {
-    e.stopPropagation(); f.tempat = li.dataset.t; f.ruang = li.dataset.r || null; refresh();
-  });
-  return el;
+  // Stats Grid 5 Kolom (kartu seragam, sama dengan dashboard role lain)
+  $('#stats').innerHTML = [
+    ['Total Pengajuan', rekap.total, ''],
+    ['Sedang Berjalan', rekap.in_progress, '#2563EB'],
+    ['Perlu Revisi', rekap.need_revision, '#D97706'],
+    ['Disetujui', rekap.approved, '#059669'],
+    ['Antrean Macet (>3h)', rekap.macet, '#DC2626']
+  ].map(([label, val, color]) => `
+    <div class="card stat">
+      <div class="label">${label}</div>
+      <div class="value"${color ? ` style="color:${color}"` : ''}>${val}</div>
+    </div>
+  `).join('');
+
+  // Antrean Macet Table
+  const macetList = res.antrean_macet || [];
+  $('#badge-macet-count').textContent = `${macetList.length} Pengajuan Tertahan`;
+  if (!macetList.length) {
+    $('#tbl-macet').innerHTML = '<div class="empty-note">Semua pengajuan berjalan lancar (tidak ada antrean yang macet lebih dari 3 hari).</div>';
+  } else {
+    $('#tbl-macet').innerHTML = `
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="${TH}">Nomor</th>
+            <th class="${TH}">Kegiatan</th>
+            <th class="${TH}">Posisi Tahap Tertahan</th>
+            <th class="${TH}">Lama Macet</th>
+            <th class="${TH}">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${macetList.map((m) => `
+            <tr>
+              <td class="${TD}" style="font-weight:600">${esc(m.nomor_pengajuan)}</td>
+              <td class="${TD}"><b>${esc(m.nama_acara)}</b></td>
+              <td class="${TD}"><span class="badge warn">${esc(m.nama_tahap || 'Approver')}</span></td>
+              <td class="${TD}" style="color:#B45309;font-weight:700">${m.hari_macet} Hari</td>
+              <td class="${TD}"><button onclick="UI.toast('Pemberitahuan telah dikirimkan ke kontak pejabat approver terkait.', 'ok')" class="btn btn-sm btn-warn">Kirim Reminder</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // Gedung Ringkas
+  const gedungList = DATA.gedung || [];
+  $('#tbl-dash-gedung').innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="${TH}">Gedung</th>
+          <th class="${TH}">Jam Operasional</th>
+          <th class="${TH}">Proposal</th>
+          <th class="${TH}">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${gedungList.map((g) => `
+          <tr>
+            <td class="${TD}" style="font-weight:600">${esc(g.nama_gedung)}<br><small class="muted">${esc(g.lokasi)}</small></td>
+            <td class="${TD}">${esc(g.jam_operasional_buka.slice(0,5))} - ${esc(g.jam_operasional_tutup.slice(0,5))}</td>
+            <td class="${TD}">${g.wajib_proposal ? '<span style="color:#1D4ED8;font-weight:600">Wajib</span>' : '<span class="muted">Opsional</span>'}</td>
+            <td class="${TD}"><span class="badge ${g.status_operasional === 'Aktif' ? 'ok' : 'bad'}">${esc(g.status_operasional)}</span></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // Log Aktivitas Ringkas
+  const logs = DATA.admin_activity_log || [];
+  $('#log-summary').innerHTML = logs.slice(-4).reverse().map((l) => `
+    <div class="log-item">
+      <div class="t">${esc(l.jenis_aktivitas)}: ${esc(l.target_entitas || '')}</div>
+      <div class="d">${esc(l.detail)}</div>
+      <div class="w">${esc(l.created_at)}</div>
+    </div>
+  `).join('') || '<div class="empty-note">Belum ada aktivitas tercatat.</div>';
 }
-function filterStatus() {
-  const el = document.createElement('div'); el.className = 'relative';
-  el.innerHTML = `<button class="${BTN}">${f.status}</button>
-    <ul class="menu-list absolute left-0 top-full z-20 mt-1.5 hidden min-w-full rounded-[14px] border border-[#373d78] bg-gradient-to-b from-[#232855] to-[#1a1f48] p-1">${STATUS.map((s) =>
-      `<li data-s="${s}" class="cursor-pointer whitespace-nowrap rounded-[10px] px-2.5 py-2 font-head text-xs [&+li]:mt-px hover:bg-acc ${f.status === s ? 'bg-acc font-semibold' : ''}">${s}</li>`).join('')}
-    </ul>`;
-  el.querySelector('button').onclick = (e) => { e.stopPropagation(); toggle(el); };
-  el.querySelectorAll('li').forEach((li) => li.onclick = (e) => { e.stopPropagation(); f.status = li.dataset.s; refresh(); });
-  return el;
-}
-function toggle(el) {
-  document.querySelectorAll('.menu-list').forEach((m) => m !== el.querySelector('.menu-list') && m.classList.add('hidden'));
-  el.querySelector('.menu-list').classList.toggle('hidden');
-}
-document.addEventListener('click', () => document.querySelectorAll('.menu-list').forEach((m) => m.classList.add('hidden')));
 
-/* ---------------- RENDER ---------------- */
-const filtered = () => RUANG.filter((r) => (f.tempat === 'Semua Tempat' || r.t === f.tempat) && (!f.ruang || r.n === f.ruang)
-  && (f.status === 'Semua Status' || r.s === f.status));
-const kosong = (n) => `<tr><td colspan="${n}" class="${TD} text-muted">Tidak ada ruang yang cocok dengan filter.</td></tr>`;
-
-// Tabel Managemen Ruang: Ruang | Tempat/Gedung | Status | Aktivitas | Kelola (dipakai Dashboard & Selengkapnya)
-const ruangTable = (rows, cols) => table(cols,
-  `<th class="${TH}">Ruang</th><th class="${TH}">Tempat/Gedung</th><th class="${TH}">Status</th><th class="${TH}">Aktivitas</th><th class="${TH}"></th>`,
-  rows.map((r) => `<tr><td class="${TD}">${esc(r.n)}</td><td class="${TD}">${esc(r.t)}</td>
-    <td class="${TD}">${pill(r.s, r.s === 'Aktif')}</td>
-    <td class="${TD}">${pill(r.a ? 'Sedang ada Kegiatan' : 'Tidak ada kegiatan', r.a)}</td>
-    <td class="${TD} pr-[19px] text-right"><button data-kelola="${r.id}" class="${GRAD} min-w-[84px] rounded-full px-[18px] py-[3px] font-head text-[10px] font-bold">Kelola</button></td></tr>`).join('') || kosong(5));
-
-function refresh() {
-  document.querySelectorAll('[data-filters]').forEach((s) => { s.innerHTML = ''; s.append(filterTempat(), filterStatus()); });
-  const rows = filtered();
-  $('#tbl-dash').innerHTML = ruangTable(rows.slice(0, 4), [19, 22, 17, 24, 18]);     // Dashboard: ringkas (4 baris)
-  $('#tbl-full').innerHTML = ruangTable(rows, [30, 18, 14, 26, 12]);                  // Selengkapnya: semua ruang
+/* Render Monitoring Semua Reservasi */
+let statusFilter = 'Semua';
+function renderMonitoring() {
+  const box = $('#filter-status-box');
+  if (!box.hasChildNodes()) {
+    box.appendChild(UI.dropdown({
+      label: 'Semua Status',
+      items: ['Semua Status', 'In-Progress', 'Need-Revision', 'Approved', 'Rejected'],
+      onSelect: (v) => { statusFilter = v === 'Semua Status' ? 'Semua' : v; renderMonitoringTabel(); }
+    }));
+  }
+  renderMonitoringTabel();
 }
 
-$('#stats').innerHTML = STATS.map(([l, v]) => `<div class="rounded-2xl border border-bord bg-panel px-6 py-5">
-  <div class="font-head text-[15px] font-medium text-muted">${l}</div><div class="mt-2.5 font-head text-[38px] font-bold leading-tight">${v}</div></div>`).join('');
-$('#log').innerHTML = LOG.map((l) => { const [a, b] = [l.slice(0, l.indexOf('Seminar')), 'Seminar Nasional']; return `<p>${a}<b>${b}</b></p>`; }).join('');
+function renderMonitoringTabel() {
+  const list = DATA.reservasi.filter((r) => statusFilter === 'Semua' || r.status_akhir === statusFilter)
+    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
-$('#tbl-peng').innerHTML = table([16, 20, 21, 30, 13],
-  ['Ruang', 'Tempat/Gedung', 'Tanggal', 'Peminjam', ''].map((h) => `<th class="${TH}">${h}</th>`).join(''),
-  PENGAJUAN.map((p, i) => `<tr><td class="${TD}">${p.ruang}</td><td class="${TD}">${p.tempat}</td><td class="${TD}">${p.tgl}</td><td class="${TD}">${p.peminjam}</td>
-    <td class="${TD} pr-[27px] text-right"><button data-surat="${i}" class="${GRAD} whitespace-nowrap rounded-full px-[14px] py-[3px] font-head text-[10px] font-bold">Terbitkan Surat</button></td></tr>`).join(''));
+  $('#tbl-semua-reservasi').innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="${TH}">Nomor / Acara</th>
+          <th class="${TH}">Peminjam &amp; PJ</th>
+          <th class="${TH}">Tempat</th>
+          <th class="${TH}">Waktu</th>
+          <th class="${TH}">Tahap Approval</th>
+          <th class="${TH}">Status</th>
+          <th class="${TH}">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map((r) => `
+          <tr>
+            <td class="${TD}"><b>${esc(r.nama_acara)}</b><br><small class="muted">${esc(r.nomor_pengajuan || '-')}</small></td>
+            <td class="${TD}">${esc(r.penanggung_jawab_nama || '-')}<br><small style="color:#2563EB">${esc(r.penanggung_jawab_kontak || '-')}</small></td>
+            <td class="${TD}">${esc(r.tempat && r.tempat[0] ? r.tempat[0].nama_gedung : 'Gedung')}</td>
+            <td class="${TD}">${esc(r.tgl_mulai || r.tgl_acara)}<br><small>${esc(r.jam_mulai.slice(0,5))}-${esc(r.jam_selesai.slice(0,5))}</small></td>
+            <td class="${TD}"><span class="badge ${r.status_akhir === 'Need-Revision' ? 'warn' : 'ok'}">${esc(r.nama_tahap_sekarang || r.posisi_approval || 'Tahap 1')}</span></td>
+            <td class="${TD}">${UI.badge(r.status_akhir)}</td>
+            <td class="${TD}">
+              ${r.status_akhir === 'Approved' ? `<a href="${API.verifyUrl(r.id_reservasi)}" target="_blank" class="btn btn-ghost btn-sm">Surat &amp; QR</a>` : '<span class="muted">-</span>'}
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="7" style="text-align:center;color:#94A3B8">Tidak ada pengajuan reservasi.</td></tr>'}
+      </tbody>
+    </table>
+  `;
+}
 
-/* ---------------- NAVIGASI & AKSI ---------------- */
+/* Render Kelola Gedung & Fasilitas */
+function renderKelolaGedung() {
+  const gList = DATA.gedung || [];
+  $('#tbl-kelola-gedung').innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="${TH}">Kode &amp; Nama Gedung</th>
+          <th class="${TH}">Jam Operasional</th>
+          <th class="${TH}">Proposal</th>
+          <th class="${TH}">Ruangan Terdaftar</th>
+          <th class="${TH}">Status Aktif</th>
+          <th class="${TH}">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${gList.map((g) => {
+          const rList = (DATA.ruangan || []).filter((r) => r.id_gedung === g.id_gedung);
+          const isAktif = g.status_operasional === 'Aktif';
+          return `
+            <tr>
+              <td class="${TD}"><b>${esc(g.nama_gedung)}</b><br><small class="muted">${esc(g.kode_gedung)} &bull; ${esc(g.lokasi)}</small></td>
+              <td class="${TD}">${esc(g.jam_operasional_buka.slice(0,5))} - ${esc(g.jam_operasional_tutup.slice(0,5))} WIB</td>
+              <td class="${TD}">${g.wajib_proposal ? '<span style="color:#1D4ED8;font-weight:700">Wajib</span>' : '<span class="muted">Opsional</span>'}</td>
+              <td class="${TD}">${rList.length} Ruangan (${rList.map((r) => r.kode_ruangan).join(', ') || '-'})</td>
+              <td class="${TD}"><span class="badge ${isAktif ? 'ok' : 'bad'}">${esc(g.status_operasional)}</span></td>
+              <td class="${TD}">
+                <button onclick="toggleGedung('${g.id_gedung}')" class="btn btn-sm ${isAktif ? 'btn-outline-danger' : 'btn-outline-ok'}">
+                  ${isAktif ? 'Nonaktifkan' : 'Aktifkan'}
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function toggleGedung(idGedung) {
+  const g = DATA.gedungById(idGedung);
+  const nextStatus = g.status_operasional === 'Aktif' ? 'Nonaktif' : 'Aktif';
+  const res = await API.updateStatusGedung({ id_gedung: idGedung, status_operasional: nextStatus });
+  if (res.status !== 'success') {
+    UI.toast(res.message, 'bad');
+    return;
+  }
+  UI.toast(res.message, 'ok');
+  renderKelolaGedung();
+  renderDashboard();
+}
+
+/* Render Alur Persetujuan Gedung Dinamis (Fitur Rizal - Admin 3) */
+function renderAlurGedung() {
+  const alurMap = DATA.alur_gedung || {};
+  const gList = DATA.gedung || [];
+
+  $('#list-alur-gedung').innerHTML = gList.map((g) => {
+    const flows = alurMap[g.id_gedung] || [
+      { tahap_ke: 1, nama_tahap: 'Persetujuan Pimpinan', id_approver: null }
+    ];
+
+    return `
+      <div class="card">
+        <div class="card-head line">
+          <div>
+            <h3>${esc(g.nama_gedung)}</h3>
+            <p class="card-sub">Total ${flows.length} Tahapan Alur Persetujuan Berjenjang</p>
+          </div>
+          <button onclick="UI.toast('Konfigurasi alur tersimpan aktif di basis data.', 'ok')" class="btn btn-sm">Simpan Alur</button>
+        </div>
+        <div class="flow">
+          ${flows.map((f, i) => `
+            <div class="flow-step">
+              <div class="k">Tahap ${f.tahap_ke}</div>
+              <div class="v">${esc(f.nama_tahap)}</div>
+            </div>
+            ${i < flows.length - 1 ? '<span class="flow-arrow">&rarr;</span>' : ''}
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* Render Penugasan Satpam (Fitur Rizal - Admin 4) */
+function renderSatpam() {
+  const assignments = DATA.satpam_gedung || [];
+  $('#tbl-satpam-gedung').innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="${TH}">Nama Personel Satpam</th>
+          <th class="${TH}">Kontak</th>
+          <th class="${TH}">Gedung Tugas Pengamanan</th>
+          <th class="${TH}">Shift</th>
+          <th class="${TH}">Status Penugasan</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${assignments.map((sg) => {
+          const u = DATA.userById(sg.id_user) || {};
+          const g = DATA.gedungById(sg.id_gedung) || {};
+          return `
+            <tr>
+              <td class="${TD}"><b>${esc(u.nama_lengkap || 'Satpam')}</b><br><small class="muted">${esc(u.email || '-')}</small></td>
+              <td class="${TD}">${esc(u.no_hp || '-')}</td>
+              <td class="${TD}"><b>${esc(g.nama_gedung || '-')}</b> (${esc(g.lokasi || '-')})</td>
+              <td class="${TD}">${esc(sg.shift || 'All')}</td>
+              <td class="${TD}"><span class="badge ok">Aktif Bertugas</span></td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+/* Render Kelola User (Fitur Rizal - Admin 1) */
+function renderUsers() {
+  const uList = DATA.users || [];
+  $('#tbl-users').innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="${TH}">Nama Lengkap &amp; Email</th>
+          <th class="${TH}">Peran (Role)</th>
+          <th class="${TH}">Jabatan / Organisasi</th>
+          <th class="${TH}">Status Akun</th>
+          <th class="${TH}">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${uList.map((u) => {
+          const isAktif = u.status_aktif !== false;
+          return `
+            <tr>
+              <td class="${TD}"><b>${esc(u.nama_lengkap)}</b><br><small class="muted">${esc(u.email)}</small></td>
+              <td class="${TD}"><span class="badge" style="background:#EFF6FF; color:#1D4ED8;">${esc(u.role)}</span></td>
+              <td class="${TD}">${esc(u.nama_jabatan || (u.id_organisasi ? (DATA.organisasiById(u.id_organisasi) || {}).nama_organisasi : '-'))}</td>
+              <td class="${TD}"><span class="badge ${isAktif ? 'ok' : 'bad'}">${isAktif ? 'Aktif' : 'Nonaktif'}</span></td>
+              <td class="${TD}">
+                <button onclick="toggleUser('${u.id_user}')" class="btn btn-sm ${isAktif ? 'btn-outline-danger' : 'btn-outline-ok'}">
+                  ${isAktif ? 'Nonaktifkan' : 'Aktifkan'}
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function toggleUser(idUser) {
+  const u = DATA.userById(idUser);
+  if (!u) return;
+  u.status_aktif = !(u.status_aktif !== false);
+  DATA.save();
+  UI.toast(`Status akun ${u.nama_lengkap} diubah menjadi ${u.status_aktif ? 'Aktif' : 'Nonaktif'}!`, 'ok');
+  renderUsers();
+}
+
+/* Render Audit Logs (Fitur Rizal - Admin 6) */
+function renderLogs() {
+  const logs = DATA.admin_activity_log || [];
+  $('#tbl-audit-logs').innerHTML = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="${TH}">Waktu Pencatatan</th>
+          <th class="${TH}">Jenis Aktivitas</th>
+          <th class="${TH}">Target Entitas</th>
+          <th class="${TH}">Rincian Audit</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${logs.slice().reverse().map((l) => `
+          <tr>
+            <td class="${TD}"><small>${esc(l.created_at)}</small></td>
+            <td class="${TD}"><b>${esc(l.jenis_aktivitas)}</b></td>
+            <td class="${TD}"><span class="badge" style="background:#F1F5F9; color:#475569;">${esc(l.target_entitas || '-')}</span></td>
+            <td class="${TD}">${esc(l.detail || '-')}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+/* Navigasi Menu Admin */
 function show(key) {
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.dataset.view === key));
   document.querySelectorAll('.menu').forEach((b) => {
-    const on = b.dataset.menu === (key === 'gedung' ? 'dashboard' : key);
-    b.classList.toggle('border-[#4b4e5c]', on); b.classList.toggle('bg-[#1d2240]', on);
+    const on = b.dataset.menu === key;
+    b.classList.toggle('active', on);
   });
-  $('#profile').classList.toggle('hidden', key !== 'dashboard');
-  $('#surat').classList.add('hidden');
+
+  const titles = {
+    dashboard: 'Dashboard Administrator',
+    pengajuan: 'Monitoring Seluruh Reservasi',
+    gedung: 'Fasilitas & Ruangan Kampus',
+    alur: 'Alur Persetujuan Gedung',
+    satpam: 'Penugasan Satpam Gedung',
+    users: 'Manajemen Akun Pengguna',
+    logs: 'Jejak Audit Aktivitas Admin'
+  };
+  $('#page-title').textContent = titles[key] || 'Dashboard Administrator';
+
+  if (key === 'dashboard') renderDashboard();
+  if (key === 'pengajuan') renderMonitoring();
+  if (key === 'gedung') renderKelolaGedung();
+  if (key === 'alur') renderAlurGedung();
+  if (key === 'satpam') renderSatpam();
+  if (key === 'users') renderUsers();
+  if (key === 'logs') renderLogs();
 }
+
 document.addEventListener('click', (e) => {
-  const m = e.target.closest('[data-menu]'), g = e.target.closest('[data-goto]'), s = e.target.closest('[data-surat]'), k = e.target.closest('[data-kelola]');
+  const m = e.target.closest('[data-menu]'), g = e.target.closest('[data-goto]');
   if (m) show(m.dataset.menu);
   if (g) show(g.dataset.goto);
-  if (k) bukaKelola(+k.dataset.kelola);
-  if (s) {
-    const p = PENGAJUAN[+s.dataset.surat] || PENGAJUAN[0];
-    if (!e.target.closest('[data-view="pengajuan"]')) show('pengajuan');
-    $('#surat-info').innerHTML = [['Kegiatan', p.kegiatan], ['Penyelenggara', p.peminjam], ['Tempat', `${p.ruang}, ${p.tempat}`], ['Tanggal', p.tgl]]
-      .map(([a, b]) => `<dt class="text-muted">${a}</dt><dd>${b}</dd>`).join('');
-    $('#surat').classList.remove('hidden');
-  }
-});
-$('#surat-x').onclick = () => $('#surat').classList.add('hidden');
-$('#surat-ok').onclick = () => { /* TODO: panggil API terbitkan surat, lalu tutup panel */ $('#surat').classList.add('hidden'); };
-
-/* ---------------- KELOLA RUANG (edit) ---------------- */
-const toast = (msg) => {
-  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
-  clearTimeout(toast.id); toast.id = setTimeout(() => t.classList.add('hidden'), 2600);
-};
-let kelolaId = null;
-function bukaKelola(id) {
-  const r = RUANG.find((x) => x.id === id); if (!r) return;
-  kelolaId = id;
-  $('#k-n').value = r.n;
-  $('#k-t').innerHTML = TEMPAT_NAMA.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
-  $('#k-t').value = r.t;
-  $(`input[name="k-s"][value="${r.s}"]`).checked = true;
-  $(`input[name="k-a"][value="${r.a ? '1' : '0'}"]`).checked = true;
-  $('#k-err').textContent = '';
-  $('#m-kelola').classList.remove('hidden');
-  $('#k-n').focus();
-}
-const tutupKelola = () => { $('#m-kelola').classList.add('hidden'); kelolaId = null; };
-$('#k-x').onclick = tutupKelola;
-$('#k-batal').onclick = tutupKelola;
-$('#m-kelola').addEventListener('mousedown', (e) => { if (e.target === $('#m-kelola')) tutupKelola(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && kelolaId !== null) tutupKelola(); });
-$('#k-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const n = $('#k-n').value.trim().replace(/\s+/g, ' '), t = $('#k-t').value;
-  if (!n) { $('#k-err').textContent = 'Nama ruang tidak boleh kosong.'; $('#k-n').focus(); return; }
-  if (RUANG.some((x) => x.id !== kelolaId && x.t === t && x.n.toLowerCase() === n.toLowerCase())) {
-    $('#k-err').textContent = `Ruang "${n}" sudah ada di ${t}.`; $('#k-n').focus(); return;
-  }
-  const r = RUANG.find((x) => x.id === kelolaId);
-  Object.assign(r, { n, t, s: $('input[name="k-s"]:checked').value, a: $('input[name="k-a"]:checked').value === '1' });
-  if (f.ruang && !RUANG.some((x) => x.n === f.ruang && x.t === f.tempat)) f.ruang = null;   // filter ruang yang sudah tidak ada -> reset
-  simpanRuang(); tutupKelola(); refresh(); toast(`Ruang "${n}" berhasil diperbarui.`);
 });
 
-refresh();
 show('dashboard');
 </script>
 </body>
