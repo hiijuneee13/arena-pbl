@@ -587,8 +587,13 @@ body.leaving { opacity: 0; transition: opacity .2s var(--ease); }
 
 .profile-card.profile-settings-dashboard {
   position: relative;
-  width: 100%;
-  max-width: 660px;
+  width: min(660px, 100%);
+  max-width: 96vw;
+  min-width: 340px;
+  min-height: 260px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;            /* isi panjang bisa di-scroll */
+  resize: both;              /* bisa diperbesar / diperkecil dari pojok kanan bawah */
   background: #FFFFFF;
   border: 1px solid var(--line);
   border-radius: 24px;
@@ -1183,3 +1188,13 @@ a.btn { text-decoration: none; }
 .bantuan-contact-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .bantuan-kendala { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: #475569; max-width: 340px; }
 .bantuan-kendala select { height: 40px; border: 1px solid #CBD5E1; border-radius: 10px; padding: 0 10px; font: inherit; font-weight: 500; color: #0F172A; background: #fff; }
+
+/* Modal profil: geser lewat judul */
+.profile-card .pf-header { cursor: grab; user-select: none; touch-action: none; }
+.profile-card.dragging .pf-header { cursor: grabbing; }
+.profile-card.dragging { animation: none; transition: none; }
+.profile-card .pf-header .pf-close { cursor: pointer; }
+@media (max-width: 600px) {
+  .profile-card.profile-settings-dashboard { resize: none; min-width: 0; max-height: calc(100vh - 32px); }
+  .profile-card .pf-header { cursor: default; }
+}

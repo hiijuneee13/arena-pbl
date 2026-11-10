@@ -158,7 +158,30 @@
     };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
 
+    // Geser modal lewat area judul
+    const card = overlay.querySelector('.profile-card');
+    let dx = 0, dy = 0;
+    const applyPos = () => { card.style.transform = `translate(${dx}px, ${dy}px)`; };
+    overlay.querySelector('.pf-header').addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.pf-close') || window.innerWidth <= 600) return;
+      const sx = e.clientX - dx, sy = e.clientY - dy;
+      card.classList.add('dragging'); card.style.animation = 'none';
+      const move = (ev) => {
+        const r = card.getBoundingClientRect();
+        const nx = ev.clientX - sx, ny = ev.clientY - sy;
+        // jaga agar judul tetap terlihat di dalam layar
+        const curX = r.left - dx, curY = r.top - dy;
+        dx = Math.min(Math.max(nx, 40 - r.width - curX + 0), window.innerWidth - 40 - curX);
+        dy = Math.min(Math.max(ny, -curY), window.innerHeight - 60 - curY);
+        applyPos();
+      };
+      const up = () => { card.classList.remove('dragging'); document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    });
+
     function open() {
+      dx = 0; dy = 0; card.style.animation = ''; card.style.transform = ''; card.style.width = ''; card.style.height = '';
       overlay.classList.add('open');
       document.addEventListener('keydown', onKey);
     }
