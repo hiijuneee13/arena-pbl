@@ -125,41 +125,66 @@
                 </button>
             </form>
 
-            <!-- MODAL: LUPA / RESET KATA SANDI -->
+            <!-- MODAL: LUPA / RESET KATA SANDI (3 langkah: email -> kode OTP -> sandi baru) -->
             <div class="forgot-overlay" id="forgotOverlay">
-                <div class="forgot-modal">
+                <div class="forgot-modal" role="dialog" aria-modal="true" aria-labelledby="fgTitle">
                     <button type="button" class="forgot-close" id="forgotClose" aria-label="Tutup">&times;</button>
-                    <h2 class="forgot-title">Atur Ulang Kata Sandi</h2>
-                    <p class="forgot-desc">Masukkan alamat email terdaftar dan kata sandi baru untuk akun Anda.</p>
-                    
-                    <div class="field">
-                        <label for="forgotEmail">Alamat Email Terdaftar</label>
-                        <div class="input-wrap">
-                            <input type="email" id="forgotEmail" placeholder="nama@arena.ac.id" autocomplete="email">
+                    <div class="fg-steps" id="fgSteps"><span class="on">1</span><i></i><span>2</span><i></i><span>3</span></div>
+
+                    <!-- Langkah 1 -->
+                    <div class="fg-pane" id="fgPane1">
+                        <h2 class="forgot-title" id="fgTitle">Atur Ulang Kata Sandi</h2>
+                        <p class="forgot-desc">Masukkan email akun Anda. Kami akan mengirim kode verifikasi 6 digit ke email tersebut.</p>
+                        <div class="field">
+                            <label for="forgotEmail">Alamat Email Terdaftar</label>
+                            <div class="input-wrap"><input type="email" id="forgotEmail" placeholder="nama@arena.ac.id" autocomplete="email"></div>
+                        </div>
+                        <div class="fg-msg" id="fgMsg1"></div>
+                        <div class="forgot-actions">
+                            <button type="button" class="btn-submit" id="btnSendOtp"><span>Kirim Kode Verifikasi</span></button>
+                            <button type="button" class="btn-cancel" id="btnCancelReset">Batal</button>
                         </div>
                     </div>
 
-                    <div class="field">
-                        <label for="forgotNewPwd">Kata Sandi Baru</label>
-                        <div class="input-wrap">
-                            <input type="password" id="forgotNewPwd" placeholder="Minimal 6 karakter" autocomplete="new-password">
+                    <!-- Langkah 2 -->
+                    <div class="fg-pane" id="fgPane2" style="display:none;">
+                        <h2 class="forgot-title">Masukkan Kode Verifikasi</h2>
+                        <p class="forgot-desc" id="fgDesc2">Jika email tersebut terdaftar, kode 6 digit telah dikirim.</p>
+                        <div class="field">
+                            <label for="fgOtp">Kode 6 Digit</label>
+                            <div class="input-wrap"><input type="text" id="fgOtp" class="fg-otp" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="one-time-code"></div>
                         </div>
+                        <div class="fg-timer" id="fgTimer"></div>
+                        <div class="fg-msg" id="fgMsg2"></div>
+                        <div class="forgot-actions">
+                            <button type="button" class="btn-submit" id="btnVerifyOtp"><span>Verifikasi</span></button>
+                            <button type="button" class="btn-cancel" id="btnResendOtp">Kirim Ulang</button>
+                        </div>
+                        <details class="fg-demo" id="fgDemo" open>
+                            <summary>Kotak Masuk Simulasi (khusus demo)</summary>
+                            <p>Belum ada server email, jadi pesan yang <b>seharusnya dikirim ke email</b> ditampilkan di sini. Di sistem sungguhan kode hanya dikirim ke email terdaftar dan <b>tidak</b> ditampilkan di layar.</p>
+                            <div id="fgInbox"></div>
+                        </details>
                     </div>
 
-                    <div class="field">
-                        <label for="forgotConfirmPwd">Konfirmasi Kata Sandi Baru</label>
-                        <div class="input-wrap">
-                            <input type="password" id="forgotConfirmPwd" placeholder="Ulangi kata sandi baru" autocomplete="new-password">
+                    <!-- Langkah 3 -->
+                    <div class="fg-pane" id="fgPane3" style="display:none;">
+                        <h2 class="forgot-title">Buat Kata Sandi Baru</h2>
+                        <p class="forgot-desc">Kode terverifikasi. Buat kata sandi baru yang kuat.</p>
+                        <div class="field">
+                            <label for="forgotNewPwd">Kata Sandi Baru</label>
+                            <div class="input-wrap"><input type="password" id="forgotNewPwd" placeholder="Kata sandi baru" autocomplete="new-password"></div>
                         </div>
-                    </div>
-
-                    <div id="forgotErrorMsg" style="display:none; color:#DC2626; font-size:12.5px; font-weight:600; margin-bottom:12px; padding:8px 12px; background:#FEF2F2; border:1px solid #FECACA; border-radius:8px;"></div>
-
-                    <div class="forgot-actions">
-                        <button type="button" class="btn-submit" id="btnResetPwd">
-                            <span>Simpan Kata Sandi</span>
-                        </button>
-                        <button type="button" class="btn-cancel" id="btnCancelReset">Batal</button>
+                        <ul class="fg-rules" id="fgRules"></ul>
+                        <div class="field">
+                            <label for="forgotConfirmPwd">Konfirmasi Kata Sandi Baru</label>
+                            <div class="input-wrap"><input type="password" id="forgotConfirmPwd" placeholder="Ulangi kata sandi baru" autocomplete="new-password"></div>
+                        </div>
+                        <div class="fg-msg" id="fgMsg3"></div>
+                        <div class="forgot-actions">
+                            <button type="button" class="btn-submit" id="btnResetPwd"><span>Simpan Kata Sandi</span></button>
+                            <button type="button" class="btn-cancel" id="btnCancelReset3">Batal</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -190,83 +215,105 @@
                 : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
         });
 
-        // ---- LUPA KATA SANDI MODAL ----
-        const forgotOverlay = document.getElementById("forgotOverlay");
-        const forgotClose = document.getElementById("forgotClose");
-        const forgotEmail = document.getElementById("forgotEmail");
-        const forgotNewPwd = document.getElementById("forgotNewPwd");
-        const forgotConfirmPwd = document.getElementById("forgotConfirmPwd");
-        const forgotErrorMsg = document.getElementById("forgotErrorMsg");
-        const btnResetPwd = document.getElementById("btnResetPwd");
-        const btnCancelReset = document.getElementById("btnCancelReset");
-        const btnForgot = document.getElementById("btnForgot");
+        // ---- LUPA KATA SANDI: email -> OTP -> sandi baru ----
+        const $ = (id) => document.getElementById(id);
+        const forgotOverlay = $("forgotOverlay");
+        const fg = { email: "", token: "", timer: null, until: 0 };
 
-        btnForgot.addEventListener("click", () => {
+        function fgShow(n) {
+            [1, 2, 3].forEach((i) => { $("fgPane" + i).style.display = i === n ? "" : "none"; });
+            [...$("fgSteps").querySelectorAll("span")].forEach((el, i) => el.classList.toggle("on", i < n));
+            $("fgSteps").style.display = n > 3 ? "none" : "";
+        }
+        function fgMsg(n, text, ok) {
+            const el = $("fgMsg" + n);
+            el.textContent = text || "";
+            el.className = "fg-msg" + (text ? (ok ? " ok" : " bad") : "");
+        }
+        function fgClose() { clearInterval(fg.timer); forgotOverlay.classList.remove("active"); }
+        function fgRenderInbox() {
+            const box = $("fgInbox"), list = Auth.demoInbox().filter((m) => m.to.toLowerCase() === fg.email.toLowerCase()).slice(0, 2);
+            box.innerHTML = list.length ? "" : '<div class="fg-mail"><i>Tidak ada pesan untuk email ini.</i></div>';
+            list.forEach((m) => {
+                const d = document.createElement("div"); d.className = "fg-mail";
+                const t = document.createElement("b"); t.textContent = m.subject;
+                const tt = document.createElement("small"); tt.textContent = "Kepada: " + m.to;
+                const bd = document.createElement("p"); bd.textContent = m.body;
+                d.append(t, tt, bd); box.appendChild(d);
+            });
+        }
+        function fgStartTimer(sec) {
+            clearInterval(fg.timer); fg.until = Date.now() + sec * 1000;
+            const tick = () => {
+                const left = Math.max(0, Math.ceil((fg.until - Date.now()) / 1000));
+                $("btnResendOtp").disabled = left > 0;
+                $("fgTimer").textContent = left > 0 ? "Kirim ulang kode tersedia dalam " + left + " detik" : "Belum menerima kode? Klik Kirim Ulang.";
+                if (!left) clearInterval(fg.timer);
+            };
+            tick(); fg.timer = setInterval(tick, 500);
+        }
+        function fgRules() {
+            const rules = Auth.passwordRules($("forgotNewPwd").value, fg.email);
+            $("fgRules").innerHTML = rules.map((r) => '<li class="' + (r.ok ? "ok" : "") + '">' + r.text + "</li>").join("");
+        }
+        function fgBusy(id, on, label) { const b = $(id); b.disabled = on; if (label) { const t = b.firstElementChild || b; t.textContent = on ? "Memproses..." : label; } }
+
+        $("btnForgot").addEventListener("click", () => {
             forgotOverlay.classList.add("active");
-            forgotEmail.value = emailInput.value || "";
-            forgotNewPwd.value = "";
-            forgotConfirmPwd.value = "";
-            forgotErrorMsg.style.display = "none";
-            forgotEmail.focus();
+            fg.email = ""; fg.token = "";
+            $("forgotEmail").value = emailInput.value || "";
+            $("fgOtp").value = ""; $("forgotNewPwd").value = ""; $("forgotConfirmPwd").value = "";
+            fgMsg(1, ""); fgMsg(2, ""); fgMsg(3, "");
+            fgRules(); fgShow(1); $("forgotEmail").focus();
         });
-        forgotClose.addEventListener("click", () => forgotOverlay.classList.remove("active"));
-        btnCancelReset.addEventListener("click", () => forgotOverlay.classList.remove("active"));
-        forgotOverlay.addEventListener("click", (e) => {
-            if (e.target === forgotOverlay) forgotOverlay.classList.remove("active");
-        });
+        $("forgotClose").addEventListener("click", fgClose);
+        $("btnCancelReset").addEventListener("click", fgClose);
+        $("btnCancelReset3").addEventListener("click", fgClose);
+        forgotOverlay.addEventListener("click", (e) => { if (e.target === forgotOverlay) fgClose(); });
 
-        btnResetPwd.addEventListener("click", () => {
-            const em = forgotEmail.value.trim();
-            const newPwd = forgotNewPwd.value;
-            const confirmPwd = forgotConfirmPwd.value;
-            forgotErrorMsg.style.display = "none";
+        async function sendOtp(fromResend) {
+            const em = (fromResend ? fg.email : $("forgotEmail").value.trim()).toLowerCase();
+            const msgN = fromResend ? 2 : 1;
+            if (!em || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { fgMsg(1, "Masukkan alamat email yang valid."); return; }
+            fgBusy(fromResend ? "btnResendOtp" : "btnSendOtp", true, fromResend ? "Kirim Ulang" : "Kirim Kode Verifikasi");
+            const res = await Auth.requestReset(em);
+            fgBusy(fromResend ? "btnResendOtp" : "btnSendOtp", false, fromResend ? "Kirim Ulang" : "Kirim Kode Verifikasi");
+            if (!res.ok) { fgMsg(msgN, res.message); return; }
+            fg.email = em;
+            $("fgDesc2").textContent = res.message;
+            fgShow(2); fgRenderInbox(); fgStartTimer(res.cooldown);
+            $("fgOtp").value = ""; fgMsg(2, ""); $("fgOtp").focus();
+        }
+        $("btnSendOtp").addEventListener("click", () => sendOtp(false));
+        $("forgotEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") sendOtp(false); });
+        $("btnResendOtp").addEventListener("click", () => sendOtp(true));
 
-            if (!em) {
-                forgotErrorMsg.textContent = "Alamat email wajib diisi!";
-                forgotErrorMsg.style.display = "block";
-                forgotEmail.focus();
-                return;
-            }
+        $("fgOtp").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6); });
+        async function verifyOtp() {
+            const code = $("fgOtp").value;
+            if (code.length !== 6) { fgMsg(2, "Masukkan 6 digit kode verifikasi."); return; }
+            fgBusy("btnVerifyOtp", true, "Verifikasi");
+            const res = await Auth.verifyResetOtp(fg.email, code);
+            fgBusy("btnVerifyOtp", false, "Verifikasi");
+            if (!res.ok) { fgMsg(2, res.message); if (res.locked) $("fgOtp").value = ""; return; }
+            fg.token = res.token; clearInterval(fg.timer);
+            fgShow(3); fgMsg(3, ""); fgRules(); $("forgotNewPwd").focus();
+        }
+        $("btnVerifyOtp").addEventListener("click", verifyOtp);
+        $("fgOtp").addEventListener("keydown", (e) => { if (e.key === "Enter") verifyOtp(); });
 
-            if (!newPwd || newPwd.length < 6) {
-                forgotErrorMsg.textContent = "Kata sandi baru minimal harus 6 karakter!";
-                forgotErrorMsg.style.display = "block";
-                forgotNewPwd.focus();
-                return;
-            }
-
-            if (newPwd !== confirmPwd) {
-                forgotErrorMsg.textContent = "Konfirmasi kata sandi tidak cocok!";
-                forgotErrorMsg.style.display = "block";
-                forgotConfirmPwd.focus();
-                return;
-            }
-
-            // Cari akun di daftar ACCOUNTS atau DATA.users
-            const acc = Auth.ACCOUNTS.find(a => a.email.toLowerCase() === em.toLowerCase() || (a.dataEmail && a.dataEmail.toLowerCase() === em.toLowerCase()));
-            const usr = typeof DATA !== 'undefined' && DATA.users ? DATA.users.find(u => u.email.toLowerCase() === em.toLowerCase()) : null;
-
-            if (!acc && !usr) {
-                forgotErrorMsg.textContent = "Email tidak terdaftar dalam sistem!";
-                forgotErrorMsg.style.display = "block";
-                forgotEmail.focus();
-                return;
-            }
-
-            // Simpan kata sandi baru
-            const resetEmail = acc ? acc.email : em;
-            if (Auth.setPassword) Auth.setPassword(resetEmail, newPwd);
-            if (acc && acc.dataEmail && Auth.setPassword) Auth.setPassword(acc.dataEmail, newPwd);
-
-            forgotOverlay.classList.remove("active");
-            errorBox.classList.remove("active");
-            successMessage.textContent = "Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.";
-            successBox.style.display = "flex";
-            emailInput.value = resetEmail;
-            passwordInput.value = newPwd;
-            btn.focus();
-
-            setTimeout(() => { successBox.style.display = "none"; }, 8000);
+        $("forgotNewPwd").addEventListener("input", fgRules);
+        $("btnResetPwd").addEventListener("click", async () => {
+            const np = $("forgotNewPwd").value, cp = $("forgotConfirmPwd").value;
+            if (np !== cp) { fgMsg(3, "Konfirmasi kata sandi tidak cocok."); return; }
+            fgBusy("btnResetPwd", true, "Simpan Kata Sandi");
+            const res = await Auth.completeReset(fg.email, fg.token, np);
+            fgBusy("btnResetPwd", false, "Simpan Kata Sandi");
+            if (!res.ok) { fgMsg(3, res.message); if (res.expired) setTimeout(() => fgShow(1), 1500); return; }
+            const done = fg.email; fg.token = ""; fgClose();
+            emailInput.value = done; passwordInput.value = "";       // sandi baru TIDAK diisi otomatis
+            successMessage.textContent = "Kata sandi berhasil diubah. Silakan masuk dengan kata sandi baru Anda.";
+            successBox.style.display = "flex"; passwordInput.focus();
         });
 
         // Form Submit
