@@ -639,3 +639,13 @@ body {
 .fg-mail { background: #fff; border: 1px solid #DBEAFE; border-radius: 8px; padding: 8px 10px; margin-top: 6px; }
 .fg-mail small { display: block; color: #64748B; margin: 2px 0 4px; }
 .fg-mail p { margin: 0; color: #0F172A; word-break: break-word; }
+
+/* ===== Responsive tambahan (HP) ===== */
+@media (max-width: 480px) {
+  .form-options { flex-wrap: wrap; gap: 8px; }
+  .forgot-link { white-space: nowrap; }
+  .forgot-overlay { padding: 10px; }
+  .forgot-modal { padding: 22px 18px; }
+  .fg-otp { letter-spacing: 6px; }
+  .forgot-actions { flex-wrap: wrap; }
+}
