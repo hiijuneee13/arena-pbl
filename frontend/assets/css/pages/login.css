@@ -640,27 +640,36 @@ body {
 .fg-mail small { display: block; color: #64748B; margin: 2px 0 4px; }
 .fg-mail p { margin: 0; color: #0F172A; word-break: break-word; }
 
-
-/* ===== RESPONSIVE LOGIN ===== */
-.m-brand { display: none; }
+/* ===== RESPONSIVE LOGIN (desktop >=1025px tidak berubah) ===== */
+.m-brand-login { display: none; }
 @media (max-width: 1024px) {
-  .login-page .m-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
-  .login-page .m-brand .brand-mark { flex: none; }
-  .login-page .m-brand b { display: block; font: 800 20px var(--font-head); color: #0F172A; }
-  .login-page .m-brand small { display: block; font-size: 12.5px; color: #64748B; margin-top: 2px; }
+    body { min-height: 100vh; min-height: 100dvh; align-items: flex-start; padding: 24px 16px; }
+    .login-page .card { margin: auto; width: 100%; }
+    .login-page .brand-mark { flex: none; }
+    .m-brand-login { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+    .m-brand-login .brand-mark { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #2563EB, #1D4ED8); color: #fff; display: grid; place-items: center; font: 800 22px 'Montserrat', sans-serif; }
+    .m-brand-login strong { display: block; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: .5px; }
+    .m-brand-login small { display: block; font-size: 12px; color: #64748B; font-weight: 500; }
+    .back-home { position: static; align-self: flex-start; margin: 0 0 14px; }
 }
 @media (max-width: 768px) {
-  body.login-page { min-height: 100dvh; padding: 16px 12px; align-items: flex-start; }
-  .login-page .panel { padding: 24px 18px; }
-  .login-page .title { font-size: 24px; }
-  .back-home { position: static; display: inline-flex; margin-bottom: 12px; }
-  .login-page input, .login-page .input-wrap input { font-size: 16px; }
-  .forgot-modal { width: calc(100% - 24px); padding: 20px 16px; }
+    .login-page .panel { padding: 32px 24px; }
+    .login-page .title { font-size: 26px; margin-bottom: 22px; }
 }
 @media (max-width: 480px) {
-  .login-page .panel { padding: 20px 16px; }
-  .login-page .title { font-size: 22px; }
-  .fg-otp { letter-spacing: 6px; font-size: 20px !important; }
-  .forgot-actions { flex-direction: column-reverse; } .forgot-actions button { width: 100%; }
+    body { padding: 16px 12px; }
+    .login-page .panel { padding: 24px 18px; }
+    .login-page .title { font-size: 22px; margin-bottom: 18px; }
+    .login-page .field input, .login-page .btn-submit { font-size: 16px; min-height: 46px; }
+    .form-options { flex-wrap: wrap; gap: 8px 12px; }
+    .forgot-overlay { padding: 10px; align-items: flex-start; overflow-y: auto; }
+    .forgot-modal { width: 100%; padding: 22px 16px; }
+    .fg-otp { letter-spacing: 6px; font-size: 20px !important; }
+    .forgot-actions { flex-direction: column-reverse; }
+    .forgot-actions .btn-submit, .forgot-actions .btn-cancel { width: 100%; }
 }
-@media (max-width: 360px) { .login-page .panel { padding: 18px 14px; } .fg-otp { letter-spacing: 4px; } }
+@media (max-width: 360px) {
+    .login-page .panel { padding: 20px 14px; }
+    .login-page .title { font-size: 20px; }
+    .fg-otp { letter-spacing: 3px; }
+}

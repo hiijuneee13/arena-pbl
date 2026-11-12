@@ -140,3 +140,12 @@
 /* Log aktivitas */
 .log-item { font-size: 12px; margin: 0 0 12px; line-height: 1.5; color: var(--text); }
 .log-item .neg { color: var(--bad); font-weight: 600; }
+
+/* ===== RESPONSIVE ADMIN (file ini tidak dimuat dashboard-admin.html; aturan siap pakai bila dimuat) ===== */
+@media (max-width: 768px) {
+  #tbl-ruang { table-layout: auto; }
+  .rtable { min-width: 560px; }
+  .grid.rekap { gap: 14px; }
+  .rekap .stat { padding: 16px 18px; min-height: 0; }
+  .rekap .stat .value { font-size: 30px; }
+}

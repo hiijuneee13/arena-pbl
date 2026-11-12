@@ -126,3 +126,39 @@
 .cat-photo img { display: block; width: 100%; height: auto; }
 .cat-photo-empty { min-height: 260px; display: grid; place-items: center; padding: 24px; text-align: center; font: 700 17px var(--font-head); color: var(--text-pure); }
 .cat-note { background: #F1F5F9; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; min-height: 96px; font-size: 14px; line-height: 1.6; color: var(--text-pure); }
+
+/* ===== RESPONSIVE MAHASISWA ===== */
+@media (max-width: 1024px) {
+  .stepper { overflow: visible; }
+  .step { width: auto; flex: 1 1 0; min-width: 0; }
+  .template-box { gap: 16px; }
+}
+@media (max-width: 768px) {
+  .template-box { flex-direction: column; align-items: stretch; padding: 16px; }
+  .template-info { align-items: flex-start; gap: 12px; }
+  .template-box .btn { width: 100%; justify-content: center; }
+  .step .circle { width: 44px; height: 44px; font-size: 16px; }
+  .step-line { margin-top: 21px; }
+  .step { font-size: 11px; }
+  .dropzone { min-height: 110px; padding: 14px; }
+  .pf-form-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .stepper { margin: 4px 0 18px; }
+  .step .circle { width: 34px; height: 34px; font-size: 14px; }
+  .step-line { margin-top: 16px; }
+  .step { font-size: 10px; gap: 6px; }
+  .step:not(.active) span { display: none; }       /* hanya langkah aktif yang menampilkan label */
+  .template-icon { width: 42px; height: 42px; }
+  .template-box h2 { font-size: 16px; }
+  /* kalender: tetap 7 kolom, badge jadi titik penanda */
+  .cal { gap: 4px; }
+  .cal .dow { font-size: 10px; padding: 4px 0; overflow: hidden; }
+  .cal .cell { min-height: 54px; padding: 4px; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: flex-start; align-items: flex-start; gap: 3px; }
+  .cal .cell small, .cal .cell > :first-child { flex: 0 0 100%; font-size: 11px; }
+  .cal .cell .badge { font-size: 0; width: 8px; height: 8px; min-width: 0; padding: 0; border-radius: 50%; flex: none; display: inline-block; }
+  .cal .cell:hover { transform: none; }
+  .catatan-modal { padding: 18px 14px; }
+  .cat-heading { font-size: 18px; }
+  .cat-photo-empty { min-height: 160px; }
+}

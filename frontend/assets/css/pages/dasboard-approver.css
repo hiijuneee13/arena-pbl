@@ -101,11 +101,15 @@
 .arsip-card .table td:last-child { min-width: 180px; }
 .sidebar-foot .help { text-align: left; }
 
-
 /* ===== RESPONSIVE APPROVER ===== */
+@media (max-width: 1024px) {
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 600px) {
-  .confirm-modal h2 { font-size: 21px; }
-  .confirm-modal .actions { flex-direction: column-reverse; width: 100%; } .confirm-modal .actions .btn { width: 100%; }
-  .confirm-modal .cf-note { max-width: none; }
+  .stat-row { grid-template-columns: minmax(0, 1fr); }
+  .card-actions .btn { flex: 1 1 calc(50% - 10px); min-width: 0; justify-content: center; }
+  .card-actions .btn-approve, .card-actions .btn-reject { min-width: 0; }
   .arsip-card .table td:last-child { min-width: 0; }
+  .arsip-card .table td:nth-child(3), .arsip-card .table td:nth-child(5) { white-space: normal; }
+  .pdf-modal .actions .btn { width: 100%; }
 }

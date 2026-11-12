@@ -37,3 +37,17 @@
 }
 table tbody tr:hover { background-color: #F8FAFC; }
 @media (max-width: 900px) { .cal { gap: 6px; } .cal .cell { min-height: 70px; padding: 6px 4px; } }
+
+/* ===== RESPONSIVE SATPAM ===== */
+@media (max-width: 768px) {
+  .gedung-info { align-items: stretch; flex-direction: column; padding: 14px 16px; }
+  .gedung-info h2 { font-size: 19px; }
+  .gedung-info .btn { width: 100%; justify-content: center; }
+}
+@media (max-width: 600px) {
+  .cal { gap: 4px; }
+  .cal .cell { min-height: 54px; padding: 4px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 3px; }
+  .cal .cell small { flex: 0 0 100%; font-size: 11px; }
+  .cal .cell .badge { font-size: 0; width: 8px; height: 8px; min-width: 0; padding: 0; border-radius: 50%; flex: none; display: inline-block; }
+  .cal .cell:hover { transform: none; }
+}

@@ -18,17 +18,8 @@
 
 <div class="app">
 
-  <!-- topbar + overlay drawer (tampil di <= 900px) -->
-  <header class="mobile-bar">
-    <button type="button" class="menu-toggle" id="menu-toggle" aria-label="Buka menu" aria-expanded="false" aria-controls="sidebar">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-    </button>
-    <div class="brand"><div class="brand-logo">A</div>ARENA</div>
-  </header>
-  <div class="drawer-overlay" id="drawer-overlay"></div>
-
   <!-- ===== SIDEBAR ADMIN ===== -->
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar">
     <div class="brand"><div class="brand-logo">A</div>ARENA</div>
     <button data-menu="dashboard" class="menu-item with-icon menu" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -204,22 +195,6 @@
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/shell.js"></script>
-<script>
-/* Drawer sidebar admin (mobile/tablet): sama dengan yang dipasang shell.js di dashboard lain */
-(function () {
-  const tg = document.getElementById('menu-toggle'), ov = document.getElementById('drawer-overlay'), sb = document.getElementById('sidebar');
-  const setDrawer = (open) => {
-    document.body.classList.toggle('drawer-open', open);
-    tg.setAttribute('aria-expanded', String(open)); tg.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
-    if (open) { const f = sb.querySelector('.menu-item'); if (f) f.focus(); } else if (sb.contains(document.activeElement)) tg.focus();
-  };
-  tg.onclick = () => setDrawer(!document.body.classList.contains('drawer-open'));
-  ov.onclick = () => setDrawer(false);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setDrawer(false); });
-  sb.addEventListener('click', (e) => { if (e.target.closest('.menu-item')) setDrawer(false); });
-  window.matchMedia('(min-width: 901px)').addEventListener('change', (m) => { if (m.matches) setDrawer(false); });
-})();
-</script>
 <script>
 /* =====================================================================
    DASHBOARD ADMIN LOGIC & STATE (SESUAI FITUR RIZAL)
@@ -612,5 +587,6 @@ document.addEventListener('click', (e) => {
 
 show('dashboard');
 </script>
+<script src="../assets/js/responsive.js"></script>
 </body>
 </html>

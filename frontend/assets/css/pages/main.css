@@ -892,7 +892,6 @@ body.leaving { opacity: 0; transition: opacity .2s var(--ease); }
 }
 
 @media (max-width: 600px) {
-  .profile-card.profile-settings-dashboard { padding: 24px 20px; }
   .pf-form-row { grid-template-columns: 1fr; }
   .pf-user-card { flex-direction: column; text-align: center; }
   .pf-photo-actions { justify-content: center; }
@@ -930,12 +929,7 @@ dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; color: var(--text-pure);
 
 /* Responsif */
 @media (max-width: 1180px) { .grid.cols-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; }
-  .grid.cols-5, .grid.cols-4, .grid.cols-3, .grid.cols-2 { grid-template-columns: 1fr; }
-  .stepper { overflow-x: auto; padding-bottom: 10px; }
-}
+/* (aturan responsif lengkap ada di bagian RESPONSIVE di akhir file) */
 
 /* =====================================================================
    DASHBOARD BANTUAN & TANYA JAWAB (Q&A) VIEW
@@ -1190,8 +1184,8 @@ a.btn { text-decoration: none; }
 .bantuan-kendala select { height: 40px; border: 1px solid #CBD5E1; border-radius: 10px; padding: 0 10px; font: inherit; font-weight: 500; color: #0F172A; background: #fff; }
 
 /* Modal profil: geser lewat judul */
-.profile-card .pf-header { cursor: grab; user-select: none; touch-action: none; }
 .profile-card.dragging .pf-header { cursor: grabbing; }
+@media (min-width: 901px) { .profile-card .pf-header { cursor: grab; user-select: none; touch-action: none; } }
 .profile-card.dragging { animation: none; transition: none; }
 .profile-card .pf-header .pf-close { cursor: pointer; }
 @media (max-width: 600px) {
@@ -1199,90 +1193,120 @@ a.btn { text-decoration: none; }
   .profile-card .pf-header { cursor: default; }
 }
 
-
 /* =====================================================================
-   RESPONSIVE (tablet & HP) - desktop >= 1025px tidak berubah
+   RESPONSIVE — tablet (<=1024) & HP (<=768 / <=480). Desktop (>=1025) tidak berubah.
    ===================================================================== */
-img, video { max-width: 100%; }
-.mobile-bar, .drawer-overlay { display: none; }
+img, svg, video { max-width: 100%; }
+.m-topbar, .drawer-overlay { display: none; }
 
-/* ---- Tablet (<= 1024px): grid 2 kolom ---- */
+/* ---------- Tablet <=1024 ---------- */
 @media (max-width: 1024px) {
-  .grid.cols-3, .grid.cols-4, .grid.cols-5, .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .grid > *, .split > * { min-width: 0; }
+  .grid.cols-5, .grid.cols-4, .grid.cols-3, .grid.cols-2, .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .main, .view, .card, .card-head, .grid > * { min-width: 0; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap > .table:not(.rcards) { min-width: 560px; }
 }
 
-/* ---- Drawer + topbar (<= 900px) ---- */
+/* ---------- Drawer sidebar + topbar mobile <=900 ---------- */
 @media (max-width: 900px) {
-  body.drawer-open { overflow: hidden; }
-  .app { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 12px 12px; align-content: start; }
-  .mobile-bar { display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 60; margin: 0 -12px 12px; padding: 10px 12px; background: #fff; border-bottom: 1px solid var(--line); }
-  .mobile-bar .brand { margin: 0; font-size: 20px; }
-  .menu-toggle { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--text-pure); cursor: pointer; }
-  .menu-toggle:focus-visible, .sidebar :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .app .sidebar { position: fixed; top: 0; left: 0; bottom: 0; height: 100dvh; width: min(290px, 86vw); z-index: 80; border-radius: 0 18px 18px 0; overflow-y: auto; transform: translateX(-105%); visibility: hidden; transition: transform .25s var(--ease), visibility .25s; }
-  .drawer-open .app .sidebar { transform: none; visibility: visible; }
-  .drawer-overlay { display: block; position: fixed; inset: 0; z-index: 70; background: rgba(15,23,42,.5); opacity: 0; pointer-events: none; transition: opacity .25s; }
-  .drawer-open .drawer-overlay { opacity: 1; pointer-events: auto; }
-  .main { padding: 0 0 32px; overflow-x: hidden; }
-  .menu-item, .sidebar-foot .help, .sidebar-foot .logout { min-height: 44px; }
-  .card-tall { min-height: auto; }
+  html, body { overflow-x: hidden; }
+  body.nav-lock { overflow: hidden; }
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; align-content: start; padding: 12px; gap: 0; }
+  .main { padding: 14px 0 32px; }
+
+  .m-topbar { display: flex; align-items: center; gap: 12px; position: sticky; top: 8px; z-index: 90; height: 56px; padding: 0 10px 0 8px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 2px 12px rgba(15, 23, 42, .06); }
+  .m-topbar .m-burger { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 12px; color: #1E293B; }
+  .m-topbar .m-burger:focus-visible, .m-topbar .m-avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .m-topbar .m-brand { display: flex; align-items: center; gap: 10px; font: 700 18px var(--font-head); color: var(--text-pure); }
+  .m-topbar .m-brand .brand-logo { width: 30px; height: 30px; font-size: 16px; }
+  .m-topbar .m-avatar { margin-left: auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: #EFF6FF; display: grid; place-items: center; overflow: hidden; padding: 0; }
+  .m-topbar .m-avatar svg { width: 30px; height: 30px; }
+  .m-topbar .m-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .drawer-overlay { display: block; position: fixed; inset: 0; z-index: 190; background: rgba(15, 23, 42, .55); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .drawer-overlay.show { opacity: 1; pointer-events: auto; }
+
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 200; width: min(300px, 85vw); height: 100vh; height: 100dvh; max-height: none; border-radius: 0 20px 20px 0; padding: 18px 14px; overflow-y: auto; transform: translateX(-105%); visibility: hidden; transition: transform .28s var(--ease), visibility 0s linear .28s; }
+  .sidebar.nav-open { transform: none; visibility: visible; transition: transform .28s var(--ease), visibility 0s; box-shadow: 8px 0 40px rgba(15, 23, 42, .25); }
+  .sidebar > .brand { margin-top: 0; }
+  .menu-item:hover { transform: none; }
+  .sidebar-foot { margin-top: auto; }
+
+  .page-head { flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 14px; }
+  .page-head .profile { display: none; }       /* avatar pindah ke topbar */
+  .page-title { font-size: 20px; }
+  .dropdown-menu { max-width: calc(100vw - 32px); }
+  .sub-menu { position: static; box-shadow: none; border: 0; border-left: 2px solid #BFDBFE; border-radius: 0; margin: 4px 0 4px 10px; padding: 2px 0 2px 6px; }
   .toast-wrap { left: 12px; right: 12px; bottom: 12px; }
-  .stepper { padding-bottom: 6px; }
-  /* tabel: scroll horizontal terkontrol */
-  .table, .rtable { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .table th, .table td, .rtable th, .rtable td { white-space: nowrap; }
-  #tbl-ruang { table-layout: auto; }
+  .card-tall { min-height: auto; }
+  .flow { overflow-x: auto; }
 }
-@media (prefers-reduced-motion: reduce) { .app .sidebar, .drawer-overlay { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .sidebar.nav-open, .drawer-overlay { transition: none; }
+}
 
-/* ---- HP besar / tablet kecil (<= 768px) ---- */
+/* ---------- Modal (HP & tablet kecil) <=768 ---------- */
 @media (max-width: 768px) {
-  .page-head { flex-wrap: wrap; gap: 10px; }
-  .page-title { font-size: 19px; }
-  .stat .value { font-size: 28px; }
-  input, select, textarea, .input { font-size: 16px; }
-  .btn, .btn-sm, .text-link, .dropdown-btn { min-height: 40px; }
-  .toolbar, .filters { gap: 10px; }
-  .toolbar .dropdown, .filters .dropdown { flex: 1 1 100%; }
-  .toolbar .dropdown-btn, .filters .dropdown-btn { width: 100%; }
-  .dropdown-menu { max-width: calc(100vw - 24px); }
-  .sub-menu { position: static !important; box-shadow: none; margin-left: 12px; }
-  .grid.rekap { gap: 14px; } .rekap .stat { padding: 18px 20px; }
-  .flow { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .profile-card.profile-settings-dashboard { width: calc(100% - 24px) !important; min-width: 0 !important; max-height: 90dvh; overflow-y: auto; resize: none !important; }
-  .profile-card .pf-header { cursor: default; touch-action: auto; }
+  .overlay, .profile-overlay, .forgot-overlay { padding: 12px; }
+  .modal, .confirm-modal, .pdf-modal, .catatan-modal, .forgot-modal { width: calc(100% - 24px) !important; max-width: 100%; max-height: 90vh; max-height: 90dvh; padding: 20px; overflow-y: auto; }
+  .modal .actions, .confirm-modal .actions, .catatan-modal .actions { flex-wrap: wrap; }
+  .confirm-modal .btn { min-width: 0; }
+  .modal .preview { min-height: 220px; }
+  .profile-card.profile-settings-dashboard { width: calc(100% - 24px); min-width: 0; resize: none; padding: 22px 18px; max-height: 92vh; max-height: 92dvh; }
+  .profile-card .pf-header { cursor: default; }
+  dl.kv, .confirm-box dl { grid-template-columns: 110px minmax(0, 1fr); gap: 6px 12px; }
+  .qr-box img, .qr-box .qr-empty { width: min(200px, 60vw); height: min(200px, 60vw); }
 }
 
-/* ---- HP (<= 600px): 1 kolom ---- */
+/* ---------- HP <=600 ---------- */
 @media (max-width: 600px) {
-  .grid.cols-2, .grid.cols-3, .grid.cols-4, .grid.cols-5, .stat-row { grid-template-columns: minmax(0, 1fr); }
-  .profile-name { display: none; }
+  .app { padding: 10px; }
+  .grid.cols-5, .grid.cols-4, .grid.cols-3, .grid.cols-2, .stat-row { grid-template-columns: minmax(0, 1fr); }
+  .stat .value { font-size: 28px; }
+  .card { padding: 14px; }
+  .toolbar, .filters { flex-direction: column; align-items: stretch; }
+  .toolbar > *, .filters > *, .toolbar .dropdown, .filters .dropdown, .dropdown-btn { width: 100%; max-width: 100%; }
+  .toolbar .spacer { display: none; }
   .req h3 { padding-right: 0; }
-  .req .badge { position: static; display: inline-block; margin: 4px 0 6px; }
-  .card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-  .card-actions .btn { flex: 1 1 130px; }
-  dl.kv, .confirm-box dl { grid-template-columns: 110px minmax(0, 1fr); }
-  .qr-box img, .qr-box .qr-empty { width: min(200px, 60vw); height: min(200px, 60vw); }
-  .modal, .modal.narrow, .confirm-modal, .pdf-modal, .catatan-modal, .forgot-modal { width: calc(100% - 24px) !important; max-height: 90dvh; padding: 18px !important; }
-  .confirm-modal .btn { min-width: 0 !important; }
-  .template-box { flex-direction: column; align-items: stretch; } .template-box .btn { width: 100%; }
-  .dropzone { padding: 18px 12px; }
-  .step-actions { gap: 10px; } .step-actions .btn { flex: 1; }
-  /* wizard: lingkaran kecil, hanya label langkah aktif */
-  .stepper { overflow-x: hidden; }
-  .step { width: auto !important; flex: 0 0 auto; font-size: 11px; }
-  .step .circle { width: 34px; height: 34px; font-size: 13px; }
-  .step-line { margin-top: 16px; }
-  .step:not(.active) > span { display: none; }
-  /* kalender 7 kolom tetap muat */
-  .cal { gap: 4px; }
-  .cal .dow { font-size: 10px; padding: 4px 0; overflow: hidden; }
-  .cal .cell { min-height: 56px; padding: 4px 2px; overflow: hidden; }
-  .cal .cell .badge, .cal .cell .tag, .cal .cell .pill { font-size: 0; width: 8px; height: 8px; min-width: 0; padding: 0; border-radius: 50%; display: inline-block; margin: 1px; }
+  .req .badge { position: static; display: inline-block; margin-bottom: 8px; }
+  .req .meta { gap: 4px 16px; }
+  .modal .actions, .confirm-modal .actions, .catatan-modal .actions, .forgot-actions, .step-actions { flex-direction: column-reverse; align-items: stretch; }
+  .modal .actions .btn, .confirm-modal .actions .btn, .catatan-modal .actions .btn, .step-actions .btn { width: 100%; justify-content: center; }
+  .flow-step { min-width: 150px; }
+  .alert-warn .alert-head { flex-wrap: wrap; }
+  .bantuan-hero, .bantuan-contact-box { padding: 16px; }
+  .bantuan-contact-actions, .bantuan-contact-actions .btn { width: 100%; }
+  .bantuan-kendala { max-width: none; }
+  /* tabel utama -> kartu (diberi kelas .rcards oleh responsive.js) */
+  .table.rcards, .table.rcards tbody, .table.rcards tr, .table.rcards td { display: block; width: 100%; }
+  .table.rcards thead { display: none; }
+  .table.rcards tr { border: 1px solid var(--line); border-radius: 12px; padding: 6px 12px; margin-bottom: 10px; background: #fff; }
+  .table.rcards td { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; border: 0; padding: 7px 0; text-align: right; white-space: normal; word-break: break-word; }
+  .table.rcards td[data-label]::before { content: attr(data-label); flex: none; max-width: 42%; font-weight: 600; font-size: 12px; color: var(--muted); text-align: left; }
+  .table.rcards td[colspan] { display: block; text-align: center; }
+  .table.rcards tbody tr:hover { background: #fff; }
+  .table.rcards td .btn + .btn { margin-left: 0; }
 }
+
+/* ---------- HP kecil <=480: target sentuh & font input ---------- */
 @media (max-width: 480px) {
-  .modal .actions, .confirm-modal .actions, .forgot-actions { flex-direction: column-reverse; }
-  .modal .actions .btn, .confirm-modal .actions .btn { width: 100%; }
+  .btn, .btn-sm, .menu-item, .dropdown-btn, .text-link, .table td .btn, .help, .logout { min-height: 44px; }
+  .text-link { display: inline-flex; align-items: center; }
+  input, select, textarea, .input, .textarea, .select { font-size: 16px; }
   .page-title { font-size: 18px; }
+  .modal h2, .confirm-modal h2 { font-size: 20px; }
+}
+
+@media (max-width: 600px) {
+  /* alur persetujuan: susun vertikal dengan panah ke bawah */
+  .flow { flex-direction: column; align-items: stretch; overflow: visible; }
+  .flow-step { min-width: 0; width: 100%; }
+  .flow-arrow { align-self: center; transform: rotate(90deg); }
+}
+
+@media (max-width: 600px) {
+  /* kolom pertama kartu tabel = judul kartu (tanpa label, rata kiri) */
+  .table.rcards td:first-child { display: block; text-align: left; font-weight: 700; padding: 8px 0 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  .table.rcards td:first-child::before { content: none; }
 }
