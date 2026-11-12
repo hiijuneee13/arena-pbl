@@ -100,3 +100,12 @@
 .arsip-card .table th:nth-child(3), .arsip-card .table th:nth-child(5) { white-space: nowrap; }
 .arsip-card .table td:last-child { min-width: 180px; }
 .sidebar-foot .help { text-align: left; }
+
+
+/* ===== RESPONSIVE APPROVER ===== */
+@media (max-width: 600px) {
+  .confirm-modal h2 { font-size: 21px; }
+  .confirm-modal .actions { flex-direction: column-reverse; width: 100%; } .confirm-modal .actions .btn { width: 100%; }
+  .confirm-modal .cf-note { max-width: none; }
+  .arsip-card .table td:last-child { min-width: 0; }
+}

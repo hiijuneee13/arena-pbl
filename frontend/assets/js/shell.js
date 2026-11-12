@@ -607,7 +607,14 @@
     const content = shell.innerHTML;
     shell.className = 'app';
     shell.innerHTML = `
-      <aside class="sidebar">
+      <header class="mobile-bar">
+        <button type="button" class="menu-toggle" id="menu-toggle" aria-label="Buka menu" aria-expanded="false" aria-controls="sidebar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="brand"><div class="brand-logo">A</div>ARENA</div>
+      </header>
+      <div class="drawer-overlay" id="drawer-overlay"></div>
+      <aside class="sidebar" id="sidebar">
         <div class="brand"><div class="brand-logo">A</div>ARENA</div>
         ${menu}
         <div class="sidebar-foot">${help}<button class="logout" id="btn-logout"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/><path d="M14 21V3L4 5.5v13L14 21z"/><circle cx="11" cy="12" r=".8" fill="currentColor"/></svg>Keluar</button></div>
@@ -661,6 +668,20 @@
 
     shell.querySelectorAll('.menu-item').forEach((b) => { b.onclick = () => show(b.dataset.menu); });
     if (btnBantuan) btnBantuan.onclick = () => show('bantuan');
+
+    // Drawer sidebar (mobile/tablet <= 900px): tutup via overlay, Esc, pilih menu, atau resize ke desktop
+    const tg = document.getElementById('menu-toggle'), ov = document.getElementById('drawer-overlay'), sb = document.getElementById('sidebar');
+    const setDrawer = (open) => {
+      document.body.classList.toggle('drawer-open', open);
+      tg.setAttribute('aria-expanded', String(open));
+      tg.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
+      if (open) { const f = sb.querySelector('.menu-item'); if (f) f.focus(); } else if (document.activeElement && sb.contains(document.activeElement)) tg.focus();
+    };
+    tg.onclick = () => setDrawer(!document.body.classList.contains('drawer-open'));
+    ov.onclick = () => setDrawer(false);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('drawer-open')) setDrawer(false); });
+    sb.addEventListener('click', (e) => { if (e.target.closest('.menu-item, .help')) setDrawer(false); });
+    window.matchMedia('(min-width: 901px)').addEventListener('change', (m) => { if (m.matches) setDrawer(false); });
     if (btnBackBantuan) btnBackBantuan.onclick = () => show(meta.menu[0].key);
 
     // Tombol kontak Bantuan (Gmail / WhatsApp)

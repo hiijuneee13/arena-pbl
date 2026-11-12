@@ -1199,69 +1199,90 @@ a.btn { text-decoration: none; }
   .profile-card .pf-header { cursor: default; }
 }
 
+
 /* =====================================================================
-   RESPONSIVE (tablet & HP) — laptop tidak berubah
-   Breakpoint: <=1024 tablet, <=900 sidebar jadi menu hamburger, <=600 HP
+   RESPONSIVE (tablet & HP) - desktop >= 1025px tidak berubah
    ===================================================================== */
-.nav-toggle { display: none; margin-left: auto; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: #F8FAFC; color: #1E293B; align-items: center; justify-content: center; }
-img, svg, video, canvas { max-width: 100%; }
+img, video { max-width: 100%; }
+.mobile-bar, .drawer-overlay { display: none; }
 
+/* ---- Tablet (<= 1024px): grid 2 kolom ---- */
 @media (max-width: 1024px) {
-  .app { grid-template-columns: 220px minmax(0, 1fr); gap: 16px; }
+  .grid.cols-3, .grid.cols-4, .grid.cols-5, .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid > *, .split > * { min-width: 0; }
 }
 
+/* ---- Drawer + topbar (<= 900px) ---- */
 @media (max-width: 900px) {
-  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; align-content: start; padding: 10px; gap: 12px; }
-  .main, .view, .card, .card-head, .main > * { min-width: 0; max-width: 100%; }
-  .main { padding: 0 0 32px; }
-  /* sidebar -> bilah atas dengan tombol hamburger */
-  .sidebar { position: sticky; top: 8px; z-index: 50; height: auto; padding: 10px 12px; gap: 8px; max-height: calc(100vh - 16px); overflow-y: auto; }
-  .sidebar .brand { margin: 0; }
-  .nav-toggle { display: inline-flex; }
-  .sidebar:not(.nav-open) > :not(.brand) { display: none !important; }
-  .menu-item:hover { transform: none; }
-  .sidebar-foot { margin-top: 4px; }
-  .page-head { gap: 12px; }
-  .page-title { font-size: 20px; }
-  /* tabel: geser ke samping, tidak terpotong */
-  .table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .table th, .table td { white-space: nowrap; }
-  .table td:first-child { white-space: normal; min-width: 160px; }
-  .split, .grid.cols-2 { grid-template-columns: minmax(0, 1fr); }
-  .toolbar > * { max-width: 100%; }
+  body.drawer-open { overflow: hidden; }
+  .app { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 12px 12px; align-content: start; }
+  .mobile-bar { display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 60; margin: 0 -12px 12px; padding: 10px 12px; background: #fff; border-bottom: 1px solid var(--line); }
+  .mobile-bar .brand { margin: 0; font-size: 20px; }
+  .menu-toggle { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--text-pure); cursor: pointer; }
+  .menu-toggle:focus-visible, .sidebar :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .app .sidebar { position: fixed; top: 0; left: 0; bottom: 0; height: 100dvh; width: min(290px, 86vw); z-index: 80; border-radius: 0 18px 18px 0; overflow-y: auto; transform: translateX(-105%); visibility: hidden; transition: transform .25s var(--ease), visibility .25s; }
+  .drawer-open .app .sidebar { transform: none; visibility: visible; }
+  .drawer-overlay { display: block; position: fixed; inset: 0; z-index: 70; background: rgba(15,23,42,.5); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .drawer-open .drawer-overlay { opacity: 1; pointer-events: auto; }
+  .main { padding: 0 0 32px; overflow-x: hidden; }
+  .menu-item, .sidebar-foot .help, .sidebar-foot .logout { min-height: 44px; }
+  .card-tall { min-height: auto; }
+  .toast-wrap { left: 12px; right: 12px; bottom: 12px; }
+  .stepper { padding-bottom: 6px; }
+  /* tabel: scroll horizontal terkontrol */
+  .table, .rtable { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table th, .table td, .rtable th, .rtable td { white-space: nowrap; }
+  #tbl-ruang { table-layout: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .app .sidebar, .drawer-overlay { transition: none; } }
+
+/* ---- HP besar / tablet kecil (<= 768px) ---- */
+@media (max-width: 768px) {
+  .page-head { flex-wrap: wrap; gap: 10px; }
+  .page-title { font-size: 19px; }
+  .stat .value { font-size: 28px; }
+  input, select, textarea, .input { font-size: 16px; }
+  .btn, .btn-sm, .text-link, .dropdown-btn { min-height: 40px; }
+  .toolbar, .filters { gap: 10px; }
+  .toolbar .dropdown, .filters .dropdown { flex: 1 1 100%; }
+  .toolbar .dropdown-btn, .filters .dropdown-btn { width: 100%; }
+  .dropdown-menu { max-width: calc(100vw - 24px); }
+  .sub-menu { position: static !important; box-shadow: none; margin-left: 12px; }
+  .grid.rekap { gap: 14px; } .rekap .stat { padding: 18px 20px; }
+  .flow { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .profile-card.profile-settings-dashboard { width: calc(100% - 24px) !important; min-width: 0 !important; max-height: 90dvh; overflow-y: auto; resize: none !important; }
+  .profile-card .pf-header { cursor: default; touch-action: auto; }
 }
 
+/* ---- HP (<= 600px): 1 kolom ---- */
 @media (max-width: 600px) {
-  .app { padding: 8px; }
-  .page-head { flex-wrap: wrap; }
-  .page-head-text { flex: 1 1 100%; order: 2; }
-  .page-head .profile { order: 1; margin-left: auto; }
-  .profile-name { font-size: 14px; max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .card { padding: 14px 14px; }
-  .grid.cols-5, .grid.cols-4, .grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .stat .value { font-size: 28px; }
-  .stat .label { font-size: 13px; }
+  .grid.cols-2, .grid.cols-3, .grid.cols-4, .grid.cols-5, .stat-row { grid-template-columns: minmax(0, 1fr); }
+  .profile-name { display: none; }
   .req h3 { padding-right: 0; }
-  .req .badge { position: static; display: inline-block; margin-bottom: 8px; }
-  .req .meta { gap: 4px 16px; }
-  /* kalender: lebih rapat */
+  .req .badge { position: static; display: inline-block; margin: 4px 0 6px; }
+  .card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .card-actions .btn { flex: 1 1 130px; }
+  dl.kv, .confirm-box dl { grid-template-columns: 110px minmax(0, 1fr); }
+  .qr-box img, .qr-box .qr-empty { width: min(200px, 60vw); height: min(200px, 60vw); }
+  .modal, .modal.narrow, .confirm-modal, .pdf-modal, .catatan-modal, .forgot-modal { width: calc(100% - 24px) !important; max-height: 90dvh; padding: 18px !important; }
+  .confirm-modal .btn { min-width: 0 !important; }
+  .template-box { flex-direction: column; align-items: stretch; } .template-box .btn { width: 100%; }
+  .dropzone { padding: 18px 12px; }
+  .step-actions { gap: 10px; } .step-actions .btn { flex: 1; }
+  /* wizard: lingkaran kecil, hanya label langkah aktif */
+  .stepper { overflow-x: hidden; }
+  .step { width: auto !important; flex: 0 0 auto; font-size: 11px; }
+  .step .circle { width: 34px; height: 34px; font-size: 13px; }
+  .step-line { margin-top: 16px; }
+  .step:not(.active) > span { display: none; }
+  /* kalender 7 kolom tetap muat */
   .cal { gap: 4px; }
   .cal .dow { font-size: 10px; padding: 4px 0; overflow: hidden; }
-  .cal .cell { min-height: 56px; padding: 4px 2px; font-size: 11px; }
-  .stepper { gap: 2px; }
-  .btn { white-space: normal; }
-  .flow-step { min-width: 150px; }
-  .bantuan-hero { padding: 18px; }
-  .bantuan-contact-box { padding: 16px; }
-  .bantuan-contact-actions, .bantuan-contact-actions .btn { width: 100%; }
-  .bantuan-kendala { max-width: none; }
-  .profile-overlay { padding: 8px; }
+  .cal .cell { min-height: 56px; padding: 4px 2px; overflow: hidden; }
+  .cal .cell .badge, .cal .cell .tag, .cal .cell .pill { font-size: 0; width: 8px; height: 8px; min-width: 0; padding: 0; border-radius: 50%; display: inline-block; margin: 1px; }
 }
-
-@media (min-width: 601px) and (max-width: 900px) {
-  .grid.cols-5, .grid.cols-4, .grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 600px) {
-  .catatan-modal, .pdf-modal, .confirm-modal { width: 96vw; padding: 18px 16px; max-height: 92vh; }
-  .cat-heading { font-size: 18px; }
+@media (max-width: 480px) {
+  .modal .actions, .confirm-modal .actions, .forgot-actions { flex-direction: column-reverse; }
+  .modal .actions .btn, .confirm-modal .actions .btn { width: 100%; }
+  .page-title { font-size: 18px; }
 }
