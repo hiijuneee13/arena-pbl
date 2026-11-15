@@ -16,6 +16,7 @@ CREATE TABLE jabatan (
 CREATE TABLE users (
   id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   username    VARCHAR(50)  NOT NULL,
+  email       VARCHAR(254) NOT NULL,
   password_hash TEXT         NOT NULL,
   nama        VARCHAR(100) NOT NULL,
   role        VARCHAR(10)  NOT NULL
@@ -25,6 +26,7 @@ CREATE TABLE users (
   CONSTRAINT users_id_role_uq UNIQUE (id, role)
 );
 CREATE UNIQUE INDEX users_username_uq ON users (lower(username));
+CREATE UNIQUE INDEX users_email_uq ON users (lower(email));
 
 
 -- Roles

@@ -12,19 +12,19 @@ INSERT INTO jabatan (nama, cakupan) VALUES
   ('Ketua Jurusan',    'jurusan'),
   ('Wakil Direktur',   'global');
 
-INSERT INTO users (username, password_hash, nama, role) VALUES
-  ('admin',       'x', 'Admin Kampus',            'admin'),
-  ('hima_sipil',  'x', 'HIMA Teknik Sipil',       'pengaju'),
-  ('ukm_musik',   'x', 'UKM Musik',               'pengaju'),
-  ('dospem_budi', 'x', 'Dr. Budi Santoso',        'approver'),
-  ('dospem_sari', 'x', 'Sari Wulandari, M.T.',    'approver'),
-  ('ketua_bem',   'x', 'Rizky Pratama',           'approver'),
-  ('kajur_sipil', 'x', 'Prof. Hendra Gunawan',    'approver'),
-  ('kajur_mesin', 'x', 'Dr. Ahmad Fauzi',         'approver'),
-  ('wadir',       'x', 'Dr. Lestari Wijaya',      'approver'),
-  ('satpam_andi', 'x', 'Andi (Satpam)',           'satpam'),
-  ('satpam_joko', 'x', 'Joko (Satpam)',           'satpam'),
-  ('satpam_rina', 'x', 'Rina (Satpam)',           'satpam');
+INSERT INTO users (username, email, password_hash, nama, role) VALUES
+  ('admin',       'admin@arena.ac.id',       'x', 'Admin Kampus',            'admin'),
+  ('hima_sipil',  'hima_sipil@arena.ac.id',  'x', 'HIMA Teknik Sipil',       'pengaju'),
+  ('ukm_musik',   'ukm_musik@arena.ac.id',   'x', 'UKM Musik',               'pengaju'),
+  ('dospem_budi', 'dospem_budi@arena.ac.id', 'x', 'Dr. Budi Santoso',        'approver'),
+  ('dospem_sari', 'dospem_sari@arena.ac.id', 'x', 'Sari Wulandari, M.T.',    'approver'),
+  ('ketua_bem',   'ketua_bem@arena.ac.id',   'x', 'Rizky Pratama',           'approver'),
+  ('kajur_sipil', 'kajur_sipil@arena.ac.id', 'x', 'Prof. Hendra Gunawan',    'approver'),
+  ('kajur_mesin', 'kajur_mesin@arena.ac.id', 'x', 'Dr. Ahmad Fauzi',         'approver'),
+  ('wadir',       'wadir@arena.ac.id',       'x', 'Dr. Lestari Wijaya',      'approver'),
+  ('satpam_andi', 'satpam_andi@arena.ac.id', 'x', 'Andi (Satpam)',           'satpam'),
+  ('satpam_joko', 'satpam_joko@arena.ac.id', 'x', 'Joko (Satpam)',           'satpam'),
+  ('satpam_rina', 'satpam_rina@arena.ac.id', 'x', 'Rina (Satpam)',           'satpam');
 
 UPDATE users SET password_hash = '$2y$10$01bSKD0QhyRIA6gj1d7v1ePaohxEAPQQjfN1bZjNQHHtrmGggpQIO';
 

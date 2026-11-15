@@ -16,25 +16,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $inputJSON = file_get_contents('php://input');
     $input = json_decode($inputJSON, TRUE); 
 
-    // SCHEMA BARU: login memakai username (kunci "email" dari frontend lama tetap diterima)
-    $username = trim($input['username'] ?? ($input['email'] ?? ''));
+    // Login memakai email; username tetap merupakan identitas/nama pengguna.
+    $email = trim($input['email'] ?? '');
     $password = $input['password'] ?? '';
 
     // Validasi kosong
-    if (empty($username) || empty($password)) {
-        echo json_encode(["status" => "error", "message" => "Username dan password wajib diisi!"]);
+    if (empty($email) || empty($password)) {
+        echo json_encode(["status" => "error", "message" => "Email dan password wajib diisi!"]);
         exit;
     }
 
     try {
         // Cari user (parameterised query untuk cegah SQL Injection)
         // SCHEMA BARU: jabatan approver diambil dari tabel approver dan jabatan
-        $stmt = $pdo->prepare("SELECT u.id, u.username, u.password_hash, u.nama, u.role, u.is_active, j.nama AS jabatan
+        $stmt = $pdo->prepare("SELECT u.id, u.username, u.email, u.password_hash, u.nama, u.role, u.is_active, j.nama AS jabatan
                                FROM users u
                                LEFT JOIN approver a ON a.user_id = u.id
                                LEFT JOIN jabatan j ON j.id = a.jabatan_id
-                               WHERE lower(u.username) = lower(:username)");
-        $stmt->bindParam(':username', $username);
+                               WHERE lower(u.email) = lower(:email)");
+        $stmt->bindParam(':email', $email);
         $stmt->execute();
 
         $user = $stmt->fetch();
@@ -60,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['role']     = label_peran($user['role'], $user['jabatan']); // label untuk frontend
                 $_SESSION['nama']     = $user['nama'];
                 $_SESSION['username'] = $user['username'];
+                $_SESSION['email']    = $user['email'];
 
                 echo json_encode([
                     "status"  => "success",
@@ -67,14 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "user"    => [
                         "nama" => $user['nama'],
                         "role" => $_SESSION['role'],
-                        "username" => $user['username']
+                        "username" => $user['username'],
+                        "email" => $user['email']
                     ]
                 ]);
             } else {
                 echo json_encode(["status" => "error", "message" => "Password salah!"]);
             }
         } else {
-            echo json_encode(["status" => "error", "message" => "Username tidak terdaftar!"]);
+            echo json_encode(["status" => "error", "message" => "Email tidak terdaftar!"]);
         }
 
     } catch (PDOException $e) {
