@@ -10,12 +10,12 @@ SELECT i.reservasi_id,
 CREATE OR REPLACE VIEW v_tahap_aktif AS
 SELECT DISTINCT ON (a.reservasi_id)
        a.reservasi_id,
-       a.id          AS approval_id,
+       a.id AS approval_id,
        a.approver_id,
        a.urutan,
-       a.status      AS status_tahap,
-       j.nama        AS jabatan,
-       u.nama        AS approver,
+       a.status AS status_tahap,
+       j.nama AS jabatan,
+       u.nama AS approver,
        a.catatan
   FROM reservasi_approval a
   JOIN reservasi r ON r.id = a.reservasi_id AND r.status IN ('diproses', 'revisi')
@@ -25,11 +25,11 @@ SELECT DISTINCT ON (a.reservasi_id)
  ORDER BY a.reservasi_id, a.urutan;
 
 CREATE OR REPLACE VIEW v_inbox_approver AS
-SELECT a.id          AS approval_id,
+SELECT a.id AS approval_id,
        a.approver_id,
-       r.id          AS reservasi_id,
+       r.id AS reservasi_id,
        r.nama_kegiatan,
-       o.nama        AS organisasi,
+       o.nama AS organisasi,
        r.pj_nama,
        r.pj_kontak,
        r.waktu_mulai,

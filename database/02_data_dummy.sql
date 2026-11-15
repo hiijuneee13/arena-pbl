@@ -3,7 +3,7 @@
 -- Semua akun contoh memakai password: password123
 -- (hash bcrypt; PHP password_verify() bisa langsung memakainya)
 
--- ---------- master ----------
+
 INSERT INTO jurusan (nama) VALUES ('Teknik Sipil'), ('Teknik Mesin');
 
 INSERT INTO jabatan (nama, cakupan) VALUES
@@ -12,7 +12,6 @@ INSERT INTO jabatan (nama, cakupan) VALUES
   ('Ketua Jurusan',    'jurusan'),
   ('Wakil Direktur',   'global');
 
--- ---------- akun ----------
 INSERT INTO users (username, password_hash, nama, role) VALUES
   ('admin',       'x', 'Admin Kampus',            'admin'),
   ('hima_sipil',  'x', 'HIMA Teknik Sipil',       'pengaju'),
@@ -29,7 +28,6 @@ INSERT INTO users (username, password_hash, nama, role) VALUES
 
 UPDATE users SET password_hash = '$2y$10$01bSKD0QhyRIA6gj1d7v1ePaohxEAPQQjfN1bZjNQHHtrmGggpQIO';
 
--- profil approver (jurusan_id hanya diisi untuk Ketua Jurusan)
 INSERT INTO approver (user_id, jabatan_id, jurusan_id)
 SELECT u.id,
        (SELECT id FROM jabatan WHERE nama = v.jabatan),
@@ -55,13 +53,13 @@ SELECT u.id, v.nama, d.id
   JOIN users u ON u.username = v.uname
   JOIN users d ON d.username = v.dospem;
 
--- ---------- tempat ----------
+
 INSERT INTO gedung (nama, jurusan_id, jam_buka, jam_tutup, wajib_proposal) VALUES
   ('Gedung Sipil', (SELECT id FROM jurusan WHERE nama = 'Teknik Sipil'), '07:00', '21:00', TRUE),
   ('Gedung Mesin', (SELECT id FROM jurusan WHERE nama = 'Teknik Mesin'), '07:00', '21:00', TRUE),
   ('Graha',        NULL,                                                  '07:00', '22:00', TRUE);
 
--- Gedung Sipil: 8 lantai x 3 ruangan (R.101 .. R.803)
+
 INSERT INTO lantai (gedung_id, nomor)
 SELECT g.id, n FROM gedung g, generate_series(1, 8) AS n WHERE g.nama = 'Gedung Sipil';
 
@@ -71,7 +69,6 @@ SELECT l.gedung_id, l.id, 'R.' || l.nomor || '0' || r, 40
   JOIN gedung g ON g.id = l.gedung_id AND g.nama = 'Gedung Sipil'
  CROSS JOIN generate_series(1, 3) AS r;
 
--- Gedung Mesin: 2 lantai x 2 ruangan
 INSERT INTO lantai (gedung_id, nomor)
 SELECT g.id, n FROM gedung g, generate_series(1, 2) AS n WHERE g.nama = 'Gedung Mesin';
 
@@ -81,9 +78,7 @@ SELECT l.gedung_id, l.id, 'M.' || l.nomor || '0' || r, 30
   JOIN gedung g ON g.id = l.gedung_id AND g.nama = 'Gedung Mesin'
  CROSS JOIN generate_series(1, 2) AS r;
 
--- Graha = gedung tunggal: tanpa lantai & ruangan (dipinjam utuh)
 
--- ---------- alur persetujuan per gedung ----------
 INSERT INTO alur_persetujuan (gedung_id, urutan, jabatan_id)
 SELECT g.id, v.urutan, j.id
   FROM (VALUES
@@ -99,7 +94,7 @@ SELECT g.id, v.urutan, j.id
   JOIN gedung  g ON g.nama = v.gedung
   JOIN jabatan j ON j.nama = v.jabatan;
 
--- ---------- satpam jaga gedung ----------
+
 INSERT INTO satpam_gedung (satpam_id, gedung_id)
 SELECT u.id, g.id
   FROM (VALUES
