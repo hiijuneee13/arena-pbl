@@ -123,3 +123,4 @@ INSERT INTO satpam_gedung (satpam_id, gedung_id) VALUES
   (10, 2),
   (11, 3),
   (12, 2);
+  
