@@ -3,46 +3,71 @@ session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
-require_once '../../config/surat.php';
 
-// 1. Gerbang keamanan: hanya admin yang boleh mengakses
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
+if (!isset($_SESSION['id_user']) || !in_array($_SESSION['role_db'] ?? '', ['admin', 'satpam', 'approver'])) {
     http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Khusus Administrator."]);
+    echo json_encode(["status" => "error", "message" => "Akses Ditolak!"]);
     exit;
 }
 
 try {
-    // 2. Ambil semua jadwal yang sudah disetujui penuh.
-    // [Penyesuaian FE] Satu baris per gedung yang dipinjam: frontend mencocokkan nama_gedung dengan daftar gedung untuk kolom "Aktivitas".
-    // qr_code_surat berisi alamat gambar QR (frontend menampilkannya langsung); kosong bila surat belum punya kode verifikasi.
-    $sql = "SELECT r.id AS id_reservasi, g.nama AS nama_gedung, COALESCE(j.nama, 'Umum') AS lokasi,
-                   " . SQL_TGL . " AS tgl_acara, " . SQL_TGL . " AS tgl_mulai,
-                   (r.waktu_selesai AT TIME ZONE 'Asia/Jakarta')::date AS tgl_selesai,
-                   " . SQL_JAM_MULAI . " AS jam_mulai, " . SQL_JAM_SELESAI . " AS jam_selesai,
-                   r.nama_kegiatan AS nama_acara, o.nama AS penyelenggara, o.nama AS nama_organisasi,
-                   r.status AS status_db, r.kode_verifikasi
-            FROM reservasi r
-            JOIN organisasi o ON o.user_id = r.organisasi_id
-            JOIN (SELECT DISTINCT reservasi_id, gedung_id FROM reservasi_item) it ON it.reservasi_id = r.id
-            JOIN gedung g ON g.id = it.gedung_id
-            LEFT JOIN jurusan j ON j.id = g.jurusan_id
-            WHERE r.status = 'disetujui'
-            ORDER BY r.waktu_mulai ASC, r.id ASC, g.id ASC";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
-    $data_jadwal = petakan_reservasi($stmt->fetchAll(PDO::FETCH_ASSOC));
+    $mode = $_GET['mode'] ?? 'admin';
 
-    foreach ($data_jadwal as $i => $j) {
-        $data_jadwal[$i]['id_reservasi']   = (string)$j['id_reservasi']; // frontend membandingkan ID sebagai string
-        $data_jadwal[$i]['qr_code_surat']  = $j['kode_verifikasi'] ? url_qr_verifikasi($j['kode_verifikasi']) : null;
+    if ($mode === 'kalender') {
+        $sql = "SELECT DISTINCT
+                       j.id_reservasi,
+                       j.nama_acara,
+                       j.penyelenggara,
+                       j.status_db,
+                       j.tgl_mulai,
+                       j.tgl_selesai,
+                       j.tgl_mulai AS tgl_acara,
+                       j.jam_mulai,
+                       j.jam_selesai,
+                       j.id_gedung,
+                       j.nama_gedung,
+                       j.id_ruangan,
+                       j.nama_ruangan,
+                       j.waktu_mulai,
+                       COALESCE(jr.nama, 'Umum') AS lokasi
+                FROM v_jadwal_global j
+                LEFT JOIN gedung gd ON gd.id = j.id_gedung
+                LEFT JOIN jurusan jr ON jr.id = gd.jurusan_id
+                WHERE j.status_db IN ('diproses', 'revisi', 'disetujui')
+                ORDER BY j.waktu_mulai ASC, j.id_reservasi ASC";
+        $stmt = $pdo->query($sql);
+        $data_jadwal = petakan_reservasi($stmt->fetchAll(PDO::FETCH_ASSOC));
+    } else {
+        $sql = "SELECT r.*,
+                       COALESCE((SELECT jr.nama FROM reservasi_item it 
+                                 JOIN gedung gd ON gd.id = it.gedung_id 
+                                 LEFT JOIN jurusan jr ON jr.id = gd.jurusan_id 
+                                 WHERE it.reservasi_id = r.id_reservasi LIMIT 1), 'Umum') AS lokasi
+                FROM v_reservasi r
+                WHERE r.status_db = 'disetujui'
+                ORDER BY r.waktu_mulai ASC";
+        $stmt = $pdo->query($sql);
+        $data_jadwal = petakan_reservasi($stmt->fetchAll(PDO::FETCH_ASSOC));
+
+        foreach ($data_jadwal as $i => $item) {
+            $data_jadwal[$i]['nama_instansi']   = $item['nama_organisasi'];
+            $data_jadwal[$i]['nama_organisasi'] = $item['nama_organisasi'];
+            $data_jadwal[$i]['penyelenggara']    = $item['nama_organisasi'];
+            $data_jadwal[$i]['tgl_acara']        = $item['tgl_mulai'];
+            $data_jadwal[$i]['lokasi']           = $item['lokasi'] ?? 'Umum';
+        }
+    }
+
+    foreach ($data_jadwal as $i => $item) {
+        $data_jadwal[$i]['id_reservasi'] = (string)$item['id_reservasi'];
     }
 
     echo json_encode([
         "status" => "success",
-        "data" => $data_jadwal
+        "data"   => $data_jadwal
     ]);
 } catch (PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Gagal mengambil jadwal global. Detail: " . $e->getMessage()]);
+    error_log("get_jadwal_global.php: " . $e->getMessage());
+    echo json_encode(["status" => "error", "message" => "Gagal mengambil jadwal global."]);
 }
 ?>

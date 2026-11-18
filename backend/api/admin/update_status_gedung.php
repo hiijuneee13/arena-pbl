@@ -1,46 +1,41 @@
 <?php
 session_start();
 header('Content-Type: application/json');
+
 require_once '../../config/koneksi.php';
-// [Penyesuaian FE] pencatatan aktivitas admin ke log_aktivitas
 require_once '../../config/surat.php';
 
-// 1. Gerbang keamanan: hanya admin tu yg boleh mengakses halaman ini
 if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
     http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak!"]);
+    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Khusus Administrator."]);
     exit;
 }
 
-// 2. Hanya menerima POST untuk update status gedung
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($input)) {
+        $input = $_POST;
+    }
     
-    // 3. Validasi input
-    $id_gedung = trim((string)($input['id_gedung'] ?? '')); // [Penyesuaian FE] dipaksa string agar bisa dicek angka
-    $status_baru = $input['status_operasional'] ?? ''; // 'Aktif' atau 'Nonaktif'
+    $id_gedung   = trim((string)($input['id_gedung'] ?? ''));
+    $status_baru = $input['status_operasional'] ?? '';
 
-    // 4. Validasi input: pastikan id_gedung dan status_operasional tidak kosong
     if (empty($id_gedung) || empty($status_baru)) {
         echo json_encode(["status" => "error", "message" => "ID Gedung dan Status Baru wajib diisi!"]);
         exit;
     }
 
-    // [Penyesuaian FE] SCHEMA BARU: id gedung berupa angka (SERIAL), bukan UUID
     if (!ctype_digit($id_gedung)) {
         echo json_encode(["status" => "error", "message" => "ID Gedung tidak valid!"]);
         exit;
     }
 
-    // 5. Validasi input: status_operasional hanya boleh 'Aktif' atau 'Nonaktif'
-    if (!in_array($status_baru, ['Aktif', 'Nonaktif'])) {
+    if (!in_array($status_baru, ['Aktif', 'Nonaktif'], true)) {
         echo json_encode(["status" => "error", "message" => "Format salah! Gunakan 'Aktif' atau 'Nonaktif'."]);
         exit;
     }
 
-    // 6. Update status gedung di database
     try {
-        // [Penyesuaian FE] ambil nama gedung (untuk pesan dan log); sekaligus memastikan ID-nya ada
         $stmt_nama = $pdo->prepare("SELECT nama FROM gedung WHERE id = :id_gedung");
         $stmt_nama->execute([':id_gedung' => $id_gedung]);
         $nama_gedung = $stmt_nama->fetchColumn();
@@ -49,42 +44,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // [Penyesuaian FE] Aturan frontend: gedung tidak boleh dinonaktifkan bila masih ada kegiatan
-        // yang sudah disetujui dan belum lewat (tanggal selesai hari ini atau sesudahnya, WIB).
-        if ($status_baru === 'Nonaktif') {
-            $stmt_cek = $pdo->prepare("SELECT 1 FROM reservasi r
-                                       JOIN reservasi_item i ON i.reservasi_id = r.id
-                                       WHERE i.gedung_id = :id_gedung AND r.status = 'disetujui'
-                                         AND (r.waktu_selesai AT TIME ZONE 'Asia/Jakarta')::date >= (now() AT TIME ZONE 'Asia/Jakarta')::date
-                                       LIMIT 1");
-            $stmt_cek->execute([':id_gedung' => $id_gedung]);
-            if ($stmt_cek->fetchColumn()) {
-                echo json_encode(["status" => "error", "message" => "Gedung \"" . $nama_gedung . "\" tidak dapat dinonaktifkan karena terdapat kegiatan yang sudah disetujui di masa depan!"]);
-                exit;
-            }
-        }
+        $pdo->beginTransaction();
 
-        // [Penyesuaian FE] SCHEMA BARU: tabel gedung_fasilitas diganti gedung; kolom status_aktif -> is_active, id_gedung -> id
+        // 1. Set app.user_id agar trigger log_aktivitas mengenali admin yang bertransaksi
+        $stmt_cfg = $pdo->prepare("SELECT set_config('app.user_id', :u, true)");
+        $stmt_cfg->execute([':u' => (string)$_SESSION['id_user']]);
+
+        // 2. Update status gedung (Trigger gedung_cegah_nonaktif otomatis memvalidasi)
         $sql = "UPDATE gedung SET is_active = :status_baru WHERE id = :id_gedung";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            ':status_baru' => ($status_baru === 'Aktif') ? 'true' : 'false', // is_active bertipe boolean
-            ':id_gedung' => $id_gedung
+            ':status_baru' => ($status_baru === 'Aktif') ? 'true' : 'false',
+            ':id_gedung'   => (int)$id_gedung
         ]);
 
-        // 7. Cek apakah ada baris yg diubah
-        if ($stmt->rowCount() > 0) {
-            catat_aktivitas($pdo, $_SESSION['id_user'], 'Ubah Status Gedung', $nama_gedung . ': Mengubah status menjadi ' . $status_baru);
-            echo json_encode(["status" => "success", "message" => "Status gedung \"" . $nama_gedung . "\" berhasil diubah menjadi $status_baru!"]);
-        } else {
-            // [Penyesuaian FE] rowCount() PostgreSQL menghitung baris yang cocok (walau nilainya sama), jadi hanya berarti ID tidak ada
-            echo json_encode(["status" => "error", "message" => "Gagal diubah. ID gedung tidak ditemukan."]);
-        }
+        $pdo->commit();
+
+        echo json_encode([
+            "status"  => "success",
+            "message" => "Status gedung \"" . $nama_gedung . "\" berhasil diubah menjadi $status_baru!"
+        ]);
+
     } catch (PDOException $e) {
-        echo json_encode(["status" => "error", "message" => "Kesalahan database: " . $e->getMessage()]);
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        // Menangkap exception P0001 dari trigger gedung_cegah_nonaktif
+        if ($e->getCode() === 'P0001') {
+            $pesan = preg_replace('/^ERROR:\s+/', '', strtok($e->errorInfo[2] ?? $e->getMessage(), "\n"));
+            echo json_encode(["status" => "error", "message" => $pesan]);
+        } else {
+            error_log("update_status_gedung.php: " . $e->getMessage());
+            echo json_encode(["status" => "error", "message" => "Kesalahan database: " . $e->getMessage()]);
+        }
     }
 } else {
-    // [Penyesuaian FE] sebelumnya non-POST menghasilkan response kosong (frontend gagal parse JSON)
     echo json_encode(["status" => "error", "message" => "Method tidak diizinkan. Gunakan POST."]);
 }
 ?>

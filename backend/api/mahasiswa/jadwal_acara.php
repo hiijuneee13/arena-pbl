@@ -4,10 +4,6 @@ header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 
-// [Penyesuaian FE] Endpoint BARU untuk API.jadwalAcara(): kalender "Jadwal Gedung" di dashboard mahasiswa.
-// Menampilkan kegiatan yang memakai gedung (diproses, perlu revisi, atau disetujui), supaya mahasiswa tahu slot yang sudah terpakai.
-// Satu baris per gedung yang dipinjam, karena frontend memfilter berdasarkan nama_gedung.
-
 if (!isset($_SESSION['id_user'])) {
     http_response_code(401);
     echo json_encode(["status" => "error", "message" => "Anda belum login!"]);
@@ -15,17 +11,23 @@ if (!isset($_SESSION['id_user'])) {
 }
 
 try {
-    $sql = "SELECT r.id AS id_reservasi, g.nama AS nama_gedung, o.nama AS nama_organisasi, r.nama_kegiatan AS nama_acara,
-                   " . SQL_TGL . " AS tgl_acara, " . SQL_TGL . " AS tgl_mulai,
-                   (r.waktu_selesai AT TIME ZONE 'Asia/Jakarta')::date AS tgl_selesai,
-                   " . SQL_JAM_MULAI . " AS jam_mulai, " . SQL_JAM_SELESAI . " AS jam_selesai,
-                   r.status AS status_db
-            FROM reservasi r
-            JOIN organisasi o ON o.user_id = r.organisasi_id
-            JOIN (SELECT DISTINCT reservasi_id, gedung_id FROM reservasi_item) it ON it.reservasi_id = r.id
-            JOIN gedung g ON g.id = it.gedung_id
-            WHERE r.status IN ('diproses', 'revisi', 'disetujui')
-            ORDER BY r.waktu_mulai ASC, r.id ASC, g.id ASC";
+    // Mengambil slot terpakai dari View v_jadwal_global
+    $sql = "SELECT DISTINCT
+                   j.id_reservasi,
+                   j.nama_gedung,
+                   j.penyelenggara AS nama_organisasi,
+                   j.nama_acara,
+                   j.tgl_mulai AS tgl_acara,
+                   j.tgl_mulai,
+                   j.tgl_selesai,
+                   j.jam_mulai,
+                   j.jam_selesai,
+                   j.status_db,
+                   j.waktu_mulai
+            FROM v_jadwal_global j
+            WHERE j.status_db IN ('diproses', 'revisi', 'disetujui')
+            ORDER BY j.waktu_mulai ASC, j.id_reservasi ASC";
+
     $data = petakan_reservasi($pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC));
     foreach ($data as $i => $d) {
         $data[$i]['id_reservasi'] = (string)$d['id_reservasi'];
