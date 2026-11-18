@@ -145,7 +145,7 @@ try {
         $semua_gedung_utuh = $tempat && count(array_filter($tempat, fn($t) => $t['tipe_sewa'] !== 'Gedung Utuh')) === 0;
 
         $riwayat[$i]['id_reservasi']        = (string)$id;
-        $riwayat[$i]['kategori_peminjaman'] = $semua_gedung_utuh ? 'Gedung Utuh' : 'Ruangan';
+        $riwayat[$i]['kategori_peminjaman'] = count($tempat) > 1 ? 'Multi-Tempat' : ($semua_gedung_utuh ? 'Gedung Utuh' : 'Ruangan');
         $riwayat[$i]['nama_gedung']         = $tempat
             ? implode(', ', array_map(fn($t) => $t['nama_gedung'] . ($t['nama_ruangan'] !== '-' ? " ({$t['nama_ruangan']})" : ''), $tempat))
             : '-';
