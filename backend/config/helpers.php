@@ -25,7 +25,7 @@ function label_peran($role_db, $jabatan = null) {
 function label_status($status) {
     $peta = [
         'diproses'          => 'In-Progress',
-        'revisi'            => 'Revisi',
+        'revisi'            => 'Need-Revision', // [Penyesuaian FE] frontend memakai 'Need-Revision' (badge, tombol Kirim Revisi, statistik)
         'disetujui'         => 'Approved',
         'ditolak'           => 'Rejected',
         'dibatalkan_sistem' => 'Dibatalkan',
