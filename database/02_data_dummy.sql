@@ -108,15 +108,23 @@ INSERT INTO ruangan (id, gedung_id, lantai_id, nama, kapasitas) VALUES
 
 -- 12. Alur persetujuan per gedung
 INSERT INTO alur_persetujuan (gedung_id, urutan, jabatan_id) VALUES
-  (1, 1, 1),
-  (1, 2, 2),
-  (1, 3, 3),
-  (1, 4, 4),
-  (2, 1, 1),
-  (2, 2, 3),
-  (3, 1, 1),
-  (3, 2, 4);
+  -- Gedung Sipil (gedung_id = 1)
+  (1, 1, 2), -- 1. Ketua BEM
+  (1, 2, 1), -- 2. Dosen Pembimbing (DPK)
+  (1, 3, 3), -- 3. Ketua Jurusan
+  (1, 4, 4), -- 4. Wakil Direktur
 
+  -- Gedung Mesin (gedung_id = 2)
+  (2, 1, 2), -- 1. Ketua BEM
+  (2, 2, 1), -- 2. Dosen Pembimbing (DPK)
+  (2, 3, 3), -- 3. Ketua Jurusan
+  (2, 4, 4), -- 4. Wakil Direktur
+
+  -- Graha (gedung_id = 3 - Gedung umum non-jurusan, berhenti di Wadir)
+  (3, 1, 2), -- 1. Ketua BEM
+  (3, 2, 1), -- 2. Dosen Pembimbing (DPK)
+  (3, 3, 4); -- 3. Wakil Direktur
+  
 -- 13. Penugasan satpam ke gedung
 INSERT INTO satpam_gedung (satpam_id, gedung_id) VALUES
   (10, 1),
