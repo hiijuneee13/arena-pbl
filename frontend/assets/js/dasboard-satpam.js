@@ -16,7 +16,7 @@
   const esc = UI.esc;
   const $ = (id) => document.getElementById(id);
   const POLL_MS = 30000;
-  const hariIni = () => DATA.util.ymd(new Date());
+  const hariIni = () => API.ymd(new Date());
   const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
   let jadwalSemua = [];

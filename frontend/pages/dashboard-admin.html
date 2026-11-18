@@ -190,7 +190,6 @@
   </main>
 </div>
 
-<script src="../assets/js/data.js"></script>
 <script src="../assets/js/auth.js"></script>
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/ui.js"></script>
@@ -223,10 +222,18 @@ const esc = UI.esc;
 const TH = '';   // gaya tabel dari .table di main.css
 const TD = '';
 
+const store = { gedung: [], reservasi: [], users: [], logs: [], satpam: [] };
+async function loadStore() {
+  const [g, d] = await Promise.all([API.getGedung(), API.dashboardAdmin()]);
+  if (g.status === 'success') store.gedung = g.data || [];
+  if (d.status === 'success') store.reservasi = d.data_reservasi || [];
+}
+
 /* Render Data Dashboard */
 async function renderDashboard() {
   const res = await API.dashboardAdmin();
-  if (res.status !== 'success') return;
+  if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
+  await loadStore();
   const rekap = res.rekap;
 
   // Stats Grid 5 Kolom (kartu seragam, sama dengan dashboard role lain)
@@ -276,7 +283,7 @@ async function renderDashboard() {
   }
 
   // Gedung Ringkas
-  const gedungList = DATA.gedung || [];
+  const gedungList = store.gedung;
   $('#tbl-dash-gedung').innerHTML = `
     <table class="table">
       <thead>
@@ -301,7 +308,7 @@ async function renderDashboard() {
   `;
 
   // Log Aktivitas Ringkas
-  const logs = DATA.admin_activity_log || [];
+  const logs = store.logs;
   $('#log-summary').innerHTML = logs.slice(-4).reverse().map((l) => `
     <div class="log-item">
       <div class="t">${esc(l.jenis_aktivitas)}: ${esc(l.target_entitas || '')}</div>
@@ -313,7 +320,8 @@ async function renderDashboard() {
 
 /* Render Monitoring Semua Reservasi */
 let statusFilter = 'Semua';
-function renderMonitoring() {
+async function renderMonitoring() {
+  await loadStore();
   const box = $('#filter-status-box');
   if (!box.hasChildNodes()) {
     box.appendChild(UI.dropdown({
@@ -326,8 +334,7 @@ function renderMonitoring() {
 }
 
 function renderMonitoringTabel() {
-  const list = DATA.reservasi.filter((r) => statusFilter === 'Semua' || r.status_akhir === statusFilter)
-    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  const list = store.reservasi.filter((r) => statusFilter === 'Semua' || r.status_akhir === statusFilter);
 
   $('#tbl-semua-reservasi').innerHTML = `
     <table class="table">
@@ -347,8 +354,8 @@ function renderMonitoringTabel() {
           <tr>
             <td class="${TD}"><b>${esc(r.nama_acara)}</b><br><small class="muted">${esc(r.nomor_pengajuan || '-')}</small></td>
             <td class="${TD}">${esc(r.penanggung_jawab_nama || '-')}<br><small style="color:#2563EB">${esc(r.penanggung_jawab_kontak || '-')}</small></td>
-            <td class="${TD}">${esc(r.tempat && r.tempat[0] ? r.tempat[0].nama_gedung : 'Gedung')}</td>
-            <td class="${TD}">${esc(r.tgl_mulai || r.tgl_acara)}<br><small>${esc(r.jam_mulai.slice(0,5))}-${esc(r.jam_selesai.slice(0,5))}</small></td>
+            <td class="${TD}">${esc(r.nama_gedung || 'Gedung')}</td>
+            <td class="${TD}">${esc(r.tgl_mulai || r.tgl_acara)}${r.jam_mulai ? `<br><small>${esc(String(r.jam_mulai).slice(0,5))}-${esc(String(r.jam_selesai).slice(0,5))}</small>` : ''}</td>
             <td class="${TD}"><span class="badge ${r.status_akhir === 'Need-Revision' ? 'warn' : 'ok'}">${esc(r.nama_tahap_sekarang || r.posisi_approval || 'Tahap 1')}</span></td>
             <td class="${TD}">${UI.badge(r.status_akhir)}</td>
             <td class="${TD}">
@@ -362,8 +369,9 @@ function renderMonitoringTabel() {
 }
 
 /* Render Kelola Gedung & Fasilitas */
-function renderKelolaGedung() {
-  const gList = DATA.gedung || [];
+async function renderKelolaGedung() {
+  await loadStore();
+  const gList = store.gedung;
   $('#tbl-kelola-gedung').innerHTML = `
     <table class="table">
       <thead>
@@ -378,7 +386,7 @@ function renderKelolaGedung() {
       </thead>
       <tbody>
         ${gList.map((g) => {
-          const rList = (DATA.ruangan || []).filter((r) => r.id_gedung === g.id_gedung);
+          const rList = API.ruanganGedung(g.id_gedung);
           const isAktif = g.status_operasional === 'Aktif';
           return `
             <tr>
@@ -401,7 +409,8 @@ function renderKelolaGedung() {
 }
 
 async function toggleGedung(idGedung) {
-  const g = DATA.gedungById(idGedung);
+  const g = store.gedung.find((x) => String(x.id_gedung) === String(idGedung));
+  if (!g) return;
   const nextStatus = g.status_operasional === 'Aktif' ? 'Nonaktif' : 'Aktif';
   const res = await API.updateStatusGedung({ id_gedung: idGedung, status_operasional: nextStatus });
   if (res.status !== 'success') {
@@ -414,14 +423,13 @@ async function toggleGedung(idGedung) {
 }
 
 /* Render Alur Persetujuan Gedung Dinamis (Fitur Rizal - Admin 3) */
-function renderAlurGedung() {
-  const alurMap = DATA.alur_gedung || {};
-  const gList = DATA.gedung || [];
+async function renderAlurGedung() {
+  await loadStore();
+  const gList = store.gedung;
 
   $('#list-alur-gedung').innerHTML = gList.map((g) => {
-    const flows = alurMap[g.id_gedung] || [
-      { tahap_ke: 1, nama_tahap: 'Persetujuan Pimpinan', id_approver: null }
-    ];
+    const flows = API.alurGedung(g.id_gedung);
+    if (!flows.length) flows.push({ tahap_ke: 1, nama_tahap: 'Persetujuan Pimpinan' });
 
     return `
       <div class="card">
@@ -448,7 +456,7 @@ function renderAlurGedung() {
 
 /* Render Penugasan Satpam (Fitur Rizal - Admin 4) */
 function renderSatpam() {
-  const assignments = DATA.satpam_gedung || [];
+  const assignments = store.satpam;
   $('#tbl-satpam-gedung').innerHTML = `
     <table class="table">
       <thead>
@@ -462,8 +470,8 @@ function renderSatpam() {
       </thead>
       <tbody>
         ${assignments.map((sg) => {
-          const u = DATA.userById(sg.id_user) || {};
-          const g = DATA.gedungById(sg.id_gedung) || {};
+          const u = sg.user || {};
+          const g = sg.gedung || {};
           return `
             <tr>
               <td class="${TD}"><b>${esc(u.nama_lengkap || 'Satpam')}</b><br><small class="muted">${esc(u.email || '-')}</small></td>
@@ -481,7 +489,7 @@ function renderSatpam() {
 
 /* Render Kelola User (Fitur Rizal - Admin 1) */
 function renderUsers() {
-  const uList = DATA.users || [];
+  const uList = store.users;
   $('#tbl-users').innerHTML = `
     <table class="table">
       <thead>
@@ -500,7 +508,7 @@ function renderUsers() {
             <tr>
               <td class="${TD}"><b>${esc(u.nama_lengkap)}</b><br><small class="muted">${esc(u.email)}</small></td>
               <td class="${TD}"><span class="badge" style="background:#EFF6FF; color:#1D4ED8;">${esc(u.role)}</span></td>
-              <td class="${TD}">${esc(u.nama_jabatan || (u.id_organisasi ? (DATA.organisasiById(u.id_organisasi) || {}).nama_organisasi : '-'))}</td>
+              <td class="${TD}">${esc(u.nama_jabatan || (u.nama_organisasi || '-'))}</td>
               <td class="${TD}"><span class="badge ${isAktif ? 'ok' : 'bad'}">${isAktif ? 'Aktif' : 'Nonaktif'}</span></td>
               <td class="${TD}">
                 <button onclick="toggleUser('${u.id_user}')" class="btn btn-sm ${isAktif ? 'btn-outline-danger' : 'btn-outline-ok'}">
@@ -515,18 +523,13 @@ function renderUsers() {
   `;
 }
 
-function toggleUser(idUser) {
-  const u = DATA.userById(idUser);
-  if (!u) return;
-  u.status_aktif = !(u.status_aktif !== false);
-  DATA.save();
-  UI.toast(`Status akun ${u.nama_lengkap} diubah menjadi ${u.status_aktif ? 'Aktif' : 'Nonaktif'}!`, 'ok');
-  renderUsers();
+function toggleUser() {
+  UI.toast('Pengaturan akun belum tersedia di backend.', 'bad');
 }
 
 /* Render Audit Logs (Fitur Rizal - Admin 6) */
 function renderLogs() {
-  const logs = DATA.admin_activity_log || [];
+  const logs = store.logs;
   $('#tbl-audit-logs').innerHTML = `
     <table class="table">
       <thead>

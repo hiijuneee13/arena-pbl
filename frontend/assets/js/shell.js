@@ -21,7 +21,7 @@
     const email = user.email || '';
     const org = user.organisasi && user.organisasi.nama_organisasi;
     const currentPhoto = global.Auth ? Auth.getPhoto(email) : null;
-    const currentPhone = global.Auth ? Auth.getPhone(email) : '0812-3456-7890';
+    const currentPhone = global.Auth ? Auth.getPhone(email) : '';
 
     const overlay = document.createElement('div');
     overlay.className = 'overlay profile-overlay';

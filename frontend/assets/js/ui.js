@@ -93,9 +93,9 @@
   /* Penelusur tahap approval dari tahap_ke/total_tahap + status_akhir.
      done = sudah lewat, now = sedang di tahap ini, rej = ditolak di tahap ini */
   function tracker(r, labels) {
-    // Alur approval dinamis per gedung (2 atau 3 tahap): nama tahap diambil dari DATA.alur_gedung bila tersedia
+    // Alur approval dinamis per gedung (2 atau 3 tahap): nama tahap diambil dari API.alurGedung bila tersedia
     const gid = (r.tempat && r.tempat[0] && r.tempat[0].id_gedung) || r.id_gedung;
-    const alur = (global.DATA && global.DATA.alur_gedung && global.DATA.alur_gedung[gid]) || [];
+    const alur = (global.API && global.API.alurGedung && global.API.alurGedung(gid)) || [];
     const total = Number(r.total_tahap) || alur.length || 2;
     const idx = Math.max(0, (Number(r.tahap_ke) || 1) - 1);
     const sekarang = r.nama_tahap || r.nama_tahap_sekarang || r.posisi_approval;           // nama tahap yang sedang berjalan (cadangan bila alur gedung tidak diketahui)

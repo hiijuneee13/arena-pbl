@@ -23,7 +23,7 @@
   $('f-org').value = org.nama_organisasi + (org.tipe ? ` (${org.tipe})` : '');
   $('f-pemohon').value = `${user.nama} (${user.email})`;
   
-  const todayYmd = DATA.util.ymd(new Date());
+  const todayYmd = API.ymd(new Date());
   $('f-tgl-mulai').min = todayYmd;
   $('f-tgl-selesai').min = todayYmd;
   $('f-tgl-mulai').value = todayYmd;
@@ -437,7 +437,7 @@
      Mendukung acara multi-hari (tgl_mulai s/d tgl_selesai). */
   const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const SEMUA = 'Semua Gedung';
-  const hariIni = () => DATA.util.ymd(new Date());
+  const hariIni = () => API.ymd(new Date());
   const jd = { data: [], gedung: SEMUA, y: new Date().getFullYear(), m: new Date().getMonth(), aktif: false, dd: false };
   // "HMTI - Himpunan Mahasiswa Teknologi Informasi" -> "Himpunan Mahasiswa Teknologi Informasi"
   const namaPeminjam = (n) => { const p = String(n || '-').split(' - '); return p.length > 1 ? p.slice(1).join(' - ') : p[0]; };

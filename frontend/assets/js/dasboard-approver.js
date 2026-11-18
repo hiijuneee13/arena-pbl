@@ -116,7 +116,7 @@
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" style="margin-bottom:12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           <div style="font-weight:700; font-size:16px; color:#0F172A;">${esc(p.dataset.file || 'Proposal.pdf')}</div>
           <p style="color:#64748B; font-size:13px; margin:6px 0 16px;">Pratinjau dokumen proposal resmi versi terbaru dari peminjam.</p>
-          <a class="btn btn-sm" href="../backend/uploads/${encodeURIComponent(p.dataset.file || '')}" target="_blank" rel="noopener">Buka Berkas di Tab Baru</a>
+          <a class="btn btn-sm" href="${API.uploadUrl(p.dataset.file)}" target="_blank" rel="noopener">Buka Berkas di Tab Baru</a>
         </div>
       `;
       UI.modal.open('m-pdf');
@@ -127,6 +127,9 @@
       const act = a.dataset.act;
 
       $('cf-note').value = '';
+      $('cf-img').value = '';
+      $('cf-img-preview').style.display = 'none';
+      $('cf-img-wrap').style.display = (act === 'revision' && user.role === 'Presiden BEM') ? '' : 'none';
 
       if (act === 'approve') {
         $('cf-title').textContent = 'Konfirmasi Persetujuan';
@@ -153,6 +156,16 @@
     }
   });
 
+  $('cf-img').onchange = () => {
+    const f = $('cf-img').files[0];
+    const box = $('cf-img-preview');
+    if (!f) { box.style.display = 'none'; return; }
+    if (!/^image\/(png|jpe?g|webp)$/i.test(f.type)) { UI.toast('Lampiran harus berupa gambar (JPG, PNG, atau WEBP).', 'bad'); $('cf-img').value = ''; box.style.display = 'none'; return; }
+    if (f.size > 5 * 1024 * 1024) { UI.toast('Ukuran gambar maksimal 5MB.', 'bad'); $('cf-img').value = ''; box.style.display = 'none'; return; }
+    box.querySelector('img').src = URL.createObjectURL(f);
+    box.style.display = '';
+  };
+
   $('cf-cancel').onclick = () => { keputusan = null; UI.modal.close('m-confirm'); };
 
   /* Submit Keputusan */
@@ -167,7 +180,8 @@
     }
 
     $('cf-submit').disabled = true;
-    const res = await API.prosesApproval({ id_reservasi, action, catatan });
+    const gambar = (action === 'revision' && user.role === 'Presiden BEM') ? $('cf-img').files[0] : null;
+    const res = await API.prosesApproval({ id_reservasi, action, catatan, gambar });
     $('cf-submit').disabled = false;
 
     if (res.status !== 'success') {
