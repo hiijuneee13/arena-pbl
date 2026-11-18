@@ -33,7 +33,9 @@ switch ($action) {
     // AKSI 1: AMBIL PROFIL (GET)
     case 'get':
         try {
-            $stmt = $pdo->prepare("SELECT id_user, email, nama_lengkap, no_hp, role FROM users WHERE id_user = :id_user");
+            // [Penyesuaian FE] SCHEMA BARU: users.id / users.nama; kolom no_hp dan nama_lengkap tidak ada lagi.
+            // Nama key lama (id_user, nama_lengkap, no_hp) tetap dikirim agar bentuk response tidak berubah; no_hp selalu null (belum ada kolomnya).
+            $stmt = $pdo->prepare("SELECT id AS id_user, username, email, nama AS nama_lengkap, NULL::text AS no_hp FROM users WHERE id = :id_user");
             $stmt->execute([':id_user' => $_SESSION['id_user']]);
             $profil = $stmt->fetch();
 
@@ -43,7 +45,10 @@ switch ($action) {
                 exit;
             }
 
-            // Kirim data profil ke frontend (password aman tidak disertakan)[cite: 11]
+            // Role dikirim dalam label frontend (Mahasiswa, DosPem, Satpam, AdminTU, dst), sama seperti login.php dan get_session.php
+            $profil['role'] = $_SESSION['role'] ?? null;
+
+            // Kirim data profil ke frontend (password aman tidak disertakan)
             echo json_encode(["status" => "success", "data" => $profil]);
         } catch (PDOException $e) {
             error_log("profile_controller.php (get): " . $e->getMessage());
@@ -60,36 +65,51 @@ switch ($action) {
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
-        $nama_lengkap = trim($input['nama_lengkap'] ?? '');
-        $no_hp = preg_replace('/[\s\-]/', '', (string)($input['no_hp'] ?? ''));
+        // [Penyesuaian FE] Frontend (API.updateProfil) mengirim { username }. Kode lama mengirim nama_lengkap; keduanya diterima.
+        // Field yang tidak dikirim tidak diubah. no_hp tidak diproses karena tabel users tidak punya kolom no_hp.
+        $username     = array_key_exists('username', $input ?? []) ? trim((string)$input['username']) : null;
+        $nama_lengkap = array_key_exists('nama_lengkap', $input ?? []) ? trim((string)$input['nama_lengkap']) : null;
 
-        // Validasi input
-        if (panjang_teks($nama_lengkap) < 3 || panjang_teks($nama_lengkap) > 100) {
-            echo json_encode(["status" => "error", "message" => "Nama lengkap harus 3 sampai 100 karakter."]);
+        if ($username === null && $nama_lengkap === null) {
+            echo json_encode(["status" => "error", "message" => "Tidak ada data profil yang diubah."]);
             exit;
         }
-        if ($no_hp !== '' && !preg_match('/^\+?[0-9]{8,15}$/', $no_hp)) {
-            echo json_encode(["status" => "error", "message" => "Nomor HP tidak valid. Gunakan 8 sampai 15 angka."]);
+
+        // Validasi input
+        if ($username !== null && !preg_match('/^[A-Za-z0-9_.\-]{3,50}$/', $username)) {
+            echo json_encode(["status" => "error", "message" => "Username 3 sampai 50 karakter (huruf, angka, titik, garis bawah, atau strip)."]);
+            exit;
+        }
+        if ($nama_lengkap !== null && (panjang_teks($nama_lengkap) < 3 || panjang_teks($nama_lengkap) > 100)) {
+            echo json_encode(["status" => "error", "message" => "Nama lengkap harus 3 sampai 100 karakter."]);
             exit;
         }
 
         try {
-            $stmt = $pdo->prepare("UPDATE users SET nama_lengkap = :nama_lengkap, no_hp = :no_hp WHERE id_user = :id_user");
-            $stmt->execute([
-                ':nama_lengkap' => $nama_lengkap,
-                ':no_hp'        => $no_hp === '' ? null : $no_hp,
-                ':id_user'      => $_SESSION['id_user']
-            ]);
+            // SCHEMA BARU: users.nama (bukan nama_lengkap) dan users.id (bukan id_user)
+            $set = [];
+            $param = [':id' => $_SESSION['id_user']];
+            if ($username !== null)     { $set[] = "username = :username"; $param[':username'] = $username; }
+            if ($nama_lengkap !== null) { $set[] = "nama = :nama";         $param[':nama'] = $nama_lengkap; }
 
-            // Samakan sesi nama agar langsung terbarui di dashboard
-            $_SESSION['nama'] = $nama_lengkap;
+            $stmt = $pdo->prepare("UPDATE users SET " . implode(', ', $set) . " WHERE id = :id");
+            $stmt->execute($param);
+
+            // Samakan sesi agar langsung terbarui di dashboard
+            if ($username !== null)     { $_SESSION['username'] = $username; }
+            if ($nama_lengkap !== null) { $_SESSION['nama'] = $nama_lengkap; }
 
             echo json_encode([
                 "status" => "success",
                 "message" => "Profil berhasil diperbarui.",
-                "data" => ["nama_lengkap" => $nama_lengkap, "no_hp" => $no_hp === '' ? null : $no_hp]
+                "data" => ["username" => $_SESSION['username'] ?? null, "nama_lengkap" => $_SESSION['nama'] ?? null]
             ]);
         } catch (PDOException $e) {
+            // Username sudah dipakai akun lain (kolom username UNIQUE)
+            if ($e->getCode() === '23505') {
+                echo json_encode(["status" => "error", "message" => "Username sudah dipakai akun lain."]);
+                exit;
+            }
             error_log("profile_controller.php (update): " . $e->getMessage());
             echo json_encode(["status" => "error", "message" => "Gagal memperbarui profil."]);
         }
@@ -128,19 +148,21 @@ switch ($action) {
 
         try {
             // Ambil password tersimpan milik user
-            $stmt = $pdo->prepare("SELECT password FROM users WHERE id_user = :id_user");
+            // [Penyesuaian FE] SCHEMA BARU: kolom password -> password_hash, id_user -> id
+            $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = :id_user");
             $stmt->execute([':id_user' => $_SESSION['id_user']]);
             $tersimpan = (string)$stmt->fetchColumn();
 
-            // Cocokkan password lama
-            if (!(password_verify($password_lama, $tersimpan) || hash_equals($tersimpan, $password_lama))) {
+            // Cocokkan password lama (hanya password_verify, sama seperti login.php; pembandingan langsung dengan hash dihapus
+            // karena hash yang bocor bisa dipakai sebagai "password lama")
+            if (!password_verify($password_lama, $tersimpan)) {
                 http_response_code(403);
                 echo json_encode(["status" => "error", "message" => "Password lama salah."]);
                 exit;
             }
 
             // Simpan password baru ter-hash
-            $stmt_update = $pdo->prepare("UPDATE users SET password = :password WHERE id_user = :id_user");
+            $stmt_update = $pdo->prepare("UPDATE users SET password_hash = :password WHERE id = :id_user");
             $stmt_update->execute([
                 ':password' => password_hash($password_baru, PASSWORD_DEFAULT),
                 ':id_user'  => $_SESSION['id_user']

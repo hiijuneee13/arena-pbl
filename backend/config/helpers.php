@@ -77,4 +77,32 @@ const SQL_POSISI = "CASE r.status
 
 // Jumlah tahap yang sudah disetujui (dipakai untuk mengurutkan riwayat)
 const SQL_JUMLAH_SETUJU = "(SELECT count(*) FROM reservasi_approval a WHERE a.reservasi_id = r.id AND a.status = 'disetujui')";
+
+// [Penyesuaian FE] Mencari satu reservasi untuk halaman verifikasi surat (publik).
+// Frontend memanggil verifikasi dengan id_reservasi (angka), sedangkan QR satpam memakai kode_verifikasi (UUID).
+// Keduanya diterima. Nilai lain ditolak sebelum menyentuh database, karena cast uuid yang salah menyebabkan error di PostgreSQL.
+// Hasil: satu baris dengan kolom id_reservasi, nama_peminjam, nama_gedung, nama_acara, tgl_acara, jam_mulai, jam_selesai, status_akhir; atau null bila tidak ada.
+function cari_reservasi_verifikasi($pdo, $id) {
+    $id = trim((string)$id);
+    if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id)) {
+        $kondisi = "r.kode_verifikasi = CAST(:id AS uuid)";
+    } elseif (ctype_digit($id) && strlen($id) <= 9) {
+        $kondisi = "r.id = CAST(:id AS integer)";
+    } else {
+        return null;
+    }
+
+    $sql = "SELECT r.id AS id_reservasi, o.nama AS nama_peminjam, " . SQL_TEMPAT . " AS nama_gedung,
+                   r.nama_kegiatan AS nama_acara, " . SQL_TGL . " AS tgl_acara,
+                   " . SQL_JAM_MULAI . " AS jam_mulai, " . SQL_JAM_SELESAI . " AS jam_selesai,
+                   r.status AS status_db
+            FROM reservasi r
+            JOIN organisasi o ON o.user_id = r.organisasi_id
+            WHERE $kondisi";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':id' => $id]);
+    $baris = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $baris ? petakan_reservasi_satu($baris) : null;
+}
 ?>

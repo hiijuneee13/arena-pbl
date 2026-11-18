@@ -1,5 +1,7 @@
 <?php
 require_once '../config/koneksi.php';
+// [Penyesuaian FE] SCHEMA BARU: fungsi pencarian reservasi untuk verifikasi
+require_once '../config/helpers.php';
 
 // 1. Menangkap parameter 'id' dari URL (contoh: verifikasi.php?id=1234-5678)
 $id_reservasi = $_GET['id'] ?? '';
@@ -13,17 +15,9 @@ if (empty($id_reservasi)) {
 } else {
     // 3. Cek ke database apakah ID reservasi ada dan status_akhir-nya 'Approved'
     try {
-        // 3a. Query untuk ambil data reservasi berdasarkan ID
-        $sql = "SELECT r.id_reservasi, u.nama_lengkap AS nama_peminjam, g.nama_gedung, 
-                       r.nama_acara, r.tgl_acara, r.jam_mulai, r.jam_selesai, r.status_akhir 
-                FROM reservasi r
-                JOIN users u ON r.id_user = u.id_user
-                JOIN gedung_fasilitas g ON r.id_gedung = g.id_gedung
-                WHERE r.id_reservasi = :id_reservasi";
-        // 3b. Eksekusi query dan ambil hasilnya
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([':id_reservasi' => $id_reservasi]);
-        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+        // 3a-3b. [Penyesuaian FE] SCHEMA BARU: query lama (users.id_user, gedung_fasilitas, r.id_gedung) sudah tidak ada.
+        // Pencarian dipindah ke cari_reservasi_verifikasi() di helpers.php; menerima id_reservasi (angka) atau kode_verifikasi (UUID).
+        $data = cari_reservasi_verifikasi($pdo, $id_reservasi);
         // 3c. Jika data tidak ditemukan atau status_akhir bukan 'Approved', beri pesan error
         if (!$data || $data['status_akhir'] !== 'Approved') {
             $pesan_error = "DOKUMEN TIDAK VALID ATAU BELUM DISETUJUI SEPENUHNYA.";
@@ -35,4 +29,3 @@ if (empty($id_reservasi)) {
     }
 }
 ?>
-
