@@ -21,16 +21,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // 3. Tangkap data JSON dari Frontend
 $data = json_decode(file_get_contents('php://input'), true);
 $id_reservasi  = $data['id_reservasi'] ?? '';
-$action        = $data['action'] ?? '';         // isinya: 'approve' atau 'reject'
+// [Penyesuaian FE] frontend mengirim 'approve', 'revision', atau 'reject' (API.prosesApproval); huruf besar/kecil diabaikan
+$action        = strtolower(trim((string)($data['action'] ?? '')));
 $catatan       = trim($data['catatan'] ?? '');
 $id_approver   = $_SESSION['id_user'];
 $role_sekarang = $_SESSION['role'];
 
 
 // (Konfirmasi Aksi / Double Check) Lapisan pengaman backend (double check) untuk mencegah kesalahan klik. 
-// Proses approval akan ditolak jika parameter konfirmasi aksi bernilai selain 'YA'.
-$konfirmasi = $data['konfirmasi_aksi'] ?? '';
-if ($konfirmasi !== 'YA') {
+// [Penyesuaian FE] Frontend tidak mengirim konfirmasi_aksi karena sudah memakai jendela konfirmasi sendiri sebelum memanggil API,
+// jadi field ini opsional: bila dikirim, nilainya harus 'YA'; bila tidak dikirim, permintaan tetap diproses.
+if (isset($data['konfirmasi_aksi']) && $data['konfirmasi_aksi'] !== 'YA') {
     http_response_code(400);
     echo json_encode([
         "status" => "error", 
@@ -45,10 +46,10 @@ if (!$id_reservasi || !$action) {
     exit;
 }
 
-// 5. Validasi action: hanya 'approve' atau 'reject' yang diterima
-if (!in_array($action, ['approve', 'reject'], true)) {
+// 5. Validasi action: hanya 'approve', 'revision', atau 'reject' yang diterima
+if (!in_array($action, ['approve', 'revision', 'reject'], true)) {
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Aksi tidak dikenal. Gunakan 'approve' atau 'reject'."]);
+    echo json_encode(["status" => "error", "message" => "Aksi tidak valid! Gunakan 'approve', 'revision', atau 'reject'."]);
     exit;
 }
 
@@ -67,9 +68,10 @@ if (($_SESSION['role_db'] ?? '') !== 'approver') {
     exit;
 }
 // SCHEMA BARU: menolak pengajuan wajib disertai catatan (aturan di database)
-if ($action === 'reject' && $catatan === '') {
+// [Penyesuaian FE] meminta revisi juga wajib disertai catatan (arahan perbaikan untuk peminjam)
+if (in_array($action, ['reject', 'revision'], true) && $catatan === '') {
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Catatan wajib diisi saat menolak pengajuan."]);
+    echo json_encode(["status" => "error", "message" => "Catatan wajib diisi saat meminta revisi atau menolak pengajuan."]);
     exit;
 }
 
@@ -120,7 +122,8 @@ try {
     }
 
     // 11. Tentukan status dan posisi selanjutnya
-    $status_tahap = ($action === 'reject') ? 'ditolak' : 'disetujui';
+    // [Penyesuaian FE] aksi revision -> status tahap 'revisi'
+    $status_tahap = ['reject' => 'ditolak', 'revision' => 'revisi', 'approve' => 'disetujui'][$action];
     $posisi_selanjutnya = label_jabatan($tahap['jabatan']); // Default
     $kode_verifikasi = null;
 
@@ -132,8 +135,14 @@ try {
         ':id'      => $tahap['id']
     ]);
 
+    // [Penyesuaian FE] Jika diminta revisi, status reservasi menjadi 'revisi' dan posisi tetap di jabatan yang meminta.
+    // Setelah peminjam mengirim revisi (kirim_revisi.php), tahap ini kembali 'menunggu' pada approver yang sama.
+    if ($action === 'revision') {
+        $stmt_res = $pdo->prepare("UPDATE reservasi SET status = 'revisi', updated_at = now() WHERE id = :id");
+        $stmt_res->execute([':id' => $id_reservasi]);
+        $aksi_riwayat = 'minta_revisi';
     // Jika ditolak, status reservasi menjadi 'ditolak' dan posisi tetap di jabatan yang menolak
-    if ($action === 'reject') {
+    } elseif ($action === 'reject') {
         $stmt_res = $pdo->prepare("UPDATE reservasi SET status = 'ditolak', updated_at = now() WHERE id = :id");
         $stmt_res->execute([':id' => $id_reservasi]);
         $aksi_riwayat = 'tolak';
@@ -171,9 +180,15 @@ try {
     // 14. Commit transaksi
     $pdo->commit();
     // 15. Kirim response sukses ke frontend
+    // [Penyesuaian FE] pesan disamakan dengan yang ditampilkan frontend
+    $pesan = [
+        'approve'  => "Pengajuan berhasil disetujui! Lanjut ke: " . $posisi_selanjutnya,
+        'revision' => "Permintaan revisi berhasil dikirim kepada peminjam.",
+        'reject'   => "Pengajuan telah ditolak."
+    ][$action];
     $respon = [
         "status"      => "success",
-        "message"     => "Pengajuan berhasil di-" . $action,
+        "message"     => $pesan,
         "next_posisi" => $posisi_selanjutnya
     ];
     if ($kode_verifikasi !== null) {
