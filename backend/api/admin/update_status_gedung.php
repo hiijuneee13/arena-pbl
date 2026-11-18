@@ -2,6 +2,8 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
+// [Penyesuaian FE] pencatatan aktivitas admin ke log_aktivitas
+require_once '../../config/surat.php';
 
 // 1. Gerbang keamanan: hanya admin tu yg boleh mengakses halaman ini
 if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
@@ -38,6 +40,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 6. Update status gedung di database
     try {
+        // [Penyesuaian FE] ambil nama gedung (untuk pesan dan log); sekaligus memastikan ID-nya ada
+        $stmt_nama = $pdo->prepare("SELECT nama FROM gedung WHERE id = :id_gedung");
+        $stmt_nama->execute([':id_gedung' => $id_gedung]);
+        $nama_gedung = $stmt_nama->fetchColumn();
+        if ($nama_gedung === false) {
+            echo json_encode(["status" => "error", "message" => "Gagal diubah. ID gedung tidak ditemukan."]);
+            exit;
+        }
+
+        // [Penyesuaian FE] Aturan frontend: gedung tidak boleh dinonaktifkan bila masih ada kegiatan
+        // yang sudah disetujui dan belum lewat (tanggal selesai hari ini atau sesudahnya, WIB).
+        if ($status_baru === 'Nonaktif') {
+            $stmt_cek = $pdo->prepare("SELECT 1 FROM reservasi r
+                                       JOIN reservasi_item i ON i.reservasi_id = r.id
+                                       WHERE i.gedung_id = :id_gedung AND r.status = 'disetujui'
+                                         AND (r.waktu_selesai AT TIME ZONE 'Asia/Jakarta')::date >= (now() AT TIME ZONE 'Asia/Jakarta')::date
+                                       LIMIT 1");
+            $stmt_cek->execute([':id_gedung' => $id_gedung]);
+            if ($stmt_cek->fetchColumn()) {
+                echo json_encode(["status" => "error", "message" => "Gedung \"" . $nama_gedung . "\" tidak dapat dinonaktifkan karena terdapat kegiatan yang sudah disetujui di masa depan!"]);
+                exit;
+            }
+        }
+
         // [Penyesuaian FE] SCHEMA BARU: tabel gedung_fasilitas diganti gedung; kolom status_aktif -> is_active, id_gedung -> id
         $sql = "UPDATE gedung SET is_active = :status_baru WHERE id = :id_gedung";
         $stmt = $pdo->prepare($sql);
@@ -48,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 7. Cek apakah ada baris yg diubah
         if ($stmt->rowCount() > 0) {
-            echo json_encode(["status" => "success", "message" => "Sistem diperbarui: Status gedung sekarang $status_baru!"]);
+            catat_aktivitas($pdo, $_SESSION['id_user'], 'Ubah Status Gedung', $nama_gedung . ': Mengubah status menjadi ' . $status_baru);
+            echo json_encode(["status" => "success", "message" => "Status gedung \"" . $nama_gedung . "\" berhasil diubah menjadi $status_baru!"]);
         } else {
             // [Penyesuaian FE] rowCount() PostgreSQL menghitung baris yang cocok (walau nilainya sama), jadi hanya berarti ID tidak ada
             echo json_encode(["status" => "error", "message" => "Gagal diubah. ID gedung tidak ditemukan."]);
