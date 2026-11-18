@@ -4,6 +4,8 @@ header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 // SCHEMA BARU: fungsi bantu untuk label status dan posisi
 require_once '../../config/helpers.php';
+require_once '../../config/storage.php';
+
 
 // 1. Gerbang keamanan: pastikan user sudah login
 if (!isset($_SESSION['id_user'])) {
@@ -129,7 +131,7 @@ try {
             $proposal_per[$p['reservasi_id']][] = [
                 "id_riwayat"     => (string)$p['id'],
                 "id_reservasi"   => (string)$p['reservasi_id'],
-                "file_url"       => 'uploads/' . $p['path_file'],
+                "file_url"       => url_presigned_s3($p['path_file']),
                 "revisi_ke"      => (int)$p['versi'],
                 "nama_file_asli" => $p['nama_asli'],
                 "catatan_revisi" => $catatan_revisi,

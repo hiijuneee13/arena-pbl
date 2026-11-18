@@ -4,6 +4,8 @@ header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 // SCHEMA BARU: fungsi bantu untuk label status dan posisi
 require_once '../../config/helpers.php';
+// [Penyesuaian FE] fungsi bantu upload ke Neon S3 (jika ingin menyimpan proposal di cloud storage)
+require_once '../../config/storage.php';
 
 // 1. Gerbang keamanan: hanya approver yg bisa mengaakses halaman ini
 if (!isset($_SESSION['id_user'])) {
@@ -71,7 +73,7 @@ try {
 
     // Menyediakan path URL file PDF proposal untuk approver
     foreach ($data_pending as &$item) {
-        $item['url_pdf'] = $item['file_proposal'] ? '../../uploads/' . $item['file_proposal'] : null;
+        $item['url_pdf'] = $item['file_proposal'] ? url_presigned_s3($item['file_proposal']) : null;
         // [Penyesuaian FE] ID dikirim sebagai string (frontend membandingkannya dengan data-attribute HTML); label tahap seperti di frontend
         $item['id_reservasi'] = (string)$item['id_reservasi'];
         $item['nama_tahap']   = label_jabatan($item['nama_tahap']);

@@ -5,6 +5,8 @@ require_once '../../config/koneksi.php';
 // [Penyesuaian FE] fungsi bantu label jabatan, normalisasi jam, dan pengecekan bentrok jadwal
 require_once '../../config/helpers.php';
 require_once '../../config/jadwal.php';
+// [Penyesuaian FE] fungsi bantu upload ke Neon S3 (jika ingin menyimpan proposal di cloud storage)
+require_once '../../config/storage.php';
 
 // Gerbang Keamanan: hanya Mahasiswa yang sudah login
 if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'Mahasiswa') {
@@ -245,9 +247,13 @@ try {
     // file baru dipindahkan SETELAH semua pengecekan lolos,
     // jadi file tidak terunggah sia-sia kalau pengajuan ditolak.
     $nama_file_baru = null;
+    // Ganti bagian move_uploaded_file dengan upload langsung ke Neon S3
+    $nama_file_baru = null;
     if ($ada_file) {
-        $nama_file_baru   = uniqid('proposal_') . '.pdf';
-        $direktori_simpan = __DIR__ . '/../../uploads/' . $nama_file_baru;
+        $nama_file_baru = uniqid('proposal_') . '.pdf';
+        // Langsung kirim dari file temporary PHP ke Neon Object Storage
+        upload_ke_s3($file['tmp_name'], $nama_file_baru, 'application/pdf');
+    
 
         if (!move_uploaded_file($file['tmp_name'], $direktori_simpan)) {
             $direktori_simpan = null;
@@ -369,7 +375,7 @@ try {
         ]
     ]);
 
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
