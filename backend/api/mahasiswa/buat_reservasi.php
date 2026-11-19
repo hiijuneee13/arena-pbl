@@ -223,13 +223,17 @@ try {
         exit;
     }
 
-    // SCHEMA BARU: penyimpanan pengajuan dilakukan dalam satu transaction
-    // (reservasi, tempat yang dipinjam, dokumen proposal, tahap persetujuan, dan riwayat).
-    $pdo->beginTransaction();
+    
 
     // [Penyesuaian FE] Kunci singkat agar dua pengajuan yang masuk bersamaan tidak sama-sama lolos cek bentrok.
     // Kunci otomatis lepas saat transaction selesai.
-    $pdo->query("SELECT pg_advisory_xact_lock(7001)");
+    $pdo->beginTransaction();
+
+    // Kunci baris gedung yang dipilih agar pengajuan bersamaan tetap antre (aman untuk Neon Pooler)
+    $stmt_lock = $pdo->prepare("SELECT id FROM gedung WHERE id = :id FOR UPDATE");
+    foreach ($tempat as $t) {
+        $stmt_lock->execute([':id' => $t['id_gedung']]);
+    }
 
     // BARU 2: cek bentrok jadwal untuk setiap tempat (aturan sama dengan cek_ketersediaan.php, tanpa kolom r.periode)
     foreach ($tempat as $t) {
@@ -369,16 +373,13 @@ try {
         ]
     ]);
 
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    // Jika database gagal, hapus file yang telanjur terunggah agar server tidak kotor
-    if ($direktori_simpan !== null && file_exists($direktori_simpan)) {
-        unlink($direktori_simpan);
-    }
-    // REVISI: detail error dicatat di log server, pengguna hanya melihat pesan umum
-    error_log("buat_reservasi.php: " . $e->getMessage());
-    echo json_encode(["status" => "error", "message" => "Terjadi kesalahan database saat menyimpan pengajuan."]);
+    echo json_encode([
+        "status"  => "error",
+        "message" => "Baris " . $e->getLine() . " (" . basename($e->getFile()) . "): " . $e->getMessage()
+    ]);
 }
 ?>

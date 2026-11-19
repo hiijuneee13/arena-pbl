@@ -39,7 +39,11 @@
     return g ? g.ruangan : [];
   }
 
-  const uploadUrl = (file) => BACKEND + 'uploads/' + encodeURIComponent(file || '');
+  const uploadUrl = (file) => {
+    if (!file) return '';
+    if (/^https?:\/\//i.test(String(file))) return String(file);
+    return BACKEND + 'uploads/' + encodeURIComponent(file);
+  };
 
   const kodeById = {};
   let satpamCache = [];
@@ -82,7 +86,7 @@
       tahap_approval: l.jabatan,
       status: AKSI[l.aksi] || l.aksi,
       catatan: l.catatan || (AKSI[l.aksi] === 'Approve' ? 'Disetujui tanpa catatan tambahan.' : 'Tanpa catatan.'),
-      gambar: l.gambar ? BACKEND + 'uploads/' + encodeURIComponent(l.gambar) : null,
+      gambar: l.gambar ? uploadUrl(l.gambar) : null,
       waktu_proses: l.waktu
     };
   }
@@ -103,31 +107,35 @@
     const data = (res.data || []).map((r) => {
       const st = status(r.status_akhir);
       const info = posisiInfo(r.nama_gedung, r.posisi_approval, st);
+      const idStr = String(r.id_reservasi);
+      if (r.qr_code_surat) kodeById[idStr] = r.qr_code_surat;
+      const tglMulai = r.tgl_mulai || r.tgl_acara;
+      const tglSelesai = r.tgl_selesai || tglMulai;
       return {
-        id_reservasi: String(r.id_reservasi),
-        nomor_pengajuan: nomor(r.id_reservasi),
+        id_reservasi: idStr,
+        nomor_pengajuan: r.nomor_pengajuan || nomor(r.id_reservasi),
         id_gedung: info.id_gedung,
         nama_gedung: r.nama_gedung,
         nama_acara: r.nama_acara,
-        deskripsi: '',
-        kategori_peminjaman: String(r.nama_gedung).indexOf(' - ') >= 0 ? 'Ruangan' : 'Gedung Utuh',
-        tgl_mulai: r.tgl_acara,
-        tgl_selesai: r.tgl_acara,
-        tgl_acara: r.tgl_acara,
+        deskripsi: r.deskripsi || '',
+        kategori_peminjaman: r.kategori_peminjaman || (String(r.nama_gedung).indexOf(' - ') >= 0 ? 'Ruangan' : 'Gedung Utuh'),
+        tgl_mulai: tglMulai,
+        tgl_selesai: tglSelesai,
+        tgl_acara: r.tgl_acara || tglMulai,
         jam_mulai: r.jam_mulai,
         jam_selesai: r.jam_selesai,
-        penanggung_jawab_nama: '-',
-        penanggung_jawab_kontak: '-',
+        penanggung_jawab_nama: r.penanggung_jawab_nama || '-',
+        penanggung_jawab_kontak: r.penanggung_jawab_kontak || '-',
         posisi_approval: r.posisi_approval,
         nama_tahap: r.posisi_approval,
         status_akhir: st,
-        tahap_ke: info.tahap_ke,
-        total_tahap: info.total_tahap,
-        versi_proposal: 1,
-        qr_code_surat: null,
-        tempat: [],
-        logs: logsOf(r.riwayat),
-        proposals: []
+        tahap_ke: r.tahap_ke != null ? Number(r.tahap_ke) : info.tahap_ke,
+        total_tahap: r.total_tahap != null ? Number(r.total_tahap) : info.total_tahap,
+        versi_proposal: r.versi_proposal != null ? Number(r.versi_proposal) : 1,
+        qr_code_surat: r.qr_code_surat || null,
+        tempat: Array.isArray(r.tempat) ? r.tempat : [],
+        logs: Array.isArray(r.logs) ? r.logs : logsOf(r.riwayat),
+        proposals: Array.isArray(r.proposals) ? r.proposals : []
       };
     });
     return { status: 'success', login_sebagai: res.login_sebagai, jumlah_riwayat: data.length, data };
@@ -136,17 +144,24 @@
   async function buatReservasi(p) {
     const u = me();
     if (!u) return err('Anda belum login!');
-    const t = (p.tempat && p.tempat[0]) || { id_gedung: p.id_gedung, id_ruangan: p.id_ruangan };
+    const daftarTempat = Array.isArray(p.tempat) && p.tempat.length
+      ? p.tempat
+      : [{ id_gedung: p.id_gedung, id_ruangan: p.id_ruangan || null }];
+    const t = daftarTempat[0];
     const tgl = (p.tgl_mulai || p.tgl_acara || '').trim();
     const tglSelesai = (p.tgl_selesai || tgl).trim();
-    if (tglSelesai && tgl && tglSelesai !== tgl) {
-      return err('Backend saat ini hanya mendukung satu tanggal per pengajuan. Samakan tanggal selesai dengan tanggal mulai.');
-    }
+
     const fd = new FormData();
+    fd.append('tempat', JSON.stringify(daftarTempat.map((item) => ({
+      id_gedung: item.id_gedung,
+      id_ruangan: item.id_ruangan || null
+    }))));
     fd.append('id_gedung', t.id_gedung || '');
     if (t.id_ruangan) fd.append('id_ruangan', t.id_ruangan);
     fd.append('nama_acara', (p.nama_acara || '').trim());
     fd.append('deskripsi', (p.deskripsi || '').trim());
+    fd.append('tgl_mulai', tgl);
+    fd.append('tgl_selesai', tglSelesai);
     fd.append('tgl_acara', tgl);
     fd.append('jam_mulai', jam5(p.jam_mulai));
     fd.append('jam_selesai', jam5(p.jam_selesai));
@@ -226,9 +241,11 @@
         status: 'success',
         data: rows.map((r) => {
           const g = refByName(r.nama_gedung);
+          const tm = r.tgl_mulai || r.tgl_acara;
+          const ts = r.tgl_selesai || tm;
           return {
             id_reservasi: String(r.id_reservasi), id_gedung: g ? g.id_gedung : null, nama_gedung: r.nama_gedung, nama_organisasi: r.nama_peminjam || (u && u.nama) || '-',
-            nama_acara: r.nama_acara, tgl_acara: r.tgl_acara, tgl_mulai: r.tgl_acara, tgl_selesai: r.tgl_acara,
+            nama_acara: r.nama_acara, tgl_acara: tm, tgl_mulai: tm, tgl_selesai: ts,
             jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai, status_akhir: r.status_akhir || 'Approved'
           };
         })
@@ -236,10 +253,12 @@
     }
     const data = (res.data || []).map((r) => {
       const g = refByName(r.nama_gedung);
+      const tm = r.tgl_mulai || r.tgl_acara;
+      const ts = r.tgl_selesai || tm;
       return {
-        id_reservasi: String(r.id_reservasi), id_gedung: g ? g.id_gedung : null, nama_gedung: r.nama_gedung, nama_organisasi: r.penyelenggara,
-        nama_acara: r.nama_acara, tgl_acara: r.tgl_acara, tgl_mulai: r.tgl_acara, tgl_selesai: r.tgl_acara,
-        jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai, status_akhir: 'Approved'
+        id_reservasi: String(r.id_reservasi), id_gedung: g ? g.id_gedung : null, nama_gedung: r.nama_gedung, nama_organisasi: r.penyelenggara || r.nama_organisasi,
+        nama_acara: r.nama_acara, tgl_acara: tm, tgl_mulai: tm, tgl_selesai: ts,
+        jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai, status_akhir: r.status_akhir ? status(r.status_akhir) : 'Approved'
       };
     });
     return { status: 'success', data };
@@ -251,22 +270,28 @@
     const res = await call('approver/get_pending.php');
     if (res.status !== 'success') return res;
     const data = (res.data || []).map((r) => {
-      const info = posisiInfo(r.nama_gedung, r.posisi_approval, 'In-Progress');
+      const info = posisiInfo(r.nama_gedung, r.nama_tahap || r.posisi_approval, 'In-Progress');
+      const tm = r.tgl_mulai || r.tgl_acara;
+      const ts = r.tgl_selesai || tm;
       return {
         id_reservasi: String(r.id_reservasi),
-        nomor_pengajuan: nomor(r.id_reservasi),
+        nomor_pengajuan: r.nomor_pengajuan || nomor(r.id_reservasi),
         nama_acara: r.nama_acara,
+        deskripsi: r.deskripsi || '',
         nama_pemohon: r.nama_pemohon,
-        nama_instansi: r.nama_pemohon,
+        nama_instansi: r.nama_instansi || r.nama_pemohon,
         nama_gedung: r.nama_gedung,
-        tgl_mulai: r.tgl_acara, tgl_selesai: r.tgl_acara, tgl_acara: r.tgl_acara,
+        tgl_mulai: tm, tgl_selesai: ts, tgl_acara: r.tgl_acara || tm,
         jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai,
-        penanggung_jawab_nama: '-', penanggung_jawab_kontak: '-',
-        file_proposal: r.file_proposal || '',
-        versi_proposal: 1,
-        tahap_ke: info.tahap_ke, total_tahap: info.total_tahap,
-        nama_tahap: r.posisi_approval,
-        jumlah_revisi: 0
+        penanggung_jawab_nama: r.penanggung_jawab_nama || '-',
+        penanggung_jawab_kontak: r.penanggung_jawab_kontak || '-',
+        file_proposal: r.url_pdf || r.file_proposal || '',
+        url_pdf: r.url_pdf || (r.file_proposal ? uploadUrl(r.file_proposal) : null),
+        versi_proposal: r.versi_proposal != null ? Number(r.versi_proposal) : 1,
+        tahap_ke: r.tahap_ke != null ? Number(r.tahap_ke) : info.tahap_ke,
+        total_tahap: r.total_tahap != null ? Number(r.total_tahap) : info.total_tahap,
+        nama_tahap: r.nama_tahap || r.posisi_approval,
+        jumlah_revisi: r.jumlah_revisi != null ? Number(r.jumlah_revisi) : 0
       };
     });
     return { status: 'success', login_sebagai: res.login_sebagai, jumlah_antrean: data.length, data };
@@ -315,18 +340,20 @@
     if (res.status !== 'success') return res;
     const data = (res.data || []).map((r) => {
       if (r.qr_code_surat) kodeById[r.id_reservasi] = r.qr_code_surat;
+      const tm = r.tgl_mulai || r.tgl_acara;
+      const ts = r.tgl_selesai || tm;
       return {
         id_reservasi: String(r.id_reservasi),
-        nomor_pengajuan: nomor(r.id_reservasi),
+        nomor_pengajuan: r.nomor_pengajuan || nomor(r.id_reservasi),
         nama_peminjam: r.nama_peminjam,
         nama_acara: r.nama_acara,
         penanggung_jawab_nama: r.nama_peminjam,
         penanggung_jawab_kontak: '-',
         nama_gedung: r.nama_gedung,
-        tgl_acara: r.tgl_acara, tgl_mulai: r.tgl_acara, tgl_selesai: r.tgl_acara,
+        tgl_acara: tm, tgl_mulai: tm, tgl_selesai: ts,
         jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai,
         qr_code_surat: r.qr_code_surat,
-        status_waktu: statusWaktu(r.tgl_acara, r.jam_mulai, r.jam_selesai)
+        status_waktu: statusWaktu(tm, r.jam_mulai, r.jam_selesai)
       };
     });
     satpamCache = data;
@@ -365,7 +392,7 @@
     if (res.status !== 'success') return res;
     const list = (res.data_reservasi || []).map((r) => Object.assign({}, r, {
       status_akhir: status(r.status_akhir),
-      nomor_pengajuan: nomor(r.id_reservasi),
+      nomor_pengajuan: r.nomor_pengajuan || nomor(r.id_reservasi),
       penanggung_jawab_nama: r.nama_peminjam,
       penanggung_jawab_kontak: '-',
       nama_tahap_sekarang: r.posisi_approval
