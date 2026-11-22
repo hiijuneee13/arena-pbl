@@ -2,39 +2,35 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
-// [Penyesuaian FE] fungsi bantu label jabatan, normalisasi jam, dan pengecekan bentrok jadwal
+// Memuat helper label jabatan, normalisasi format jam, dan validasi jadwal
 require_once '../../config/helpers.php';
 require_once '../../config/jadwal.php';
 
-// Gerbang Keamanan: hanya Mahasiswa yang sudah login
+// Validasi sesi: memastikan pengguna sudah login dengan hak akses Mahasiswa
 if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'Mahasiswa') {
     http_response_code(403);
     echo json_encode(["status" => "error", "message" => "Akses ditolak! Hanya Mahasiswa."]);
     exit;
 }
 
-// Tolak method selain POST dengan pesan yang jelas
+// Memastikan request menggunakan metode HTTP POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(["status" => "error", "message" => "Method tidak diizinkan. Gunakan POST."]);
     exit;
 }
 
-// Fungsi bantu: hitung panjang teks (mendukung mbstring)
+// Helper untuk menghitung panjang karakter teks
 function panjang($teks) {
     return function_exists('mb_strlen') ? mb_strlen($teks) : strlen($teks);
 }
 
-// Menangkap input form (multipart/form-data).
-// [Penyesuaian FE] Nama field disamakan dengan data yang dikirim API.buatReservasi() di frontend:
-//   nama_acara, deskripsi, penanggung_jawab_nama, penanggung_jawab_kontak, tgl_mulai, tgl_selesai, jam_mulai, jam_selesai,
-//   tempat (daftar { id_gedung, id_ruangan }, boleh dikirim sebagai JSON string atau tempat[0][id_gedung] dst), file_proposal.
-// Nama field lama (id_gedung, id_ruangan, tgl_acara, pj_nama, pj_nim, pj_kontak) tetap diterima agar kode lama tidak rusak.
+// Menangkap parameter input formulir pengajuan reservasi
 $nama_acara  = trim($_POST['nama_acara'] ?? '');
 $deskripsi   = trim($_POST['deskripsi'] ?? '');
 $pj_nama     = trim($_POST['penanggung_jawab_nama'] ?? ($_POST['pj_nama'] ?? ''));
 $pj_kontak   = trim($_POST['penanggung_jawab_kontak'] ?? ($_POST['pj_kontak'] ?? ''));
-// SCHEMA BARU: pj_nim wajib di database, tetapi form frontend tidak punya isian NIM, jadi diisi '-' bila kosong
+// Nilai default NIM penanggung jawab jika tidak diisi pada formulir
 $pj_nim      = trim($_POST['pj_nim'] ?? '');
 if ($pj_nim === '') { $pj_nim = '-'; }
 
@@ -44,7 +40,7 @@ if ($tgl_selesai === '') { $tgl_selesai = $tgl_mulai; }
 $jam_mulai   = normalisasi_jam($_POST['jam_mulai'] ?? '');
 $jam_selesai = normalisasi_jam($_POST['jam_selesai'] ?? '');
 
-// Daftar tempat yang dipinjam (gedung utuh bila id_ruangan kosong)
+// Parsing data fasilitas tempat (gedung dan ruangan) yang diajukan
 $tempat_in = $_POST['tempat'] ?? null;
 if (is_string($tempat_in)) { $tempat_in = json_decode($tempat_in, true); }
 if (!is_array($tempat_in) || !$tempat_in) {
@@ -54,7 +50,7 @@ if (!is_array($tempat_in) || !$tempat_in) {
     }
 }
 
-// Validasi input
+// Validasi kelengkapan data dasar formulir
 if ($nama_acara === '' || $tgl_mulai === '' || !$tempat_in) {
     echo json_encode(["status" => "error", "message" => "Data form tidak lengkap!"]);
     exit;
@@ -63,18 +59,18 @@ if ($jam_mulai === false || $jam_selesai === false) {
     echo json_encode(["status" => "error", "message" => "Format jam tidak valid!"]);
     exit;
 }
-// SCHEMA BARU: data penanggung jawab wajib diisi (kolom pj_nama, pj_nim, pj_kontak NOT NULL)
+// Validasi data penanggung jawab kegiatan
 if ($pj_nama === '' || $pj_kontak === '') {
     echo json_encode(["status" => "error", "message" => "Data penanggung jawab (nama dan kontak) wajib diisi!"]);
     exit;
 }
-// Batas panjang sesuai kolom di database
+// Validasi batas maksimal panjang karakter sesuai skema tabel
 if (panjang($nama_acara) > 200 || panjang($pj_nama) > 100 || panjang($pj_nim) > 30 || panjang($pj_kontak) > 30) {
     echo json_encode(["status" => "error", "message" => "Isian terlalu panjang (nama kegiatan maks. 200, nama penanggung jawab maks. 100, kontak maks. 30 karakter)."]);
     exit;
 }
 
-// Validasi format tanggal (YYYY-MM-DD) dan urutannya
+// Validasi format tanggal dan konsistensi rentang tanggal kegiatan
 if (!tanggal_valid($tgl_mulai) || !tanggal_valid($tgl_selesai)) {
     echo json_encode(["status" => "error", "message" => "Format tanggal tidak valid!"]);
     exit;
@@ -84,13 +80,13 @@ if ($tgl_selesai < $tgl_mulai) {
     exit;
 }
 
-// jam selesai harus lebih besar dari jam mulai (jam berlaku tiap hari selama rentang tanggal)
+// Validasi batasan jam operasional kegiatan
 if ($jam_selesai <= $jam_mulai) {
     echo json_encode(["status" => "error", "message" => "Jam selesai harus lebih besar dari jam mulai!"]);
     exit;
 }
 
-// Validasi backend untuk menolak input tanggal reservasi di masa lalu (patokan hari ini = WIB)
+// Memastikan tanggal pelaksanaan kegiatan tidak berada di masa lalu
 $zona_wib = new DateTimeZone('Asia/Jakarta');
 $hari_ini = (new DateTime('now', $zona_wib))->format('Y-m-d');
 if ($tgl_mulai < $hari_ini) {
@@ -98,7 +94,7 @@ if ($tgl_mulai < $hari_ini) {
     exit;
 }
 
-// Rapikan daftar tempat: ID harus angka, duplikat dibuang, dan satu gedung tidak boleh dipilih sebagai gedung utuh sekaligus ruangan
+// Normalisasi data tempat: eliminasi duplikasi dan validasi pemilihan fasilitas
 $tempat = [];
 $gedung_utuh = [];
 $gedung_ruangan = [];
@@ -122,32 +118,27 @@ foreach ($gedung_utuh as $g => $_) {
 }
 $tempat = array_values($tempat);
 
-// Validasi keberadaan file.
-// SCHEMA BARU: wajib atau tidaknya proposal ditentukan oleh gedung (kolom wajib_proposal),
-// jadi pengecekan "wajib"-nya dilakukan setelah data gedung dibaca. Di sini hanya memeriksa file yang dikirim.
+// Pengecekan berkas proposal yang diunggah
 $ada_file = isset($_FILES['file_proposal']) && $_FILES['file_proposal']['error'] !== UPLOAD_ERR_NO_FILE;
 if ($ada_file && $_FILES['file_proposal']['error'] !== UPLOAD_ERR_OK) {
     echo json_encode(["status" => "error", "message" => "File proposal gagal diunggah. Periksa ukuran dan formatnya."]);
     exit;
 }
 
-// Validasi file proposal (jika ada): harus PDF dan maksimal 5MB
+// Validasi format (PDF), batas ukuran (maksimal 5MB), dan MIME type berkas
 if ($ada_file) {
     $file      = $_FILES['file_proposal'];
     $file_ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $file_size = $file['size'];
 
-    // Validasi format dan ukuran file (maksimal 5MB)
     if ($file_ext !== 'pdf') {
         echo json_encode(["status" => "error", "message" => "Gagal! Format file harus PDF."]);
         exit;
     }
-    // Validasi ukuran file (maksimal 5MB)
     if ($file_size > 5 * 1024 * 1024) {
         echo json_encode(["status" => "error", "message" => "Gagal! Ukuran file maksimal 5MB."]);
         exit;
     }
-    // Validasi MIME type file menggunakan finfo (jika tersedia) untuk memastikan file benar-benar PDF
     if (class_exists('finfo')) {
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         if ($finfo->file($file['tmp_name']) !== 'application/pdf') {
@@ -157,14 +148,13 @@ if ($ada_file) {
     }
 }
 
-$direktori_simpan = null; // diisi setelah file berhasil dipindahkan
+$direktori_simpan = null;
 
-// SCHEMA BARU: tanggal dan jam digabung menjadi waktu (timestamp) dengan zona WIB.
-// waktu_mulai = tgl_mulai + jam_mulai, waktu_selesai = tgl_selesai + jam_selesai (jam berlaku tiap hari selama rentang tanggal).
+// Konversi tanggal dan jam menjadi format timestamp zona waktu WIB
 $waktu_mulai   = (new DateTime($tgl_mulai . ' ' . $jam_mulai, $zona_wib))->format('Y-m-d H:i:sP');
 $waktu_selesai = (new DateTime($tgl_selesai . ' ' . $jam_selesai, $zona_wib))->format('Y-m-d H:i:sP');
 
-// Menghentikan proses: batalkan transaction, hapus file yang telanjur dipindahkan, lalu kirim pesan error
+// Helper untuk pembatalan transaksi basis data dan pembersihan berkas sementara
 function batalkan($pdo, &$direktori_simpan, $pesan, $kode = 200) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
     if ($direktori_simpan !== null && file_exists($direktori_simpan)) { unlink($direktori_simpan); }
@@ -173,12 +163,12 @@ function batalkan($pdo, &$direktori_simpan, $pesan, $kode = 200) {
     exit;
 }
 
-// Proses penyimpanan data ke database dengan pengecekan bentrok jadwal
+// Memulai proses transaksi penyimpanan data reservasi
 try {
-    // BARU 1: pastikan setiap gedung ada dan masih aktif, jam acara sesuai jam operasional, dan ruangan valid
+    // 1. Validasi status operasional gedung, jam buka/tutup, dan ketersediaan ruangan
     $stmt_gedung  = $pdo->prepare("SELECT id, nama, jurusan_id, jam_buka, jam_tutup, wajib_proposal, is_active FROM gedung WHERE id = :id_gedung");
     $stmt_ruangan = $pdo->prepare("SELECT id, nama FROM ruangan WHERE id = :id_ruangan AND gedung_id = :id_gedung AND is_active");
-    $gedung_data = [];     // id gedung -> data gedung (urutan sesuai pilihan)
+    $gedung_data = [];
     $perlu_proposal = false;
 
     foreach ($tempat as $i => $t) {
@@ -194,7 +184,7 @@ try {
             exit;
         }
 
-        // SCHEMA BARU: acara harus berada dalam jam operasional gedung
+        // Memastikan rentang waktu kegiatan berada dalam jam operasional gedung
         if ($jam_mulai < $gedung['jam_buka'] || $jam_selesai > $gedung['jam_tutup']) {
             echo json_encode([
                 "status"  => "error",
@@ -204,7 +194,7 @@ try {
             exit;
         }
 
-        // SCHEMA BARU: ruangan bersifat opsional, tetapi jika dipilih harus milik gedung tersebut dan aktif
+        // Memastikan ruangan yang dipilih berstatus aktif dan sesuai dengan gedung terkait
         if ($t['id_ruangan'] !== null) {
             $stmt_ruangan->execute([':id_ruangan' => $t['id_ruangan'], ':id_gedung' => $t['id_gedung']]);
             if (!$stmt_ruangan->fetch()) {
@@ -217,25 +207,22 @@ try {
         if (filter_var($gedung['wajib_proposal'], FILTER_VALIDATE_BOOLEAN)) { $perlu_proposal = true; }
     }
 
-    // SCHEMA BARU: proposal wajib bila salah satu gedung yang dipilih mewajibkannya (wajib_proposal = true)
+    // Memastikan berkas proposal terunggah apabila gedung mewajibkan proposal
     if ($perlu_proposal && !$ada_file) {
         echo json_encode(["status" => "error", "message" => "File proposal wajib diunggah!"]);
         exit;
     }
 
-    
-
-    // [Penyesuaian FE] Kunci singkat agar dua pengajuan yang masuk bersamaan tidak sama-sama lolos cek bentrok.
-    // Kunci otomatis lepas saat transaction selesai.
+    // Mengawali database transaction dan menerapkan row locking untuk konkurensi data
     $pdo->beginTransaction();
 
-    // Kunci baris gedung yang dipilih agar pengajuan bersamaan tetap antre (aman untuk Neon Pooler)
+    // Mengunci baris gedung yang dipilih agar pengajuan konkuren tetap antre secara konsisten
     $stmt_lock = $pdo->prepare("SELECT id FROM gedung WHERE id = :id FOR UPDATE");
     foreach ($tempat as $t) {
         $stmt_lock->execute([':id' => $t['id_gedung']]);
     }
 
-    // BARU 2: cek bentrok jadwal untuk setiap tempat (aturan sama dengan cek_ketersediaan.php, tanpa kolom r.periode)
+    // 2. Pemeriksaan bentrok jadwal untuk setiap fasilitas yang diajukan
     foreach ($tempat as $t) {
         $bentrok = cari_bentrok_jadwal($pdo, $t['id_gedung'], $t['id_ruangan'], $tgl_mulai, $tgl_selesai, $jam_mulai, $jam_selesai);
         if ($bentrok) {
@@ -246,8 +233,7 @@ try {
         }
     }
 
-    // file baru dipindahkan SETELAH semua pengecekan lolos,
-    // jadi file tidak terunggah sia-sia kalau pengajuan ditolak.
+    // 3. Penyimpanan fisik berkas proposal ke direktori upload setelah validasi lolos
     $nama_file_baru = null;
     if ($ada_file) {
         $nama_file_baru   = uniqid('proposal_') . '.pdf';
@@ -259,7 +245,7 @@ try {
         }
     }
 
-    // 10a. Simpan data utama reservasi. Pengaju = akun organisasi yang sedang login (id dari session).
+    // 4. Menyimpan data induk reservasi ke tabel reservasi
     $stmt = $pdo->prepare("INSERT INTO reservasi
             (organisasi_id, nama_kegiatan, deskripsi, pj_nama, pj_nim, pj_kontak, waktu_mulai, waktu_selesai)
             VALUES
@@ -278,13 +264,13 @@ try {
     $baris_baru   = $stmt->fetch();
     $id_reservasi = (int)$baris_baru['id'];
 
-    // 10b. Simpan semua tempat yang dipinjam (gedung, dan ruangan jika dipilih)
+    // 5. Menyimpan rincian fasilitas gedung dan ruangan ke tabel reservasi_item
     $stmt_item = $pdo->prepare("INSERT INTO reservasi_item (reservasi_id, gedung_id, ruangan_id) VALUES (:reservasi_id, :gedung_id, :ruangan_id)");
     foreach ($tempat as $t) {
         $stmt_item->execute([':reservasi_id' => $id_reservasi, ':gedung_id' => $t['id_gedung'], ':ruangan_id' => $t['id_ruangan']]);
     }
 
-    // 10c. Simpan dokumen proposal (versi 1). Yang disimpan di database hanya nama filenya.
+    // 6. Menyimpan metadata dokumen proposal ke tabel dokumen_reservasi
     if ($ada_file) {
         $stmt_dok = $pdo->prepare("INSERT INTO dokumen_reservasi (reservasi_id, versi, nama_asli, path_file, ukuran_byte, uploaded_by)
                                    VALUES (:reservasi_id, 1, :nama_asli, :path_file, :ukuran, :uploaded_by)");
@@ -297,9 +283,7 @@ try {
         ]);
     }
 
-    // 10d. Buat tahap persetujuan sesuai alur gedung (tabel alur_persetujuan), mulai dari tahap pertama.
-    // [Penyesuaian FE] Bila memilih lebih dari satu gedung, alur tiap gedung digabung berurutan:
-    // approver yang sama hanya dihitung sekali (mis. dosen pembimbing), sehingga semua pihak yang berwenang tetap menyetujui.
+    // 7. Menyusun hierarki alur persetujuan berdasarkan konfigurasi gedung
     $stmt_alur = $pdo->prepare("SELECT ap.urutan, ap.jabatan_id, j.cakupan, j.nama AS jabatan
                                 FROM alur_persetujuan ap
                                 JOIN jabatan j ON j.id = ap.jabatan_id
@@ -317,8 +301,6 @@ try {
         }
 
         foreach ($alur as $tahap) {
-            // Tentukan siapa approver tahap ini menurut cakupan jabatannya:
-            //   organisasi = dosen pembimbing organisasi pengaju, jurusan = approver jurusan gedung, global = approver jabatan itu
             if ($tahap['cakupan'] === 'organisasi') {
                 $stmt_a = $pdo->prepare("SELECT dosen_pembimbing_id FROM organisasi WHERE user_id = :org");
                 $stmt_a->execute([':org' => $_SESSION['id_user']]);
@@ -334,7 +316,7 @@ try {
             if (!$id_approver) {
                 batalkan($pdo, $direktori_simpan, "Approver untuk tahap " . $tahap['jabatan'] . " belum tersedia.");
             }
-            if (isset($approver_terpakai[$id_approver])) { continue; } // approver sama sudah ada di alur
+            if (isset($approver_terpakai[$id_approver])) { continue; }
 
             $approver_terpakai[$id_approver] = true;
             $tahap_gabungan[] = ['jabatan_id' => $tahap['jabatan_id'], 'approver_id' => $id_approver, 'jabatan' => $tahap['jabatan']];
@@ -352,7 +334,7 @@ try {
         ]);
     }
 
-    // 10e. Catat riwayat pengajuan
+    // 8. Mencatat log riwayat pengajuan awal pada tabel reservasi_riwayat
     $stmt_riwayat = $pdo->prepare("INSERT INTO reservasi_riwayat (reservasi_id, aktor_id, aksi) VALUES (:reservasi_id, :aktor_id, 'diajukan')");
     $stmt_riwayat->execute([':reservasi_id' => $id_reservasi, ':aktor_id' => $_SESSION['id_user']]);
 
@@ -362,7 +344,7 @@ try {
     echo json_encode([
         "status" => "success",
         "message" => "Pengajuan berhasil dikirim! Menunggu persetujuan tahap 1: " . $nama_tahap_1,
-        "id_reservasi" => $id_reservasi, // dipertahankan agar pemanggil lama tetap jalan
+        "id_reservasi" => $id_reservasi,
         "data" => [
             "id_reservasi"        => (string)$id_reservasi,
             "nomor_pengajuan"     => $baris_baru['nomor_pengajuan'],
