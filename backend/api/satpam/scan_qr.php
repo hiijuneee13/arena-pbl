@@ -5,11 +5,7 @@ require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 require_once '../../config/surat.php';
 
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'Satpam') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Halaman ini khusus Satpam."]);
-    exit;
-}
+wajib_login(['satpam']);
 
 $masukan = $_GET['kode'] ?? ($_POST['kode'] ?? '');
 if ($masukan === '' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -89,6 +85,7 @@ try {
     ]);
 } catch (PDOException $e) {
     error_log("scan_qr.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Terjadi kesalahan sistem saat memeriksa kode."]);
 }
 ?>

@@ -5,11 +5,7 @@ require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 require_once '../../config/surat.php';
 
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Halaman ini khusus Admin TU."]);
-    exit;
-}
+wajib_login(['admin']);
 
 try {
     // 1. View v_reservasi
@@ -83,6 +79,7 @@ try {
     ]);
 } catch (PDOException $e) {
     error_log("dashboard_admin.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Terjadi kesalahan database saat memuat dashboard."]);
 }
 ?>

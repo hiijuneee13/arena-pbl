@@ -10,13 +10,13 @@ $pesan_error = "";
 
 // 2. Jika ID kosong, kirim response error
 if (empty($id_reservasi)) {
-    $pesan_error = "ID Reservasi tidak valid.";
+    $pesan_error = "Kode verifikasi tidak valid.";
 // Jika ID tidak kosong, lanjutkan untuk cek ke database
 } else {
     // 3. Cek ke database apakah ID reservasi ada dan status_akhir-nya 'Approved'
     try {
         // 3a-3b. [Penyesuaian FE] SCHEMA BARU: query lama (users.id_user, gedung_fasilitas, r.id_gedung) sudah tidak ada.
-        // Pencarian dipindah ke cari_reservasi_verifikasi() di helpers.php; menerima id_reservasi (angka) atau kode_verifikasi (UUID).
+        // Pencarian dipindah ke cari_reservasi_verifikasi() di helpers.php; hanya menerima kode_verifikasi (UUID).
         $data = cari_reservasi_verifikasi($pdo, $id_reservasi);
         // 3c. Jika data tidak ditemukan atau status_akhir bukan 'Approved', beri pesan error
         if (!$data || $data['status_akhir'] !== 'Approved') {

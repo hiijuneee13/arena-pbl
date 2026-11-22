@@ -3,18 +3,8 @@ session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
-require_once '../../config/storage.php';
 
-if (!isset($_SESSION['id_user'])) {
-    echo json_encode(["status" => "error", "message" => "Anda belum login!"]);
-    exit;
-}
-
-if (($_SESSION['role_db'] ?? '') !== 'approver') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Anda bukan Approver."]);
-    exit;
-}
+wajib_login(['approver']);
 
 try {
     // Membaca antrean dari View v_inbox_approver
@@ -29,15 +19,8 @@ try {
     $data_pending = petakan_reservasi($stmt->fetchAll(PDO::FETCH_ASSOC));
 
     foreach ($data_pending as &$item) {
-        $path_file = $item['file_proposal'] ?? '';
-        $item['url_pdf'] = null;
-        if (!empty($path_file)) {
-            try {
-                $item['url_pdf'] = url_presigned_s3($path_file);
-            } catch (Exception $ex) {
-                $item['url_pdf'] = 'uploads/' . $path_file;
-            }
-        }
+        // file_proposal = nama file proposal versi terbaru; url_pdf = alamat untuk membukanya
+        $item['url_pdf'] = !empty($item['file_proposal']) ? url_berkas($item['file_proposal']) : null;
         $item['id_reservasi']   = (string)$item['id_reservasi'];
         $item['nama_instansi']  = $item['nama_pemohon'];
         $item['tgl_mulai']      = $item['tgl_acara'];
@@ -55,6 +38,7 @@ try {
 
 } catch (PDOException $e) {
     error_log("get_pending.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Terjadi kesalahan database saat mengambil antrean persetujuan."]);
 }
 ?>

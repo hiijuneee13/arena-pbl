@@ -4,18 +4,8 @@ header('Content-Type: application/json');
 
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
-require_once '../../config/storage.php';
 
-if (!isset($_SESSION['id_user'])) {
-    echo json_encode(["status" => "error", "message" => "Anda belum login!"]);
-    exit;
-}
-
-if ($_SESSION['role'] !== 'Mahasiswa') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Halaman ini khusus Mahasiswa."]);
-    exit;
-}
+wajib_login(['pengaju']);
 
 try {
     $id_user = $_SESSION['id_user'];
@@ -76,15 +66,8 @@ try {
                                  ORDER BY revisi_ke ASC, id_riwayat ASC");
         $stmt_p->execute([':ids' => $ids]);
         foreach ($stmt_p->fetchAll(PDO::FETCH_ASSOC) as $p) {
-            $path_file = preg_replace('#^uploads/#', '', $p['file_url']);
-            $url_pdf = null;
-            if (!empty($path_file)) {
-                try {
-                    $url_pdf = url_presigned_s3($path_file);
-                } catch (Exception $ex) {
-                    $url_pdf = null;
-                }
-            }
+            // path_file di database hanya nama file; URL dibentuk satu pintu lewat url_berkas()
+            $url_pdf = url_berkas($p['file_url']);
             $proposal_per[$p['id_reservasi']][] = [
                 "id_riwayat"     => (string)$p['id_riwayat'],
                 "revisi_ke"      => (int)$p['revisi_ke'],
@@ -115,6 +98,7 @@ try {
 
 } catch (PDOException $e) {
     error_log("riwayat_reservasi.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Terjadi kesalahan database saat mengambil riwayat reservasi."]);
 }
 ?>

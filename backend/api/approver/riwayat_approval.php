@@ -4,25 +4,18 @@ header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 
-if (!isset($_SESSION['id_user'])) {
-    http_response_code(401);
-    echo json_encode(["status" => "error", "message" => "Anda belum login!"]);
-    exit;
-}
-
-if (($_SESSION['role_db'] ?? '') !== 'approver') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Anda bukan Approver."]);
-    exit;
-}
+wajib_login(['approver']);
 
 try {
     $id_approver = (int)$_SESSION['id_user'];
 
     // 1. Ambil riwayat keputusan dari View v_log_approval
-    $sql_log = "SELECT * FROM v_log_approval 
-                WHERE id_approver = :id 
-                ORDER BY waktu_asli DESC";
+    // nama organisasi diambil dari v_reservasi (v_log_approval tidak memuatnya)
+    $sql_log = "SELECT l.*, v.nama_organisasi
+                FROM v_log_approval l
+                JOIN v_reservasi v ON v.id_reservasi = l.id_reservasi
+                WHERE l.id_approver = :id
+                ORDER BY l.waktu_asli DESC, l.id_approval DESC";
     $stmt_log = $pdo->prepare($sql_log);
     $stmt_log->execute([':id' => $id_approver]);
     $riwayat = $stmt_log->fetchAll(PDO::FETCH_ASSOC);
@@ -62,6 +55,7 @@ try {
 
 } catch (PDOException $e) {
     error_log("riwayat_approval.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Terjadi kesalahan database saat mengambil riwayat keputusan."]);
 }
 ?>

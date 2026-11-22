@@ -6,86 +6,89 @@ header('Content-Type: application/json');
 
 // Memanggil jembatan koneksi database
 require_once '../../config/koneksi.php';
-// SCHEMA BARU: fungsi bantu untuk label peran frontend
+// Fungsi bantu untuk label peran frontend
 require_once '../../config/helpers.php';
 
-// Cek apakah request yang masuk bertipe POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Hanya menerima POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(["status" => "error", "message" => "Method tidak diizinkan. Gunakan POST."]);
+    exit;
+}
 
-    // Menangkap data JSON yang dikirim oleh Frontend
-    $inputJSON = file_get_contents('php://input');
-    $input = json_decode($inputJSON, TRUE); 
+// Menangkap data JSON yang dikirim oleh Frontend
+$input = json_decode(file_get_contents('php://input'), true);
+if (!is_array($input)) { $input = $_POST; }
 
-    // Login memakai email; username tetap merupakan identitas/nama pengguna.
-    $email = trim($input['email'] ?? '');
-    $password = $input['password'] ?? '';
+// Login memakai email; username tetap merupakan identitas/nama pengguna.
+$email    = trim((string)($input['email'] ?? ''));
+$password = (string)($input['password'] ?? '');
 
-    // Validasi kosong
-    if (empty($email) || empty($password)) {
-        echo json_encode(["status" => "error", "message" => "Email dan password wajib diisi!"]);
+if ($email === '' || $password === '') {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "Email dan password wajib diisi!"]);
+    exit;
+}
+
+try {
+    // Jabatan approver dari tabel approver + jabatan; nama organisasi pengaju dari tabel organisasi
+    $stmt = $pdo->prepare("SELECT u.id, u.username, u.email, u.password_hash, u.nama, u.role, u.is_active,
+                                  j.nama AS jabatan, o.nama AS nama_organisasi
+                           FROM users u
+                           LEFT JOIN approver a   ON a.user_id = u.id
+                           LEFT JOIN jabatan j    ON j.id = a.jabatan_id
+                           LEFT JOIN organisasi o ON o.user_id = u.id
+                           WHERE lower(u.email) = lower(:email)");
+    $stmt->execute([':email' => $email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "Email tidak terdaftar!"]);
         exit;
     }
 
-    try {
-        // Cari user (parameterised query untuk cegah SQL Injection)
-        // SCHEMA BARU: jabatan approver diambil dari tabel approver dan jabatan
-        $stmt = $pdo->prepare("SELECT u.id, u.username, u.email, u.password_hash, u.nama, u.role, u.is_active, j.nama AS jabatan
-                               FROM users u
-                               LEFT JOIN approver a ON a.user_id = u.id
-                               LEFT JOIN jabatan j ON j.id = a.jabatan_id
-                               WHERE lower(u.email) = lower(:email)");
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-
-        $user = $stmt->fetch();
-
-        if ($user) {
-            // Cek password dengan password_verify() (kolom password_hash menyimpan hash bcrypt)
-            $cocok = password_verify($password, $user['password_hash']);
-
-            if ($cocok) {
-                // Akun yang dinonaktifkan tidak boleh masuk
-                if (!filter_var($user['is_active'], FILTER_VALIDATE_BOOLEAN)) {
-                    echo json_encode(["status" => "error", "message" => "Akun tidak aktif. Hubungi admin."]);
-                    exit;
-                }
-
-                // buat ID sesi baru setelah login untuk mencegah session fixation
-                session_regenerate_id(true);
-
-                // Berhasil! Catat identitasnya di Session Server
-                $_SESSION['id_user']  = $user['id'];
-                $_SESSION['role_db']  = $user['role'];      // role asli di database
-                $_SESSION['jabatan']  = $user['jabatan'];   // jabatan approver (null untuk peran lain)
-                $_SESSION['role']     = label_peran($user['role'], $user['jabatan']); // label untuk frontend
-                $_SESSION['nama']     = $user['nama'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['email']    = $user['email'];
-
-                echo json_encode([
-                    "status"  => "success",
-                    "message" => "Login berhasil!",
-                    "user"    => [
-                        "nama" => $user['nama'],
-                        "role" => $_SESSION['role'],
-                        "username" => $user['username'],
-                        "email" => $user['email']
-                    ]
-                ]);
-            } else {
-                echo json_encode(["status" => "error", "message" => "Password salah!"]);
-            }
-        } else {
-            echo json_encode(["status" => "error", "message" => "Email tidak terdaftar!"]);
-        }
-
-    } catch (PDOException $e) {
-        error_log("login.php: " . $e->getMessage());
-        echo json_encode(["status" => "error", "message" => "Terjadi kesalahan server."]);
+    if (!password_verify($password, $user['password_hash'])) {
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "Password salah!"]);
+        exit;
     }
 
-} else {
-    // Jika ada yang mencoba buka via URL browser biasa (GET)
-    echo json_encode(["status" => "error", "message" => "Method tidak diizinkan. Gunakan POST."]);
+    // Akun yang dinonaktifkan tidak boleh masuk
+    if (!filter_var($user['is_active'], FILTER_VALIDATE_BOOLEAN)) {
+        http_response_code(403);
+        echo json_encode(["status" => "error", "message" => "Akun tidak aktif. Hubungi admin."]);
+        exit;
+    }
+
+    // ID sesi baru setelah login untuk mencegah session fixation
+    session_regenerate_id(true);
+
+    $_SESSION['id_user']  = (int)$user['id'];
+    $_SESSION['role_db']  = $user['role'];      // role asli di database
+    $_SESSION['jabatan']  = $user['jabatan'];   // jabatan approver (null untuk peran lain)
+    $_SESSION['role']     = label_peran($user['role'], $user['jabatan']); // label untuk frontend
+    $_SESSION['nama']     = $user['nama'];
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['email']    = $user['email'];
+
+    echo json_encode([
+        "status"  => "success",
+        "message" => "Login berhasil!",
+        "user"    => [
+            "id_user"         => (int)$user['id'],
+            "nama"            => $user['nama'],
+            "role"            => $_SESSION['role'],
+            "role_db"         => $user['role'],
+            "username"        => $user['username'],
+            "email"           => $user['email'],
+            "nama_organisasi" => $user['nama_organisasi']
+        ]
+    ]);
+
+} catch (PDOException $e) {
+    error_log("login.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Terjadi kesalahan server."]);
 }
 ?>

@@ -153,16 +153,3 @@ CREATE TABLE dokumen_reservasi (
   versi        SMALLINT     NOT NULL DEFAULT 1,
   nama_asli    VARCHAR(255) NOT NULL,
   path_file    VARCHAR(500) NOT NULL,
-  ukuran_byte  INTEGER      NOT NULL CHECK (ukuran_byte > 0),
-  uploaded_by  INTEGER REFERENCES users(id),
-  uploaded_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
-  UNIQUE (reservasi_id, versi)
-);
-
-CREATE TABLE log_aktivitas (
-  id      BIGSERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id),
-  aksi    VARCHAR(50)  NOT NULL,
-  target  VARCHAR(100),
-  waktu   TIMESTAMPTZ  NOT NULL DEFAULT now()
-);

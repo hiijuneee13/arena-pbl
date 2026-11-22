@@ -2,12 +2,9 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
+require_once '../../config/helpers.php';
 
-if (!isset($_SESSION['id_user'])) {
-    http_response_code(401);
-    echo json_encode(["status" => "error", "message" => "Anda belum login!"]);
-    exit;
-}
+wajib_login();
 
 try {
     // 1. Mengambil gedung aktif dari View v_gedung
@@ -47,6 +44,7 @@ try {
     echo json_encode(["status" => "success", "data" => $data]);
 } catch (PDOException $e) {
     error_log("list_gedung_aktif.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Gagal mengambil daftar gedung."]);
 }
 ?>

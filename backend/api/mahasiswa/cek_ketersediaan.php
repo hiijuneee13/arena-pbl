@@ -6,11 +6,7 @@ require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 require_once '../../config/jadwal.php';
 
-if (!isset($_SESSION['id_user'])) {
-    http_response_code(401);
-    echo json_encode(["status" => "error", "message" => "Anda belum login!"]);
-    exit;
-}
+wajib_login();
 
 $input = $_POST;
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -50,13 +46,13 @@ if ($jam_mulai === false || $jam_selesai === false) {
     echo json_encode(["status" => "error", "message" => "Format jam tidak valid (contoh: 08:00)!"]);
     exit;
 }
-if ($jam_selesai <= $jam_mulai) {
-    echo json_encode(["status" => "error", "message" => "Jam selesai harus lebih besar dari jam mulai!"]);
+if (($tgl_selesai . ' ' . $jam_selesai) <= ($tgl_mulai . ' ' . $jam_mulai)) {
+    echo json_encode(["status" => "error", "message" => "Waktu selesai harus lebih besar dari waktu mulai!"]);
     exit;
 }
 
 try {
-    // 1. Ambil informasi gedung dari View v_gedung
+    // 1. Informasi gedung dari View v_gedung
     $stmt_g = $pdo->prepare("SELECT * FROM v_gedung WHERE id_gedung = :id");
     $stmt_g->execute([':id' => $id_gedung]);
     $gedung = $stmt_g->fetch(PDO::FETCH_ASSOC);
@@ -65,7 +61,7 @@ try {
         echo json_encode(["status" => "error", "message" => "Gedung tidak ditemukan!"]);
         exit;
     }
-    if (!$gedung['is_active']) {
+    if (!filter_var($gedung['is_active'], FILTER_VALIDATE_BOOLEAN)) {
         echo json_encode(["status" => "error", "message" => "Gedung " . $gedung['nama_gedung'] . " sedang tidak aktif."]);
         exit;
     }
@@ -73,23 +69,18 @@ try {
     $waktu_mulai   = $tgl_mulai . ' ' . $jam_mulai . '+07';
     $waktu_selesai = $tgl_selesai . ' ' . $jam_selesai . '+07';
 
-    // 2. Cek jam operasional dengan fn_di_luar_jam
+    // 2. Jam operasional (fn_di_luar_jam)
     $stmt_jam = $pdo->prepare("SELECT fn_di_luar_jam(:gedung, :mulai, :selesai)");
-    $stmt_jam->execute([
-        ':gedung'  => $id_gedung,
-        ':mulai'   => $waktu_mulai,
-        ':selesai' => $waktu_selesai
-    ]);
+    $stmt_jam->execute([':gedung' => $id_gedung, ':mulai' => $waktu_mulai, ':selesai' => $waktu_selesai]);
     $di_luar_jam = filter_var($stmt_jam->fetchColumn(), FILTER_VALIDATE_BOOLEAN);
 
-    // 3. Cek bentrok dengan fn_cek_bentrok
+    // 3. Bentrok jadwal (fn_cek_bentrok); ruangan NULL = seluruh gedung
     $stmt_bentrok = $pdo->prepare("SELECT * FROM fn_cek_bentrok(:gedung, :ruangan, :mulai, :selesai)");
-    $stmt_bentrok->execute([
-        ':gedung'  => $id_gedung,
-        ':ruangan' => $id_ruangan,
-        ':mulai'   => $waktu_mulai,
-        ':selesai' => $waktu_selesai
-    ]);
+    $stmt_bentrok->bindValue(':gedung', $id_gedung, PDO::PARAM_INT);
+    $stmt_bentrok->bindValue(':ruangan', $id_ruangan, $id_ruangan === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+    $stmt_bentrok->bindValue(':mulai', $waktu_mulai);
+    $stmt_bentrok->bindValue(':selesai', $waktu_selesai);
+    $stmt_bentrok->execute();
     $daftar_bentrok = $stmt_bentrok->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($daftar_bentrok as &$b) {
@@ -98,13 +89,9 @@ try {
     }
     unset($b);
 
-    // 4. Cek ketersediaan ruangan dengan fn_ruangan_tersedia
+    // 4. Ketersediaan tiap ruangan (fn_ruangan_tersedia)
     $stmt_ruang = $pdo->prepare("SELECT * FROM fn_ruangan_tersedia(:gedung, :mulai, :selesai)");
-    $stmt_ruang->execute([
-        ':gedung'  => $id_gedung,
-        ':mulai'   => $waktu_mulai,
-        ':selesai' => $waktu_selesai
-    ]);
+    $stmt_ruang->execute([':gedung' => $id_gedung, ':mulai' => $waktu_mulai, ':selesai' => $waktu_selesai]);
     $daftar_ruangan = $stmt_ruang->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($daftar_ruangan as &$r) {
@@ -133,10 +120,10 @@ try {
 
 } catch (PDOException $e) {
     if ($e->getCode() === 'P0001') {
-        $pesan = preg_replace('/^ERROR:\s+/', '', strtok($e->errorInfo[2] ?? $e->getMessage(), "\n"));
-        echo json_encode(["status" => "error", "message" => $pesan]);
+        echo json_encode(["status" => "error", "message" => pesan_dari_exception($e)]);
     } else {
         error_log("cek_ketersediaan.php: " . $e->getMessage());
+        http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Terjadi kesalahan saat memeriksa ketersediaan."]);
     }
 }

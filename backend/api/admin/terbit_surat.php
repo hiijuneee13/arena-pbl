@@ -2,6 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
+require_once '../../config/helpers.php';
 require_once '../../config/surat.php';
 
 // [Penyesuaian FE] Endpoint BARU untuk API.terbitkanSurat(id_reservasi) (tombol "Terbitkan Surat" di dashboard admin).
@@ -9,11 +10,7 @@ require_once '../../config/surat.php';
 // persetujuan terakhir (proses_approval.php); bila belum ada, dibuat di sini. Aman dipanggil berulang.
 // Parameter: id_reservasi (JSON atau form).
 
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Halaman ini khusus Admin TU."]);
-    exit;
-}
+wajib_login(['admin']);
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(["status" => "error", "message" => "Method tidak diizinkan. Gunakan POST."]);
@@ -54,7 +51,8 @@ try {
     }
     $pdo->commit();
 
-    catat_aktivitas($pdo, $_SESSION['id_user'], 'Terbitkan Surat', $r['nama_kegiatan'] . ': Menerbitkan surat izin digital');
+    // aksi = jenis aktivitas, target = nama kegiatan (kolom log_aktivitas.aksi / .target)
+    catat_aktivitas($pdo, $_SESSION['id_user'], 'Terbitkan Surat', $r['nama_kegiatan']);
 
     echo json_encode([
         "status" => "success",
@@ -66,6 +64,7 @@ try {
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
     error_log("terbit_surat.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Gagal menerbitkan surat izin."]);
 }
 ?>

@@ -7,14 +7,15 @@ if (isset($_SESSION['id_user'])) {
     echo json_encode([
         "status" => "success",
         "user" => [
-            "id_user" => $_SESSION['id_user'],
-            "nama" => $_SESSION['nama'] ?? 'Mahasiswa',
-            "email" => $_SESSION['email'] ?? '',
+            "id_user"  => $_SESSION['id_user'],
+            "nama"     => $_SESSION['nama'] ?? '',
+            "email"    => $_SESSION['email'] ?? '',
             "username" => $_SESSION['username'] ?? '',
-            "role" => $_SESSION['role'] ?? 'Mahasiswa'
+            "role"     => $_SESSION['role'] ?? '',
+            "role_db"  => $_SESSION['role_db'] ?? ''
         ]
     ]);
-    
+
 // 2. Jika belum login, kirim response error
 } else {
     http_response_code(401);

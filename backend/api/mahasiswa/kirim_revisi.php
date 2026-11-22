@@ -5,11 +5,7 @@ header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'Mahasiswa') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses ditolak! Halaman ini khusus Mahasiswa."]);
-    exit;
-}
+wajib_login(['pengaju']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -30,7 +26,7 @@ $id_reservasi = (int)$id_reservasi;
 // Mendukung key 'file' dari frontend maupun 'file_proposal'
 $file = $_FILES['file'] ?? ($_FILES['file_proposal'] ?? null);
 if (!$file || $file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0) {
-    echo json_encode(["status" => "error", "message" => "Berkas proposal revisi wajib diunggah!"]);
+    echo json_encode(["status" => "error", "message" => "Berkas proposal revisi wajib diunggah (PDF, maksimal 5MB)!"]);
     exit;
 }
 
@@ -50,6 +46,10 @@ if (class_exists('finfo')) {
         exit;
     }
 }
+if ((function_exists('mb_strlen') ? mb_strlen($file['name']) : strlen($file['name'])) > 255) {
+    echo json_encode(["status" => "error", "message" => "Nama file terlalu panjang (maksimal 255 karakter)."]);
+    exit;
+}
 
 $direktori_simpan = null;
 
@@ -64,38 +64,29 @@ function batalkan($pdo, &$direktori_simpan, $pesan, $kode = 200) {
 try {
     $pdo->beginTransaction();
 
-    $nama_acak = 'revisi_' . bin2hex(random_bytes(10)) . '.pdf';
-    $folder_upload = realpath(__DIR__ . '/../../uploads');
-    if (!$folder_upload) {
-        $folder_upload = __DIR__ . '/../../uploads';
-        if (!is_dir($folder_upload)) {
-            mkdir($folder_upload, 0755, true);
-        }
-        $folder_upload = realpath($folder_upload);
+    $nama_file_simpan = 'revisi_' . bin2hex(random_bytes(10)) . '.pdf';
+    $folder_upload = __DIR__ . '/../../uploads';
+    if (!is_dir($folder_upload)) {
+        mkdir($folder_upload, 0755, true);
     }
 
-    $direktori_simpan = $folder_upload . DIRECTORY_SEPARATOR . $nama_acak;
+    $direktori_simpan = realpath($folder_upload) . DIRECTORY_SEPARATOR . $nama_file_simpan;
     if (!move_uploaded_file($file['tmp_name'], $direktori_simpan)) {
         batalkan($pdo, $direktori_simpan, "Gagal menyimpan berkas proposal ke server!");
     }
 
-    $relatif_path = 'uploads/' . $nama_acak;
-    $id_user = (int)$_SESSION['id_user'];
-    $nama_asli = $file['name'];
-    $ukuran = (int)$file['size'];
-
-    // Panggil Stored Function fn_kirim_revisi
+    // Stored Function fn_kirim_revisi: path_file yang disimpan hanya NAMA FILE
     $stmt = $pdo->prepare("SELECT fn_kirim_revisi(:id_reservasi, :id_user, :nama_asli, :path_file, :ukuran, :catatan)");
     $stmt->execute([
         ':id_reservasi' => $id_reservasi,
-        ':id_user'      => $id_user,
-        ':nama_asli'    => $nama_asli,
-        ':path_file'    => $relatif_path,
-        ':ukuran'       => $ukuran,
+        ':id_user'      => (int)$_SESSION['id_user'],
+        ':nama_asli'    => $file['name'],
+        ':path_file'    => $nama_file_simpan,
+        ':ukuran'       => (int)$file['size'],
         ':catatan'      => $catatan === '' ? null : $catatan
     ]);
 
-    // Baca nama jabatan approver berikutnya dari View v_reservasi
+    // Nama jabatan approver yang kini memegang pengajuan, dari View v_reservasi
     $stmt_v = $pdo->prepare("SELECT posisi_approval FROM v_reservasi WHERE id_reservasi = :id");
     $stmt_v->execute([':id' => $id_reservasi]);
     $posisi = $stmt_v->fetchColumn();
@@ -111,11 +102,13 @@ try {
 
 } catch (PDOException $e) {
     if ($e->getCode() === 'P0001') {
-        $pesan = preg_replace('/^ERROR:\s+/', '', strtok($e->errorInfo[2] ?? $e->getMessage(), "\n"));
-        batalkan($pdo, $direktori_simpan, $pesan);
+        batalkan($pdo, $direktori_simpan, pesan_dari_exception($e));
     } else {
         error_log("kirim_revisi.php: " . $e->getMessage());
-        batalkan($pdo, $direktori_simpan, "Terjadi kesalahan saat mengirim revisi proposal.");
+        batalkan($pdo, $direktori_simpan, "Terjadi kesalahan saat mengirim revisi proposal.", 500);
     }
+} catch (Exception $e) {
+    error_log("kirim_revisi.php: " . $e->getMessage());
+    batalkan($pdo, $direktori_simpan, "Terjadi kesalahan server saat mengirim revisi proposal.", 500);
 }
 ?>

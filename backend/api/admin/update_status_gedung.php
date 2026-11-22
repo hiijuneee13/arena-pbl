@@ -3,13 +3,10 @@ session_start();
 header('Content-Type: application/json');
 
 require_once '../../config/koneksi.php';
+require_once '../../config/helpers.php';
 require_once '../../config/surat.php';
 
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Khusus Administrator."]);
-    exit;
-}
+wajib_login(['admin']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -71,14 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         // Menangkap exception P0001 dari trigger gedung_cegah_nonaktif
         if ($e->getCode() === 'P0001') {
-            $pesan = preg_replace('/^ERROR:\s+/', '', strtok($e->errorInfo[2] ?? $e->getMessage(), "\n"));
-            echo json_encode(["status" => "error", "message" => $pesan]);
+            echo json_encode(["status" => "error", "message" => pesan_dari_exception($e)]);
         } else {
             error_log("update_status_gedung.php: " . $e->getMessage());
-            echo json_encode(["status" => "error", "message" => "Kesalahan database: " . $e->getMessage()]);
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Terjadi kesalahan database saat mengubah status gedung."]);
         }
     }
 } else {
+    http_response_code(405);
     echo json_encode(["status" => "error", "message" => "Method tidak diizinkan. Gunakan POST."]);
 }
 ?>

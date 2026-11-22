@@ -2,13 +2,10 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
+require_once '../../config/helpers.php';
 require_once '../../config/surat.php';
 
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'AdminTU') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Halaman ini khusus Admin TU."]);
-    exit;
-}
+wajib_login(['admin']);
 
 try {
     // Mengambil 200 aktivitas admin terbaru dari View v_log_aktivitas
@@ -31,6 +28,7 @@ try {
     echo json_encode(["status" => "success", "data" => $logs]);
 } catch (PDOException $e) {
     error_log("log_aktivitas.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Gagal mengambil log aktivitas."]);
 }
 ?>

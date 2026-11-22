@@ -53,10 +53,52 @@ function petakan_reservasi($daftar) {
     return $daftar;
 }
 
-// Mencari reservasi untuk halaman verifikasi surat publik memakai Stored Function fn_cari_verifikasi(:id)
+// Gerbang akses seragam untuk semua endpoint yang memerlukan login.
+//   $role_db_diizinkan : daftar role di database (admin / pengaju / approver / satpam); kosong = semua role boleh.
+//   Belum login -> HTTP 401, role tidak cocok -> HTTP 403. Selalu berakhir dengan exit.
+// Pemanggil wajib sudah menjalankan session_start().
+function wajib_login($role_db_diizinkan = []) {
+    if (!isset($_SESSION['id_user'])) {
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "Anda belum login atau sesi telah habis."]);
+        exit;
+    }
+    if ($role_db_diizinkan && !in_array($_SESSION['role_db'] ?? '', $role_db_diizinkan, true)) {
+        http_response_code(403);
+        echo json_encode(["status" => "error", "message" => "Akses ditolak! Peran Anda tidak diizinkan untuk fitur ini."]);
+        exit;
+    }
+}
+
+// Pesan error dari RAISE EXCEPTION di database (SQLSTATE P0001) -> teks Indonesia siap tampil
+function pesan_dari_exception($e) {
+    return preg_replace('/^ERROR:\s+/', '', strtok($e->errorInfo[2] ?? $e->getMessage(), "\n"));
+}
+
+// Alamat dasar backend (contoh: http://localhost/arena-pbl/backend), dibentuk dari server yang sedang dipakai.
+function url_dasar_backend() {
+    $https  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+              || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $skrip  = $_SERVER['SCRIPT_NAME'] ?? '';
+    $posisi = strpos($skrip, '/api/');
+    $dasar  = $posisi !== false ? substr($skrip, 0, $posisi) : dirname(dirname($skrip));
+    return ($https ? 'https' : 'http') . '://' . $host . rtrim($dasar, '/\\');
+}
+
+// URL berkas proposal. Kolom dokumen_reservasi.path_file hanya berisi NAMA FILE (mis. proposal_ab12.pdf);
+// file disimpan di backend/uploads/. basename() juga menormalkan data lama yang berawalan "uploads/".
+function url_berkas($path_file) {
+    $nama = basename(str_replace('\\', '/', (string)$path_file));
+    if ($nama === '' || $nama === '.' || $nama === '..') { return null; }
+    return url_dasar_backend() . '/uploads/' . rawurlencode($nama);
+}
+
+// Mencari reservasi untuk halaman verifikasi surat publik memakai Stored Function fn_cari_verifikasi(:id).
+// Halaman publik HANYA menerima kode_verifikasi (UUID) supaya tidak bisa ditebak lewat nomor urut.
 function cari_reservasi_verifikasi($pdo, $id) {
     $id = trim((string)$id);
-    if ($id === '') {
+    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id)) {
         return null;
     }
 

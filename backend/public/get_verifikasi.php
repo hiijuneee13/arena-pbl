@@ -6,7 +6,7 @@ require_once '../config/helpers.php';
 $id_reservasi = $_GET['id'] ?? '';
 
 if (empty($id_reservasi)) {
-    echo json_encode(["status" => "error", "message" => "ID Reservasi tidak ditemukan!"]);
+    echo json_encode(["status" => "error", "message" => "Kode verifikasi tidak ditemukan!"]);
     exit;
 }
 
@@ -34,6 +34,8 @@ try {
         ]);
     }
 } catch (PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Terjadi kesalahan sistem: " . $e->getMessage()]);
+    error_log("get_verifikasi.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Terjadi kesalahan sistem."]);
 }
 ?>

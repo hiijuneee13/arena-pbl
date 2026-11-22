@@ -108,23 +108,15 @@ INSERT INTO ruangan (id, gedung_id, lantai_id, nama, kapasitas) VALUES
 
 -- 12. Alur persetujuan per gedung
 INSERT INTO alur_persetujuan (gedung_id, urutan, jabatan_id) VALUES
-  -- Gedung Sipil (gedung_id = 1)
-  (1, 1, 2), -- 1. Ketua BEM
-  (1, 2, 1), -- 2. Dosen Pembimbing (DPK)
-  (1, 3, 3), -- 3. Ketua Jurusan
-  (1, 4, 4), -- 4. Wakil Direktur
+  (1, 1, 1),
+  (1, 2, 2),
+  (1, 3, 3),
+  (1, 4, 4),
+  (2, 1, 1),
+  (2, 2, 3),
+  (3, 1, 1),
+  (3, 2, 4);
 
-  -- Gedung Mesin (gedung_id = 2)
-  (2, 1, 2), -- 1. Ketua BEM
-  (2, 2, 1), -- 2. Dosen Pembimbing (DPK)
-  (2, 3, 3), -- 3. Ketua Jurusan
-  (2, 4, 4), -- 4. Wakil Direktur
-
-  -- Graha (gedung_id = 3 - Gedung umum non-jurusan, berhenti di Wadir)
-  (3, 1, 2), -- 1. Ketua BEM
-  (3, 2, 1), -- 2. Dosen Pembimbing (DPK)
-  (3, 3, 4); -- 3. Wakil Direktur
-  
 -- 13. Penugasan satpam ke gedung
 INSERT INTO satpam_gedung (satpam_id, gedung_id) VALUES
   (10, 1),
@@ -132,3 +124,12 @@ INSERT INTO satpam_gedung (satpam_id, gedung_id) VALUES
   (11, 3),
   (12, 2);
   
+
+-- 14. Sinkronkan sequence SERIAL setelah INSERT dengan id eksplisit di atas,
+--     supaya INSERT berikutnya (tanpa id) tidak bentrok primary key.
+SELECT setval(pg_get_serial_sequence('jurusan', 'id'), (SELECT max(id) FROM jurusan));
+SELECT setval(pg_get_serial_sequence('jabatan', 'id'), (SELECT max(id) FROM jabatan));
+SELECT setval(pg_get_serial_sequence('users',   'id'), (SELECT max(id) FROM users));
+SELECT setval(pg_get_serial_sequence('gedung',  'id'), (SELECT max(id) FROM gedung));
+SELECT setval(pg_get_serial_sequence('lantai',  'id'), (SELECT max(id) FROM lantai));
+SELECT setval(pg_get_serial_sequence('ruangan', 'id'), (SELECT max(id) FROM ruangan));

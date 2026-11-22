@@ -5,17 +5,7 @@ header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 
-if (!isset($_SESSION['id_user'])) {
-    http_response_code(401);
-    echo json_encode(["status" => "error", "message" => "Anda belum login!"]);
-    exit;
-}
-
-if (($_SESSION['role_db'] ?? '') !== 'approver') {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak! Anda bukan Approver."]);
-    exit;
-}
+wajib_login(['approver']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -103,10 +93,10 @@ try {
         $pdo->rollBack();
     }
     if ($e->getCode() === 'P0001') {
-        $pesan = preg_replace('/^ERROR:\s+/', '', strtok($e->errorInfo[2] ?? $e->getMessage(), "\n"));
-        echo json_encode(["status" => "error", "message" => $pesan]);
+        echo json_encode(["status" => "error", "message" => pesan_dari_exception($e)]);
     } else {
         error_log("proses_approval.php: " . $e->getMessage());
+        http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Gagal memproses keputusan. Silakan coba lagi."]);
     }
 }

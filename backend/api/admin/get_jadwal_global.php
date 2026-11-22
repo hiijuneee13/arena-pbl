@@ -4,11 +4,7 @@ header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 
-if (!isset($_SESSION['id_user']) || !in_array($_SESSION['role_db'] ?? '', ['admin', 'satpam', 'approver'])) {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Akses Ditolak!"]);
-    exit;
-}
+wajib_login(['admin', 'satpam', 'approver']);
 
 try {
     $mode = $_GET['mode'] ?? 'admin';
@@ -68,6 +64,7 @@ try {
     ]);
 } catch (PDOException $e) {
     error_log("get_jadwal_global.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Gagal mengambil jadwal global."]);
 }
 ?>
