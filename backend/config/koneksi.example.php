@@ -17,7 +17,7 @@ $db_host = getenv('ARENA_DB_HOST') ?: 'localhost';
 $db_port = getenv('ARENA_DB_PORT') ?: '5432';
 $db_name = getenv('ARENA_DB_NAME') ?: 'arena_db';
 $db_user = getenv('ARENA_DB_USER') ?: 'postgres';
-$db_pass = getenv('ARENA_DB_PASS') ?: 'ganti_dengan_password_anda';
+$db_pass = getenv('ARENA_DB_PASS') ?: 'npg_Zj2emd7WIplh';
 
 try {
     $pdo = new PDO(
