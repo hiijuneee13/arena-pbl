@@ -42,14 +42,16 @@
 
         <!-- LANGKAH 2: Data Kegiatan & Penanggung Jawab Acara -->
         <div class="step-panel" data-step="2">
-          <div class="field"><label for="f-nama">Nama Kegiatan</label><input class="input" id="f-nama" maxlength="255" placeholder="Contoh: Seminar Nasional Teknologi & Expo Riset 2026"></div>
+          <div class="field"><label for="f-nama">Nama Kegiatan <span class="wajib" title="Wajib diisi">*</span></label><input class="input" id="f-nama" maxlength="200" placeholder="Contoh: Seminar Nasional Teknologi & Expo Riset 2026"></div>
           
-          <div class="field"><label for="f-deskripsi">Deskripsi Singkat Acara</label><textarea class="textarea" id="f-deskripsi" rows="2" placeholder="Jelaskan ringkasan tujuan dan target peserta kegiatan"></textarea></div>
+          <div class="field"><label for="f-deskripsi">Deskripsi Singkat Acara <span class="opsional">(opsional)</span></label><textarea class="textarea" id="f-deskripsi" rows="2" placeholder="Jelaskan ringkasan tujuan dan target peserta kegiatan"></textarea></div>
 
           <div class="grid cols-2">
-            <div class="field"><label for="f-pj-nama">Penanggung Jawab Acara (Ketua Pelaksana)</label><input class="input" id="f-pj-nama" placeholder="Nama Lengkap Ketua Pelaksana"></div>
-            <div class="field"><label for="f-pj-kontak">Kontak WhatsApp / HP Penanggung Jawab</label><input class="input" id="f-pj-kontak" placeholder="08xxxxxxxxxx"></div>
+            <div class="field"><label for="f-pj-nama">Penanggung Jawab Acara <span class="wajib" title="Wajib diisi">*</span></label><input class="input" id="f-pj-nama" maxlength="100" placeholder="Nama Lengkap Penanggung Jawab"></div>
+            <div class="field"><label for="f-pj-nim">NIM Penanggung Jawab <span class="wajib" title="Wajib diisi">*</span></label><input class="input" id="f-pj-nim" maxlength="30" placeholder="Contoh: 2441720001"></div>
           </div>
+          <!-- Full-width (1 kolom penuh, selebar input "Nama Kegiatan"); ID input tidak berubah -->
+          <div class="field"><label for="f-pj-kontak">Kontak WhatsApp / HP Penanggung Jawab <span class="wajib" title="Wajib diisi">*</span></label><input class="input" id="f-pj-kontak" maxlength="30" placeholder="08xxxxxxxxxx"></div>
 
           <div class="grid cols-2">
             <div class="field"><label for="f-org">Organisasi Pelaksana</label><input class="input" id="f-org" readonly></div>
@@ -74,7 +76,7 @@
 
           <div class="grid cols-2">
             <div class="field"><label for="f-tgl-mulai">Tanggal Mulai Kegiatan</label><input class="input" id="f-tgl-mulai" type="date"></div>
-            <div class="field"><label for="f-tgl-selesai">Tanggal Selesai (Bisa Multi-Hari)</label><input class="input" id="f-tgl-selesai" type="date"></div>
+            <div class="field"><label for="f-tgl-selesai">Tanggal Selesai (Multi-Hari = Satu Rentang Kontinu)</label><input class="input" id="f-tgl-selesai" type="date"></div>
           </div>
 
           <div class="grid cols-2">
@@ -141,6 +143,22 @@
       <div id="cat-list"></div>
       <div class="actions"><button class="btn" onclick="UI.modal.close('m-catatan')">Selesai</button></div>
     </div></div>
+
+    <!-- Modal: Batalkan Peminjaman -->
+    <div class="overlay" id="m-batal">
+      <div class="modal" style="max-width:520px;">
+        <h2>Batalkan Peminjaman?</h2>
+        <p class="hint">Pengajuan <b id="batal-acara"></b> akan dibatalkan dan jadwalnya dilepas kembali. Tindakan ini tidak bisa diurungkan.</p>
+        <div class="field">
+          <label for="batal-alasan">Alasan Pembatalan <span class="opsional">(opsional)</span></label>
+          <textarea class="textarea" id="batal-alasan" rows="3" maxlength="300" placeholder="Contoh: Kegiatan ditunda ke bulan depan"></textarea>
+        </div>
+        <div class="step-actions" style="margin-top:6px;">
+          <button class="btn btn-ghost" onclick="UI.modal.close('m-batal')">Kembali</button>
+          <button class="btn" id="btn-konfirmasi-batal" style="background:var(--bad);">Ya, Batalkan</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal: Kirim Revisi Proposal (Alur lanjut dari approver peminta) -->
     <div class="overlay" id="m-revisi">

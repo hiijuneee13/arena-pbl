@@ -4,9 +4,8 @@
 const S3_ENDPOINT   = 'https://br-floral-hall-b3o90zfu.storage.c-4.ap-southeast-1.aws.neon.tech';
 const S3_REGION     = 'ap-southeast-1';
 const S3_BUCKET     = 'uploads'; // nama bucket yang kamu buat di Neon
-const S3_ACCESS_KEY = 'ISI_ACCESS_KEY_ANDA';
-const S3_SECRET_KEY = 'ISI_SECRET_KEY_ANDA';
-
+const S3_ACCESS_KEY = 'nak_live_b38edb48cbc8432aabd4d7f3a9528774';
+const S3_SECRET_KEY = '';
 /**
  * Mengunggah file lokal (misal $_FILES['file_proposal']['tmp_name']) ke Neon S3 Storage.
  * Mengembalikan true jika berhasil, atau melempar Exception jika gagal.
