@@ -46,9 +46,7 @@ $pesan = null;
 if ($nama === '' || mb_strlen($nama) > 100)                          $pesan = 'Nama lengkap wajib diisi (maks. 100 karakter).';
 elseif (!filter_var($email, FILTER_VALIDATE_EMAIL))                  $pesan = 'Format email tidak valid.';
 elseif (!in_array($role, ROLE_VALID, true))                          $pesan = 'Peran tidak valid.';
-elseif (strlen($pass) < 8 || !preg_match('/[a-z]/', $pass) || !preg_match('/[A-Z]/', $pass)
-        || !preg_match('/\d/', $pass) || !preg_match('/[^A-Za-z0-9]/', $pass))
-                                                                     $pesan = 'Kata sandi minimal 8 karakter, memuat huruf besar & kecil, angka, dan simbol.';
+elseif ($pass === '')                                                $pesan = 'Kata sandi wajib diisi.';   // isi kata sandi bebas, ditentukan admin
 elseif ($role === 'mahasiswa' && $organisasi === '')                 $pesan = 'Nama organisasi wajib diisi.';
 elseif ($role === 'approver' && $jabatan === '')                     $pesan = 'Nama jabatan wajib diisi.';
 if ($pesan) {

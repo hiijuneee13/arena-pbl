@@ -9,6 +9,11 @@
 <link rel="stylesheet" href="../assets/css/pages/main.css">
 <style>
   body { background: #F8FAFC; color: #0F172A; }
+  /* ikon mata di dalam kolom kata sandi (sama seperti halaman login) */
+  .pass-wrap { position: relative; display: flex; align-items: center; }
+  .pass-wrap .input { width: 100%; padding-right: 46px; }
+  .toggle-pwd { position: absolute; right: 10px; background: none; border: none; color: #64748B; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; transition: color .15s; }
+  .toggle-pwd:hover { color: #0F172A; }
   .view { display: none; }
   .view.active { display: block; animation: up .3s both; }
   @keyframes up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -194,8 +199,11 @@
           </select>
         </div>
         <div class="field" id="u-extra-wrap"><label for="u-extra" id="u-extra-label">Nama Organisasi</label><input class="input" id="u-extra" maxlength="120" autocomplete="off"></div>
-        <div class="field"><label for="u-pass">Kata Sandi Awal <span class="wajib">*</span></label><input class="input" id="u-pass" type="password" maxlength="100" autocomplete="new-password" placeholder="Minimal 8 karakter, huruf besar+kecil, angka, simbol">
-          <p class="hint" id="u-pass-hint"></p></div>
+        <div class="field"><label for="u-pass">Kata Sandi Awal <span class="wajib">*</span></label><div class="pass-wrap"><input class="input" id="u-pass" type="password" maxlength="100" autocomplete="new-password" placeholder="Isi kata sandi sesuai keinginan admin">
+            <button type="button" class="toggle-pwd" id="btn-lihat-pass" aria-label="Lihat kata sandi">
+              <svg id="u-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button></div>
+        </div>
         <div class="actions">
           <button type="button" class="btn btn-ghost" onclick="UI.modal.close('m-user')">Batal</button>
           <button type="button" class="btn" id="btn-simpan-user">Simpan Akun</button>
@@ -559,10 +567,18 @@ function sesuaikanFormUser() {
   if (ekstra) { $('#u-extra-label').textContent = ekstra; $('#u-extra').placeholder = ekstra === 'Nama Organisasi' ? 'Contoh: HIMA Teknik Sipil' : 'Contoh: Dosen Pembina'; }
 }
 $('#u-role').addEventListener('change', sesuaikanFormUser);
+const MATA_TERBUKA = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+const MATA_CORET = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+$('#btn-lihat-pass').addEventListener('click', () => {   // klik ikon mata: tampilkan / sembunyikan kata sandi (seperti di login)
+  const tampil = $('#u-pass').type === 'password';
+  $('#u-pass').type = tampil ? 'text' : 'password';
+  $('#u-eye').innerHTML = tampil ? MATA_CORET : MATA_TERBUKA;
+  $('#btn-lihat-pass').setAttribute('aria-label', tampil ? 'Sembunyikan kata sandi' : 'Lihat kata sandi');
+});
 $('#btn-tambah-user').addEventListener('click', () => {
   ['u-nama', 'u-email', 'u-extra', 'u-pass'].forEach((id) => { document.getElementById(id).value = ''; });
   $('#u-role').value = 'mahasiswa';
-  $('#u-pass-hint').textContent = '';
+  $('#u-pass').type = 'password'; $('#u-eye').innerHTML = MATA_TERBUKA; $('#btn-lihat-pass').setAttribute('aria-label', 'Lihat kata sandi');
   sesuaikanFormUser();
   UI.modal.open('m-user');
 });
@@ -573,8 +589,7 @@ $('#btn-simpan-user').addEventListener('click', async () => {
   if (!v('u-nama')) return UI.toast('Nama lengkap wajib diisi.', 'bad');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return UI.toast('Format email tidak valid.', 'bad');
   if (ekstra && !v('u-extra')) return UI.toast(ekstra + ' wajib diisi.', 'bad');
-  const masalah = Auth.passwordIssues(pass, email);
-  if (masalah.length) { $('#u-pass-hint').textContent = 'Kata sandi belum memenuhi: ' + masalah.join('; ') + '.'; return; }
+  if (!pass) return UI.toast('Kata sandi wajib diisi.', 'bad');   // isi kata sandi bebas, ditentukan admin
   $('#btn-simpan-user').disabled = true;
   const res = await API.tambahUser({ nama_lengkap: v('u-nama'), email, role, password: pass, nama_organisasi: role === 'mahasiswa' ? v('u-extra') : '', nama_jabatan: role === 'approver' ? v('u-extra') : '' });
   $('#btn-simpan-user').disabled = false;
