@@ -1,63 +1,88 @@
 <?php
 /*
- * DRAFT - Batalkan Peminjaman (dipanggil API.batalkanReservasi di frontend)
- * Request : POST JSON { "id_reservasi": "...", "alasan": "..." (opsional) }
+ * Batalkan Peminjaman oleh pengaju (dipanggil API.batalkanReservasi di frontend)
+ * Request : POST JSON { "id_reservasi": 12, "alasan": "..." (opsional) }
  * Response: { "status": "success|error", "message": "..." }
  *
- * Nama tabel/kolom/session di bagian "SESUAIKAN" di bawah ditulis tanpa melihat skema database,
- * jadi cocokkan dulu dengan database asli sebelum dipakai.
+ * Mengikuti skema database:
+ *   reservasi.status         : 'dibatalkan_sistem' (satu-satunya nilai batal yang diizinkan CHECK constraint)
+ *   reservasi.alasan_batal   : alasan pembatalan
+ *   reservasi_riwayat.aksi   : 'dibatalkan_sistem' (jejak di riwayat, aktor = pengaju)
+ *   Pemilik pengajuan        : reservasi.organisasi_id = users.id pengaju yang login
+ * Aturan: 'diproses' dan 'revisi' boleh dibatalkan; 'disetujui' hanya selama acara belum dimulai.
  */
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 
-wajib_login();
-
-// ---- SESUAIKAN dengan database ARENA ----
-const TABEL_RESERVASI   = 'reservasi';
-const KOLOM_PEMOHON     = 'id_user';               // pemilik pengajuan
-const STATUS_DIBATALKAN = 'dibatalkan';            // nilai status_db untuk pengajuan batal
-const STATUS_BISA_BATAL = ['diproses', 'revisi', 'disetujui'];
-$id_user = $_SESSION['id_user'] ?? null;
-// -----------------------------------------
+wajib_login(['pengaju']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(["status" => "error", "message" => "Metode tidak diizinkan."]);
+    echo json_encode(["status" => "error", "message" => "Metode tidak diizinkan. Gunakan POST."]);
     exit;
 }
 
-$in = json_decode(file_get_contents('php://input'), true) ?: [];
-$id_reservasi = trim((string)($in['id_reservasi'] ?? ''));
-$alasan = mb_substr(trim((string)($in['alasan'] ?? '')), 0, 300);
+$in = json_decode(file_get_contents('php://input'), true);
+if (!is_array($in)) { $in = $_POST; }
 
-if ($id_reservasi === '' || !$id_user) {
+$id_reservasi = trim((string)($in['id_reservasi'] ?? ''));
+$alasan = trim((string)($in['alasan'] ?? ''));
+$alasan = function_exists('mb_substr') ? mb_substr($alasan, 0, 300) : substr($alasan, 0, 300);
+
+if (!ctype_digit($id_reservasi) || strlen($id_reservasi) > 9) {
     http_response_code(400);
     echo json_encode(["status" => "error", "message" => "Data pembatalan tidak valid."]);
     exit;
 }
 
+$id_user = (int)$_SESSION['id_user'];
+$catatan = $alasan !== '' ? $alasan : 'Dibatalkan oleh pengaju';
+
 try {
-    // Hanya pemilik pengajuan yang boleh membatalkan, dan hanya selagi statusnya masih aktif.
-    // TODO: untuk status 'disetujui', tolak pembatalan bila acara sudah dimulai (frontend sudah menyembunyikan tombolnya).
-    $in_status = implode(',', array_fill(0, count(STATUS_BISA_BATAL), '?'));
-    $st = $pdo->prepare("SELECT status_db FROM " . TABEL_RESERVASI . "
-                         WHERE id_reservasi = ? AND " . KOLOM_PEMOHON . " = ? AND status_db IN ($in_status)");
-    $st->execute(array_merge([$id_reservasi, $id_user], STATUS_BISA_BATAL));
-    if (!$st->fetch()) {
+    $pdo->beginTransaction();
+
+    // Kunci barisnya supaya tidak berbenturan dengan keputusan approver yang masuk bersamaan
+    $st = $pdo->prepare("SELECT status, (waktu_mulai > now()) AS belum_mulai
+                         FROM reservasi
+                         WHERE id = :id AND organisasi_id = :uid
+                         FOR UPDATE");
+    $st->execute([':id' => (int)$id_reservasi, ':uid' => $id_user]);
+    $r = $st->fetch(PDO::FETCH_ASSOC);
+
+    if (!$r) {
+        $pdo->rollBack();
         http_response_code(404);
-        echo json_encode(["status" => "error", "message" => "Pengajuan tidak ditemukan atau sudah tidak bisa dibatalkan."]);
+        echo json_encode(["status" => "error", "message" => "Pengajuan tidak ditemukan."]);
         exit;
     }
 
-    $up = $pdo->prepare("UPDATE " . TABEL_RESERVASI . " SET status_db = ?
-                         WHERE id_reservasi = ? AND " . KOLOM_PEMOHON . " = ?");
-    $up->execute([STATUS_DIBATALKAN, $id_reservasi, $id_user]);
+    $belum_mulai = filter_var($r['belum_mulai'], FILTER_VALIDATE_BOOLEAN);
+    if (!in_array($r['status'], ['diproses', 'revisi', 'disetujui'], true)) {
+        $pdo->rollBack();
+        http_response_code(409);
+        echo json_encode(["status" => "error", "message" => "Pengajuan sudah tidak bisa dibatalkan (status: " . label_status($r['status']) . ")."]);
+        exit;
+    }
+    if ($r['status'] === 'disetujui' && !$belum_mulai) {
+        $pdo->rollBack();
+        http_response_code(409);
+        echo json_encode(["status" => "error", "message" => "Acara sudah dimulai, pengajuan yang telah disetujui tidak bisa dibatalkan."]);
+        exit;
+    }
 
-    // TODO: simpan $alasan ke tabel log/riwayat approval bila ada (kolom catatan).
+    $up = $pdo->prepare("UPDATE reservasi SET status = 'dibatalkan_sistem', alasan_batal = :alasan WHERE id = :id");
+    $up->execute([':alasan' => $catatan, ':id' => (int)$id_reservasi]);
+
+    $rw = $pdo->prepare("INSERT INTO reservasi_riwayat (reservasi_id, aktor_id, aksi, catatan)
+                         VALUES (:id, :uid, 'dibatalkan_sistem', :catatan)");
+    $rw->execute([':id' => (int)$id_reservasi, ':uid' => $id_user, ':catatan' => $catatan]);
+
+    $pdo->commit();
     echo json_encode(["status" => "success", "message" => "Pengajuan berhasil dibatalkan."]);
 } catch (PDOException $e) {
+    if ($pdo->inTransaction()) { $pdo->rollBack(); }
     error_log("batalkan_reservasi.php: " . $e->getMessage());
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Gagal membatalkan pengajuan."]);

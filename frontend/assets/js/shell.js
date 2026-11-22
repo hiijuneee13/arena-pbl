@@ -309,7 +309,8 @@
     const meta = user.roleMeta || {};
     const org = user.organisasi && (user.organisasi.nama_organisasi || user.organisasi.nama);
     let peran = meta.label || user.role || '-';
-    if (meta.tahap) peran = 'Approver Tahap ' + meta.tahap + ' (' + meta.label + ')';
+    // urutan tahap approval ditentukan per gedung di database (alur_persetujuan), jadi hanya jabatan yang ditampilkan
+    if (meta.tahap) peran = 'Approver (' + meta.label + ')';
     else if (user.role === 'Mahasiswa') peran = 'Mahasiswa' + (org ? ' - ' + org : '');
     else if (user.role === 'Satpam') peran = 'Satpam' + (user.pos ? ' - ' + user.pos : '');
     return { nama: user.nama_profil || user.nama || '-', email: user.email || '-', peran, role: meta.label || user.role || 'Pengguna' };

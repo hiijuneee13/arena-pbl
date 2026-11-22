@@ -23,6 +23,7 @@ File `config/storage.php` (S3) **tidak lagi dipakai**.
 | `mahasiswa/jadwal_acara.php` | GET | semua login | Jadwal terpakai |
 | `mahasiswa/buat_reservasi.php` | POST multipart | pengaju | Buat pengajuan |
 | `mahasiswa/riwayat_reservasi.php` | GET | pengaju | Riwayat + logs + proposals |
+| `mahasiswa/batalkan_reservasi.php` | POST JSON `{id_reservasi,alasan}` | pengaju | Batalkan pengajuan (status `dibatalkan_sistem`) |
 | `mahasiswa/kirim_revisi.php` | POST multipart `id_reservasi,file,catatan_revisi` | pengaju | Kirim revisi proposal |
 | `approver/get_pending.php` | GET | approver | Antrean giliran saya |
 | `approver/proses_approval.php` | POST JSON `{id_reservasi,action,catatan}` | approver | approve / revision / reject |
@@ -34,5 +35,7 @@ File `config/storage.php` (S3) **tidak lagi dipakai**.
 | `admin/get_jadwal_global.php` | GET | admin/satpam/approver | Jadwal global |
 | `admin/get_alur_gedung.php`, `get_satpam_gedung.php`, `get_users.php` | GET | admin | Data referensi |
 | `admin/toggle_user.php` | POST JSON `{id_user,status_aktif}` | admin | Aktif/nonaktif akun |
+| `admin/get_referensi_akun.php` | GET | admin | Pilihan jabatan, jurusan, dosen pembimbing untuk form akun |
+| `admin/tambah_user.php` | POST JSON | admin | Buat akun (users + organisasi / approver / satpam) |
 | `admin/log_aktivitas.php`, `terbit_surat.php` | GET / POST | admin | Log, surat |
 | `public/verifikasi.php?id=<UUID>` , `public/get_verifikasi.php?id=<UUID>` | GET | publik | Verifikasi surat |
