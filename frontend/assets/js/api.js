@@ -1,458 +1,224 @@
+/* =====================================================================
+   ARENA - api.js
+   Lapisan pemanggil backend PHP (backend/api/...). Semua data berasal dari
+   database lewat endpoint; TIDAK ada data hardcode gedung/ruangan/alur.
+   Respons backend diteruskan apa adanya (pass-through); yang dilakukan di sini
+   hanya: pengiriman request (JSON / FormData sesuai endpoint), penanganan sesi
+   habis (HTTP 401 -> kembali ke login), dan menyimpan kode verifikasi (UUID) surat
+   untuk membuat link / QR.
+   ===================================================================== */
 (function (global) {
   'use strict';
 
   const SCRIPT_SRC = (document.currentScript && document.currentScript.src) || global.location.href;
-  const BACKEND = new URL('../../../backend/', SCRIPT_SRC).href;
-  const BASE = BACKEND + 'api/';
+  const BACKEND = new URL('../../../backend/', SCRIPT_SRC).href;     // .../backend/
+  const BASE = BACKEND + 'api/';                                     // .../backend/api/
+  const LOGIN_URL = new URL('../../login.html', SCRIPT_SRC).href;    // .../frontend/login.html
 
   const err = (message) => ({ status: 'error', message });
-  const me = () => (global.Auth ? global.Auth.current() : null);
-  const jam5 = (t) => String(t || '').slice(0, 5);
-  const hhmmss = (t) => (t && String(t).length === 5 ? t + ':00' : t);
   const ymd = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  const nowHms = () => new Date().toTimeString().slice(0, 8);
-  const nomor = (id) => 'ARENA-' + String(id).padStart(5, '0');
+  const qs = (obj) => Object.keys(obj)
+    .filter((k) => obj[k] !== undefined && obj[k] !== null && obj[k] !== '')
+    .map((k) => encodeURIComponent(k) + '=' + encodeURIComponent(obj[k])).join('&');
 
-  const STATUS = { 'In-Progress': 'In-Progress', Revisi: 'Need-Revision', Approved: 'Approved', Rejected: 'Rejected', Dibatalkan: 'Rejected' };
-  const status = (s) => STATUS[s] || s;
-
-  const REF = [
-    { id_gedung: 1, nama_gedung: 'Gedung Sipil', lokasi: 'Teknik Sipil', jam_buka: '07:00', jam_tutup: '21:00', wajib_proposal: true,
-      alur: ['DosPem', 'Presiden BEM', 'Kajur', 'Wadir'],
-      ruangan: Array.from({ length: 24 }, (_, i) => ({ id_ruangan: i + 1, kode_ruangan: 'R.' + (((i % 8) + 1) * 100 + 1 + Math.floor(i / 8)), nama_ruangan: 'Ruang Kelas', kapasitas: 40, lantai: 'Lantai ' + ((i % 8) + 1), fasilitas: '' })) },
-    { id_gedung: 2, nama_gedung: 'Gedung Mesin', lokasi: 'Teknik Mesin', jam_buka: '07:00', jam_tutup: '21:00', wajib_proposal: true,
-      alur: ['DosPem', 'Kajur'],
-      ruangan: [[25, 'M.101', 1], [26, 'M.201', 2], [27, 'M.102', 1], [28, 'M.202', 2]].map((x) => ({ id_ruangan: x[0], kode_ruangan: x[1], nama_ruangan: 'Ruang Kelas', kapasitas: 30, lantai: 'Lantai ' + x[2], fasilitas: '' })) },
-    { id_gedung: 3, nama_gedung: 'Graha', lokasi: 'Umum', jam_buka: '07:00', jam_tutup: '22:00', wajib_proposal: true,
-      alur: ['DosPem', 'Wadir'], ruangan: [] }
-  ];
-  const refByName = (nama) => REF.find((g) => String(nama || '').indexOf(g.nama_gedung) === 0) || null;
-  const refById = (id) => REF.find((g) => String(g.id_gedung) === String(id)) || null;
-
-  function alurGedung(id_gedung) {
-    const g = refById(id_gedung);
-    return g ? g.alur.map((n, i) => ({ tahap_ke: i + 1, nama_tahap: n })) : [];
-  }
-
-  function ruanganGedung(id_gedung) {
-    const g = refById(id_gedung);
-    return g ? g.ruangan : [];
-  }
-
-  const uploadUrl = (file) => {
-    if (!file) return '';
-    if (/^https?:\/\//i.test(String(file))) return String(file);
-    return BACKEND + 'uploads/' + encodeURIComponent(file);
-  };
-
+  // kode_verifikasi (UUID) per id_reservasi; sumbernya kolom qr_code_surat dari backend
   const kodeById = {};
-  let satpamCache = [];
+  const simpanKode = (rows) => (rows || []).forEach((r) => { if (r && r.qr_code_surat) kodeById[String(r.id_reservasi)] = r.qr_code_surat; });
 
   async function call(path, opts) {
     try {
       const res = await fetch(BASE + path, Object.assign({ credentials: 'include' }, opts || {}));
       const text = await res.text();
-      try { return JSON.parse(text); } catch (e) { return err('Respon server tidak valid.'); }
+      let json;
+      try { json = JSON.parse(text); } catch (e) { return err('Respon server tidak valid.'); }
+      if (res.status === 401) {                       // sesi PHP habis / belum login -> paksa login ulang
+        if (global.Auth) global.Auth.logout();
+        global.location.replace(LOGIN_URL);
+      }
+      return json;
     } catch (e) {
       return err('Tidak dapat terhubung ke server backend.');
     }
   }
+  const getJson = (path, params) => call(path + (params ? '?' + qs(params) : ''));
   const postJson = (path, body) => call(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
+  // Link & QR surat: hanya memakai kode verifikasi (UUID), bukan nomor urut yang mudah ditebak
   function verifyUrl(id) {
-    return new URL('public/verifikasi.php?id=' + encodeURIComponent(kodeById[id] || id), BACKEND).href;
+    const kode = kodeById[String(id)];
+    return kode ? new URL('public/verifikasi.php?id=' + encodeURIComponent(kode), BACKEND).href : '#';
   }
   function qrUrl(id) {
     return 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(verifyUrl(id));
   }
 
-  function posisiInfo(nama_gedung, posisi, st) {
-    const g = refByName(nama_gedung);
-    const alur = g ? g.alur : [];
-    let idx = alur.indexOf(posisi);
-    if (st === 'Approved') idx = alur.length - 1;
-    return {
-      id_gedung: g ? g.id_gedung : null,
-      total_tahap: alur.length || 1,
-      tahap_ke: idx >= 0 ? idx + 1 : 1
-    };
-  }
-
   /* ================= PENGAJU ================= */
 
-  const AKSI = { setuju: 'Approve', disetujui_penuh: 'Approve', minta_revisi: 'Revision', tolak: 'Reject' };
-  function logRow(l) {
-    return {
-      tahap_approval: l.jabatan,
-      status: AKSI[l.aksi] || l.aksi,
-      catatan: l.catatan || (AKSI[l.aksi] === 'Approve' ? 'Disetujui tanpa catatan tambahan.' : 'Tanpa catatan.'),
-      gambar: l.gambar ? uploadUrl(l.gambar) : null,
-      waktu_proses: l.waktu
-    };
-  }
-
-  function logsOf(rows) {
-    const seen = new Set();
-    return (rows || []).filter((l) => AKSI[l.aksi]).map(logRow).filter((l) => {
-      const k = l.tahap_approval + '|' + l.status + '|' + l.catatan;
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-  }
-
   async function riwayatReservasi() {
-    const res = await call('mahasiswa/riwayat_reservasi.php');
+    const res = await getJson('mahasiswa/riwayat_reservasi.php');
     if (res.status !== 'success') return res;
-    const data = (res.data || []).map((r) => {
-      const st = status(r.status_akhir);
-      const info = posisiInfo(r.nama_gedung, r.posisi_approval, st);
-      const idStr = String(r.id_reservasi);
-      if (r.qr_code_surat) kodeById[idStr] = r.qr_code_surat;
-      const tglMulai = r.tgl_mulai || r.tgl_acara;
-      const tglSelesai = r.tgl_selesai || tglMulai;
-      return {
-        id_reservasi: idStr,
-        nomor_pengajuan: r.nomor_pengajuan || nomor(r.id_reservasi),
-        id_gedung: info.id_gedung,
-        nama_gedung: r.nama_gedung,
-        nama_acara: r.nama_acara,
-        deskripsi: r.deskripsi || '',
-        kategori_peminjaman: r.kategori_peminjaman || (String(r.nama_gedung).indexOf(' - ') >= 0 ? 'Ruangan' : 'Gedung Utuh'),
-        tgl_mulai: tglMulai,
-        tgl_selesai: tglSelesai,
-        tgl_acara: r.tgl_acara || tglMulai,
-        jam_mulai: r.jam_mulai,
-        jam_selesai: r.jam_selesai,
-        penanggung_jawab_nama: r.penanggung_jawab_nama || '-',
-        penanggung_jawab_kontak: r.penanggung_jawab_kontak || '-',
-        posisi_approval: r.posisi_approval,
-        nama_tahap: r.posisi_approval,
-        status_akhir: st,
-        tahap_ke: r.tahap_ke != null ? Number(r.tahap_ke) : info.tahap_ke,
-        total_tahap: r.total_tahap != null ? Number(r.total_tahap) : info.total_tahap,
-        versi_proposal: r.versi_proposal != null ? Number(r.versi_proposal) : 1,
-        qr_code_surat: r.qr_code_surat || null,
-        tempat: Array.isArray(r.tempat) ? r.tempat : [],
-        logs: Array.isArray(r.logs) ? r.logs : logsOf(r.riwayat),
-        proposals: Array.isArray(r.proposals) ? r.proposals : []
-      };
-    });
-    return { status: 'success', login_sebagai: res.login_sebagai, jumlah_riwayat: data.length, data };
-  }
-
-  async function buatReservasi(p) {
-    const u = me();
-    if (!u) return err('Anda belum login!');
-    const daftarTempat = Array.isArray(p.tempat) && p.tempat.length
-      ? p.tempat
-      : [{ id_gedung: p.id_gedung, id_ruangan: p.id_ruangan || null }];
-    const t = daftarTempat[0];
-    const tgl = (p.tgl_mulai || p.tgl_acara || '').trim();
-    const tglSelesai = (p.tgl_selesai || tgl).trim();
-
-    const fd = new FormData();
-    fd.append('tempat', JSON.stringify(daftarTempat.map((item) => ({
-      id_gedung: item.id_gedung,
-      id_ruangan: item.id_ruangan || null
-    }))));
-    fd.append('id_gedung', t.id_gedung || '');
-    if (t.id_ruangan) fd.append('id_ruangan', t.id_ruangan);
-    fd.append('nama_acara', (p.nama_acara || '').trim());
-    fd.append('deskripsi', (p.deskripsi || '').trim());
-    fd.append('tgl_mulai', tgl);
-    fd.append('tgl_selesai', tglSelesai);
-    fd.append('tgl_acara', tgl);
-    fd.append('jam_mulai', jam5(p.jam_mulai));
-    fd.append('jam_selesai', jam5(p.jam_selesai));
-    const pjNama = (p.penanggung_jawab_nama || '').trim();
-    const pjNim = (p.penanggung_jawab_nim || '-').trim();
-    const pjKontak = (p.penanggung_jawab_kontak || '').trim();
-    ['pj_nama', 'penanggung_jawab_nama'].forEach((k) => fd.append(k, pjNama));
-    ['pj_nim', 'penanggung_jawab_nim'].forEach((k) => fd.append(k, pjNim));
-    ['pj_kontak', 'penanggung_jawab_kontak', 'pj_hp', 'pj_no_hp'].forEach((k) => fd.append(k, pjKontak));
-    if (p.file) fd.append('file_proposal', p.file);
-    const res = await call('mahasiswa/buat_reservasi.php', { method: 'POST', body: fd });
-    if (res.status !== 'success') {
-      const sent = {};
-      fd.forEach((v, k) => { sent[k] = (v && v.name) ? '[file] ' + v.name : v; });
-      console.error('[ARENA] buat_reservasi gagal. Data terkirim:', sent, 'Respon:', res);
-    }
+    simpanKode(res.data);
+    // key log dari backend: nama_tahap & tanggal_waktu -> dipakai UI sebagai tahap_approval & waktu_proses
+    res.data = (res.data || []).map((r) => Object.assign({}, r, {
+      logs: (r.logs || []).map((l) => Object.assign({}, l, { tahap_approval: l.nama_tahap, waktu_proses: l.tanggal_waktu }))
+    }));
     return res;
   }
 
-  async function kirimRevisi() {
-    return err('Fitur kirim revisi belum tersedia di backend.');
+  // p: { nama_acara, deskripsi, tgl_mulai, tgl_selesai, jam_mulai, jam_selesai, penanggung_jawab_nama/nim/kontak,
+  //      tempat: [{ id_gedung, id_ruangan }], file }   -> multipart/form-data ke buat_reservasi.php
+  async function buatReservasi(p) {
+    const fd = new FormData();
+    fd.append('nama_acara', (p.nama_acara || '').trim());
+    fd.append('deskripsi', (p.deskripsi || '').trim());
+    fd.append('tgl_mulai', (p.tgl_mulai || '').trim());
+    fd.append('tgl_selesai', (p.tgl_selesai || p.tgl_mulai || '').trim());
+    fd.append('jam_mulai', p.jam_mulai || '');
+    fd.append('jam_selesai', p.jam_selesai || '');
+    fd.append('penanggung_jawab_nama', (p.penanggung_jawab_nama || '').trim());
+    fd.append('penanggung_jawab_nim', (p.penanggung_jawab_nim || '').trim());
+    fd.append('penanggung_jawab_kontak', (p.penanggung_jawab_kontak || '').trim());
+    (p.tempat || []).forEach((t, i) => {
+      fd.append('tempat[' + i + '][id_gedung]', t.id_gedung);
+      if (t.id_ruangan) fd.append('tempat[' + i + '][id_ruangan]', t.id_ruangan);
+    });
+    if (p.file) fd.append('file_proposal', p.file);
+    return call('mahasiswa/buat_reservasi.php', { method: 'POST', body: fd });
+  }
+
+  // multipart/form-data: id_reservasi, file, catatan_revisi
+  async function kirimRevisi(p) {
+    if (!p || !p.id_reservasi) return err('ID pengajuan tidak valid.');
+    if (!p.file) return err('Berkas proposal revisi wajib diunggah!');
+    const fd = new FormData();
+    fd.append('id_reservasi', p.id_reservasi);
+    fd.append('file', p.file);
+    fd.append('catatan_revisi', (p.catatan_revisi || '').trim());
+    return call('mahasiswa/kirim_revisi.php', { method: 'POST', body: fd });
   }
 
   async function listGedungAktif() {
-    const g = await call('admin/get_gedung.php');
-    if (g.status === 'success' && Array.isArray(g.data)) {
-      const data = g.data.filter((x) => x.status_operasional === 'Aktif').map((x) => {
-        const ref = refById(x.id_gedung) || {};
-        return {
-          id_gedung: Number(x.id_gedung), nama_gedung: x.nama_gedung, lokasi: x.lokasi, fasilitas: x.fasilitas, kapasitas: x.kapasitas,
-          jam_operasional: x.jam_buka + ' - ' + x.jam_tutup, wajib_proposal: x.wajib_proposal === true || x.wajib_proposal === 't',
-          ruangan: ref.ruangan || []
-        };
-      });
-      return { status: 'success', data };
-    }
-    const data = REF.map((x) => ({
-      id_gedung: x.id_gedung, nama_gedung: x.nama_gedung, lokasi: x.lokasi, fasilitas: x.ruangan.map((r) => r.kode_ruangan).join(', '),
-      kapasitas: x.ruangan.reduce((a, r) => a + r.kapasitas, 0), jam_operasional: x.jam_buka + ' - ' + x.jam_tutup,
-      wajib_proposal: x.wajib_proposal, ruangan: x.ruangan
-    }));
-    return { status: 'success', data };
+    return getJson('mahasiswa/list_gedung_aktif.php');
   }
 
-  async function cekKetersediaan(id_gedung, tgl_mulai, tgl_selesai, jam_mulai, jam_selesai) {
-    const g = refById(id_gedung);
-    if (!g) return err('Gedung tidak ditemukan.');
-    const jm = hhmmss(jam_mulai || '08:00:00');
-    const js = hhmmss(jam_selesai || '17:00:00');
-    const luar = jm < hhmmss(g.jam_buka) || js > hhmmss(g.jam_tutup);
-    const jadwal = await jadwalAcara();
-    const tm = tgl_mulai || ymd(new Date());
-    const ts = tgl_selesai || tm;
-    const bentrok = (jadwal.data || []).filter((r) => String(r.id_gedung) === String(id_gedung)
-      && tm <= r.tgl_selesai && ts >= r.tgl_mulai && jm < hhmmss(r.jam_selesai) && js > hhmmss(r.jam_mulai));
-    return {
-      status: 'success',
-      data: {
-        id_gedung: g.id_gedung, nama_gedung: g.nama_gedung, jam_operasional: g.jam_buka + ' - ' + g.jam_tutup,
-        wajib_proposal: g.wajib_proposal, di_luar_jam_operasional: luar, gedung_utuh_tersedia: !luar && bentrok.length === 0,
-        bentrok: bentrok.map((b) => ({ nama_acara: b.nama_acara, jam_mulai: b.jam_mulai, jam_selesai: b.jam_selesai, status: b.status_akhir })),
-        ruangan: g.ruangan.map((r) => ({
-          id_ruangan: r.id_ruangan, kode_ruangan: r.kode_ruangan, nama_ruangan: r.nama_ruangan, kapasitas: r.kapasitas, lantai: r.lantai,
-          tersedia: !luar && !bentrok.some((b) => String(b.nama_gedung).indexOf(r.kode_ruangan) >= 0 || String(b.nama_gedung) === g.nama_gedung)
-        }))
-      }
-    };
+  async function cekKetersediaan(id_gedung, tgl_mulai, tgl_selesai, jam_mulai, jam_selesai, id_ruangan) {
+    return getJson('mahasiswa/cek_ketersediaan.php', {
+      id_gedung, id_ruangan, tgl_mulai, tgl_selesai: tgl_selesai || tgl_mulai, jam_mulai, jam_selesai
+    });
   }
 
   async function jadwalAcara() {
-    const res = await call('admin/get_jadwal_global.php');
-    if (res.status !== 'success') {
-      const u = me();
-      const own = u && u.role === 'Mahasiswa' ? await riwayatReservasi() : u && u.role === 'Satpam' ? await dashboardSatpam() : { data: [] };
-      const rows = (own.data || []).filter((r) => r.status_akhir === undefined || r.status_akhir === 'Approved' || r.status_akhir === 'In-Progress');
-      return {
-        status: 'success',
-        data: rows.map((r) => {
-          const g = refByName(r.nama_gedung);
-          const tm = r.tgl_mulai || r.tgl_acara;
-          const ts = r.tgl_selesai || tm;
-          return {
-            id_reservasi: String(r.id_reservasi), id_gedung: g ? g.id_gedung : null, nama_gedung: r.nama_gedung, nama_organisasi: r.nama_peminjam || (u && u.nama) || '-',
-            nama_acara: r.nama_acara, tgl_acara: tm, tgl_mulai: tm, tgl_selesai: ts,
-            jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai, status_akhir: r.status_akhir || 'Approved'
-          };
-        })
-      };
-    }
-    const data = (res.data || []).map((r) => {
-      const g = refByName(r.nama_gedung);
-      const tm = r.tgl_mulai || r.tgl_acara;
-      const ts = r.tgl_selesai || tm;
-      return {
-        id_reservasi: String(r.id_reservasi), id_gedung: g ? g.id_gedung : null, nama_gedung: r.nama_gedung, nama_organisasi: r.penyelenggara || r.nama_organisasi,
-        nama_acara: r.nama_acara, tgl_acara: tm, tgl_mulai: tm, tgl_selesai: ts,
-        jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai, status_akhir: r.status_akhir ? status(r.status_akhir) : 'Approved'
-      };
-    });
-    return { status: 'success', data };
+    return getJson('mahasiswa/jadwal_acara.php');
   }
 
   /* ================= APPROVER ================= */
 
   async function getPending() {
-    const res = await call('approver/get_pending.php');
-    if (res.status !== 'success') return res;
-    const data = (res.data || []).map((r) => {
-      const info = posisiInfo(r.nama_gedung, r.nama_tahap || r.posisi_approval, 'In-Progress');
-      const tm = r.tgl_mulai || r.tgl_acara;
-      const ts = r.tgl_selesai || tm;
-      return {
-        id_reservasi: String(r.id_reservasi),
-        nomor_pengajuan: r.nomor_pengajuan || nomor(r.id_reservasi),
-        nama_acara: r.nama_acara,
-        deskripsi: r.deskripsi || '',
-        nama_pemohon: r.nama_pemohon,
-        nama_instansi: r.nama_instansi || r.nama_pemohon,
-        nama_gedung: r.nama_gedung,
-        tgl_mulai: tm, tgl_selesai: ts, tgl_acara: r.tgl_acara || tm,
-        jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai,
-        penanggung_jawab_nama: r.penanggung_jawab_nama || '-',
-        penanggung_jawab_kontak: r.penanggung_jawab_kontak || '-',
-        file_proposal: r.url_pdf || r.file_proposal || '',
-        url_pdf: r.url_pdf || (r.file_proposal ? uploadUrl(r.file_proposal) : null),
-        versi_proposal: r.versi_proposal != null ? Number(r.versi_proposal) : 1,
-        tahap_ke: r.tahap_ke != null ? Number(r.tahap_ke) : info.tahap_ke,
-        total_tahap: r.total_tahap != null ? Number(r.total_tahap) : info.total_tahap,
-        nama_tahap: r.nama_tahap || r.posisi_approval,
-        jumlah_revisi: r.jumlah_revisi != null ? Number(r.jumlah_revisi) : 0
-      };
-    });
-    return { status: 'success', login_sebagai: res.login_sebagai, jumlah_antrean: data.length, data };
+    return getJson('approver/get_pending.php');
   }
 
-  async function prosesApproval({ id_reservasi, action, catatan, gambar }) {
+  // JSON: { id_reservasi, action: approve|revision|reject, catatan }
+  async function prosesApproval({ id_reservasi, action, catatan }) {
     if (!id_reservasi || !action) return err('Data tidak lengkap.');
     const act = String(action).toLowerCase();
-    if (act === 'revision' && !(catatan || '').trim()) return err('Catatan wajib diisi saat meminta revisi.');
     if (!['approve', 'reject', 'revision'].includes(act)) return err('Aksi tidak valid.');
-    if (act === 'reject' && !(catatan || '').trim()) return err('Catatan wajib diisi saat menolak pengajuan.');
-    let res;
-    if (gambar) {
-      const fd = new FormData();
-      fd.append('id_reservasi', id_reservasi);
-      fd.append('action', act);
-      fd.append('catatan', (catatan || '').trim());
-      fd.append('konfirmasi_aksi', 'YA');
-      fd.append('gambar', gambar);
-      res = await call('approver/proses_approval.php', { method: 'POST', body: fd });
-    } else {
-      res = await postJson('approver/proses_approval.php', { id_reservasi, action: act, catatan: (catatan || '').trim(), konfirmasi_aksi: 'YA' });
-    }
-    if (res.status === 'success' && res.kode_verifikasi) kodeById[id_reservasi] = res.kode_verifikasi;
+    const note = (catatan || '').trim();
+    if (act === 'revision' && !note) return err('Catatan wajib diisi saat meminta revisi.');
+    if (act === 'reject' && !note) return err('Catatan wajib diisi saat menolak pengajuan.');
+    const res = await postJson('approver/proses_approval.php', { id_reservasi, action: act, catatan: note });
+    if (res.status === 'success' && res.kode_verifikasi) kodeById[String(id_reservasi)] = res.kode_verifikasi;
     return res;
   }
 
   async function riwayatApproval() {
-    return { status: 'success', statistik: { disetujui: 0, revisi: 0, ditolak: 0, total: 0 }, data: [] };
+    return getJson('approver/riwayat_approval.php');
   }
 
   /* ================= SATPAM ================= */
 
-  function statusWaktu(tgl, jm, js) {
-    const today = ymd(new Date());
-    const now = nowHms();
-    if (today < tgl) return 'Akan Datang';
-    if (today > tgl) return 'Selesai';
-    if (now < jm) return 'Akan Datang Hari Ini';
-    if (now <= js) return 'Sedang Berlangsung';
-    return 'Selesai Hari Ini';
-  }
-
   async function dashboardSatpam() {
-    const res = await call('satpam/dashboard_satpam.php');
-    if (res.status !== 'success') return res;
-    const data = (res.data || []).map((r) => {
-      if (r.qr_code_surat) kodeById[r.id_reservasi] = r.qr_code_surat;
-      const tm = r.tgl_mulai || r.tgl_acara;
-      const ts = r.tgl_selesai || tm;
-      return {
-        id_reservasi: String(r.id_reservasi),
-        nomor_pengajuan: r.nomor_pengajuan || nomor(r.id_reservasi),
-        nama_peminjam: r.nama_peminjam,
-        nama_acara: r.nama_acara,
-        penanggung_jawab_nama: r.nama_peminjam,
-        penanggung_jawab_kontak: '-',
-        nama_gedung: r.nama_gedung,
-        tgl_acara: tm, tgl_mulai: tm, tgl_selesai: ts,
-        jam_mulai: r.jam_mulai, jam_selesai: r.jam_selesai,
-        qr_code_surat: r.qr_code_surat,
-        status_waktu: statusWaktu(tm, r.jam_mulai, r.jam_selesai)
-      };
-    });
-    satpamCache = data;
-    const names = Array.from(new Set(data.map((d) => String(d.nama_gedung).split(' - ')[0])));
-    return {
-      status: 'success', login_sebagai: res.login_sebagai,
-      nama_gedung: names.length === 1 ? names[0] : 'Semua Gedung Tugas',
-      lokasi: 'Pos Pengamanan', jumlah_jadwal: data.length, data
-    };
+    const res = await getJson('satpam/dashboard_satpam.php');
+    if (res.status === 'success') simpanKode(res.data);
+    return res;
   }
 
-  async function scanQR(qrString) {
-    const code = String(qrString || '').trim();
-    if (!satpamCache.length) await dashboardSatpam();
-    const r = satpamCache.find((x) => x.qr_code_surat === code || String(x.id_reservasi) === code || x.nomor_pengajuan === code);
-    if (!r) return err('DOKUMEN TIDAK VALID / PALSU! Tidak ditemukan pada jadwal gedung tugas Anda.');
-    const st = statusWaktu(r.tgl_acara, r.jam_mulai, r.jam_selesai);
-    return {
-      status: 'success',
-      is_valid: true, is_approved: true, is_gedung_sesuai: true,
-      status_waktu: st,
-      message: 'SURAT IZIN VALID (RESMI)',
-      data: {
-        nomor_pengajuan: r.nomor_pengajuan, nama_acara: r.nama_acara, penanggung_jawab: r.nama_peminjam,
-        lokasi: r.nama_gedung,
-        waktu: r.tgl_acara + ' (' + jam5(r.jam_mulai) + ' - ' + jam5(r.jam_selesai) + ')',
-        status_akhir: 'Approved'
-      }
-    };
+  async function scanQR(kode) {
+    return getJson('satpam/scan_qr.php', { kode: String(kode || '').trim() });
   }
 
   /* ================= ADMIN ================= */
 
   async function dashboardAdmin() {
-    const res = await call('admin/dashboard_admin.php');
-    if (res.status !== 'success') return res;
-    const list = (res.data_reservasi || []).map((r) => Object.assign({}, r, {
-      status_akhir: status(r.status_akhir),
-      nomor_pengajuan: r.nomor_pengajuan || nomor(r.id_reservasi),
-      penanggung_jawab_nama: r.nama_peminjam,
-      penanggung_jawab_kontak: '-',
-      nama_tahap_sekarang: r.posisi_approval
-    }));
-    const c = (s) => list.filter((r) => r.status_akhir === s).length;
-    return {
-      status: 'success',
-      login_sebagai: res.login_sebagai,
-      rekap: { total: list.length, approved: c('Approved'), in_progress: c('In-Progress'), need_revision: c('Need-Revision'), rejected: c('Rejected'), macet: 0 },
-      antrean_macet: [],
-      recent_logs: [],
-      data_reservasi: list,
-      daftar_gedung: res.daftar_gedung || []
-    };
+    const res = await getJson('admin/dashboard_admin.php');
+    if (res.status === 'success') {
+      simpanKode(res.data_reservasi);
+      res.data_reservasi = (res.data_reservasi || []).map((r) => Object.assign({}, r, { nama_tahap_sekarang: r.posisi_approval }));
+    }
+    return res;
   }
 
   async function getGedung() {
-    const res = await call('admin/get_gedung.php');
+    const res = await getJson('admin/get_gedung.php');
     if (res.status !== 'success') return res;
-    const data = (res.data || []).map((g) => Object.assign({}, g, {
+    res.data = (res.data || []).map((g) => Object.assign({}, g, {
       id_gedung: Number(g.id_gedung),
       kode_gedung: String(g.nama_gedung).replace(/^Gedung\s+/i, '').slice(0, 3).toUpperCase(),
-      jam_operasional_buka: g.jam_buka, jam_operasional_tutup: g.jam_tutup,
+      jam_operasional_buka: g.jam_buka,
+      jam_operasional_tutup: g.jam_tutup,
       wajib_proposal: g.wajib_proposal === true || g.wajib_proposal === 't'
     }));
-    return { status: 'success', data };
+    return res;
   }
 
   async function getJadwalGlobal() {
-    const res = await dashboardAdmin();
-    if (res.status !== 'success') return res;
-    return { status: 'success', data: res.data_reservasi };
+    return getJson('admin/get_jadwal_global.php');
   }
 
+  // JSON: { id_gedung, status_operasional: 'Aktif' | 'Nonaktif' }
   async function updateStatusGedung(p) {
     return postJson('admin/update_status_gedung.php', p);
   }
 
-  async function terbitkanSurat() {
-    return err('Surat diterbitkan otomatis saat persetujuan terakhir.');
+  async function terbitkanSurat(id_reservasi) {
+    const res = await postJson('admin/terbit_surat.php', { id_reservasi });
+    if (res.status === 'success' && res.kode_verifikasi) kodeById[String(id_reservasi)] = res.kode_verifikasi;
+    return res;
   }
 
   async function logAktivitas() {
-    return { status: 'success', data: [] };
+    return getJson('admin/log_aktivitas.php');
   }
 
-  function rekapPemakaian() { return dashboardAdmin(); }
+  async function rekapPemakaian() {
+    return getJson('admin/rekap_pemakaian.php');
+  }
+
+  async function getAlurGedung() {
+    return getJson('admin/get_alur_gedung.php');
+  }
+
+  async function getSatpamGedung() {
+    return getJson('admin/get_satpam_gedung.php');
+  }
+
+  async function getUsers() {
+    return getJson('admin/get_users.php');
+  }
+
+  async function toggleUser(id_user, status_aktif) {
+    return postJson('admin/toggle_user.php', { id_user, status_aktif });
+  }
 
   /* ================= PROFIL & PUBLIK ================= */
 
+  // Mengubah nama lengkap (users.nama) dan / atau username (users.username)
   async function updateProfil(p) {
-    const u = me();
-    if (!u) return err('Anda belum login!');
-    if (global.Auth && p && p.username) global.Auth.setProfileName(p.username);
-    return { status: 'success', message: 'Profil berhasil diperbarui!' };
+    return postJson('auth/profile.php?action=update', p || {});
   }
 
-  async function getVerifikasi(id) {
+  async function getVerifikasi(kode) {
     try {
-      const res = await fetch(BACKEND + 'public/get_verifikasi.php?id=' + encodeURIComponent(kodeById[id] || id), { credentials: 'include' });
+      const res = await fetch(BACKEND + 'public/get_verifikasi.php?id=' + encodeURIComponent(kode), { credentials: 'include' });
       return await res.json();
     } catch (e) {
       return err('Tidak dapat terhubung ke server backend.');
@@ -460,11 +226,12 @@
   }
 
   global.API = {
-    ymd, uploadUrl, alurGedung, ruanganGedung, verifyUrl, qrUrl,
+    ymd, verifyUrl, qrUrl, BACKEND,
     riwayatReservasi, buatReservasi, kirimRevisi, listGedungAktif, cekKetersediaan, jadwalAcara,
     getPending, prosesApproval, riwayatApproval,
     dashboardSatpam, scanQR,
     dashboardAdmin, getGedung, getJadwalGlobal, updateStatusGedung, terbitkanSurat, logAktivitas, rekapPemakaian,
+    getAlurGedung, getSatpamGedung, getUsers, toggleUser,
     updateProfil, getVerifikasi
   };
 })(window);

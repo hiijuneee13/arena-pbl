@@ -74,34 +74,31 @@
   /* ---------- Status ----------
      Nilai status_akhir dari database: Pending | In-Progress | Approved | Rejected
      Dipetakan ke label Indonesia + warna badge. */
-  const STATUS_LABEL = { 'In-Progress': 'Dalam Proses', Pending: 'Menunggu', Approved: 'Disetujui', Rejected: 'Ditolak', Approve: 'Disetujui', Reject: 'Ditolak', Revision: 'Revisi', Revise: 'Revisi' };
+  const STATUS_LABEL = { 'In-Progress': 'Dalam Proses', Pending: 'Menunggu', Approved: 'Disetujui', Rejected: 'Ditolak', 'Need-Revision': 'Perlu Revisi', Dibatalkan: 'Dibatalkan', Approve: 'Disetujui', Reject: 'Ditolak', Revision: 'Revisi', Revise: 'Revisi' };
   const BADGE = {
-    'In-Progress': 'warn', Pending: 'warn', Approved: 'ok', Rejected: 'bad', Approve: 'ok', Reject: 'bad', Revision: 'warn', Revise: 'warn',
+    'In-Progress': 'warn', Pending: 'warn', Approved: 'ok', Rejected: 'bad', 'Need-Revision': 'warn', Dibatalkan: 'bad',
+    Approve: 'ok', Reject: 'bad', Revision: 'warn', Revise: 'warn',
     Aktif: 'ok', Nonaktif: 'bad',
-    'Akan Datang': 'warn', 'Sedang Berlangsung': 'ok', Selesai: 'bad',
+    'Akan Datang': 'warn', 'Akan Datang Hari Ini': 'warn', 'Sedang Berlangsung': 'ok', Selesai: 'bad', 'Selesai Hari Ini': 'bad',
   };
   const badge = (s) => `<span class="badge ${BADGE[s] || 'warn'}">${esc(STATUS_LABEL[s] || s)}</span>`;
 
   /* Status acara terhadap waktu sekarang (untuk dashboard Satpam) */
   function statusAcara(j) {
     const now = new Date();
-    const start = new Date(`${j.tgl_acara}T${String(j.jam_mulai).slice(0, 5)}:00`);
-    const end = new Date(`${j.tgl_acara}T${String(j.jam_selesai).slice(0, 5)}:00`);
+    const start = new Date(`${j.tgl_mulai || j.tgl_acara}T${String(j.jam_mulai).slice(0, 5)}:00`);
+    const end = new Date(`${j.tgl_selesai || j.tgl_mulai || j.tgl_acara}T${String(j.jam_selesai).slice(0, 5)}:00`);
     return now > end ? 'Selesai' : now >= start ? 'Sedang Berlangsung' : 'Akan Datang';
   }
 
   /* Penelusur tahap approval dari tahap_ke/total_tahap + status_akhir.
      done = sudah lewat, now = sedang di tahap ini, rej = ditolak di tahap ini */
   function tracker(r, labels) {
-    // Alur approval dinamis per gedung (2 atau 3 tahap): nama tahap diambil dari API.alurGedung bila tersedia
-    const gid = (r.tempat && r.tempat[0] && r.tempat[0].id_gedung) || r.id_gedung;
-    const alur = (global.API && global.API.alurGedung && global.API.alurGedung(gid)) || [];
-    const total = Number(r.total_tahap) || alur.length || 2;
+    // Jumlah & posisi tahap berasal dari backend (total_tahap, tahap_ke, nama_tahap / posisi_approval)
+    const total = Number(r.total_tahap) || 1;
     const idx = Math.max(0, (Number(r.tahap_ke) || 1) - 1);
-    const sekarang = r.nama_tahap || r.nama_tahap_sekarang || r.posisi_approval;           // nama tahap yang sedang berjalan (cadangan bila alur gedung tidak diketahui)
-    const alurCocok = alur.length === total;                                               // nama alur dipakai hanya bila jumlah tahapnya sama
-    const nama = (i) => (labels && labels[i]) || (alurCocok && alur[i] && alur[i].nama_tahap)
-      || (i === idx && sekarang && sekarang !== 'Selesai' ? sekarang : `Tahap ${i + 1}`);
+    const sekarang = r.nama_tahap || r.nama_tahap_sekarang || r.posisi_approval;           // nama tahap yang sedang berjalan
+    const nama = (i) => (labels && labels[i]) || (i === idx && sekarang && sekarang !== 'Selesai' ? sekarang : `Tahap ${i + 1}`);
     return '<div class="mini-steps">' + Array.from({ length: total }, (_, i) => {
       let cls = '';
       if (r.status_akhir === 'Approved') cls = 'done';

@@ -118,18 +118,19 @@
     }
     clearLoginFail(em);
 
-    const sess = await request('auth/get_session.php');
     const b = res.user || {};
     const role = b.role;
-    const meta = ROLES[role] || ROLES.Approver;
+    // jabatan approver baru di tabel jabatan yang belum dikenal frontend tetap diperlakukan sebagai Approver
+    const meta = ROLES[role] || (b.role_db === 'approver' ? ROLES.Approver : ROLES.Approver);
     const user = {
-      id_user: sess.status === 'success' ? sess.user.id_user : null,
+      id_user: b.id_user,
       nama: b.nama,
       email: b.email || em,
       username: b.username,
       role,
+      role_db: b.role_db,
       nama_jabatan: meta.label,
-      organisasi: role === 'Mahasiswa' ? { nama_organisasi: b.nama } : null,
+      organisasi: role === 'Mahasiswa' ? { nama_organisasi: b.nama_organisasi || b.nama } : null,
       roleMeta: meta,
       cabang: null,
       pos: null,
@@ -148,14 +149,20 @@
     return u;
   }
 
+  // Mengakhiri sesi di server (auth/logout.php) dan menghapus data sesi di browser
   function logout() {
     try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
     global.__arenaUser = null;
+    try {
+      fetch(BASE + 'auth/logout.php', { method: 'POST', credentials: 'include', keepalive: true }).catch(() => {});
+    } catch (e) {}
   }
 
   function requireRole(allowed, loginPath) {
     const u = current();
-    if (!u || (allowed && !allowed.includes(u.role))) { global.location.replace(loginPath || '../login.html'); return null; }
+    // 'Approver' mewakili semua pengguna dengan role database approver (apa pun nama jabatannya)
+    const boleh = !allowed || allowed.includes(u && u.role) || (u && u.role_db === 'approver' && allowed.includes('Approver'));
+    if (!u || !boleh) { global.location.replace(loginPath || '../login.html'); return null; }
     return u;
   }
 
