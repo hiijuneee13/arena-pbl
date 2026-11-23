@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Satpam - ARENA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/pages/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/dasboard-satpam.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- Menu: Dashboard (Jadwal Acara Approved di Gedung Tugas Satpam) -->
+    <section class="view" data-view="dashboard">
+      <div class="card gedung-info">
+        <div>
+          <div class="muted small">Gedung Tugas Pengamanan Anda</div>
+          <h2 id="nama-gedung">-</h2>
+          <div class="muted small" id="lokasi-gedung"></div>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <button class="btn btn-sm" id="btn-open-scanner" style="background:#059669; color:#fff;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10"/></svg>
+            Pindai / Input QR Surat
+          </button>
+          <div class="sync muted small" id="sync">Memuat jadwal...</div>
+        </div>
+      </div>
+
+      <div class="grid cols-3" id="stat-satpam"></div>
+
+      <!-- Tabel Jadwal Khusus Hari Ini -->
+      <div class="card">
+        <div class="card-title">Jadwal Acara Khusus Hari Ini</div>
+        <div class="table-wrap"><table class="table" id="tbl-aktif"></table></div>
+      </div>
+
+      <!-- Kalender Bulan Ini -->
+      <div class="card">
+        <div class="toolbar">
+          <div class="card-title" id="cal-title" style="margin:0">Kalender Kegiatan Gedung Tugas</div>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost btn-sm" id="cal-prev">&lt; Sebelumnya</button>
+          <button class="btn btn-ghost btn-sm" id="cal-next">Berikutnya &gt;</button>
+        </div>
+        <div class="cal" id="cal"></div>
+      </div>
+    </section>
+
+    <!-- Menu: Semua Jadwal Acara (Filter: Hari Ini, Sedang Berlangsung, Akan Datang) -->
+    <section class="view" data-view="jadwal">
+      <div class="card">
+        <div class="toolbar">
+          <div class="card-title" style="margin:0">Semua Jadwal Acara Terdaftar</div>
+          <div class="spacer"></div>
+          <div id="filter-jadwal"></div>
+        </div>
+        <div class="table-wrap"><table class="table" id="tbl-semua"></table></div>
+      </div>
+    </section>
+
+    <!-- Modal: Scan & Verifikasi QR Code Surat Izin -->
+    <div class="overlay" id="m-scan-qr">
+      <div class="modal narrow" style="max-width:520px;">
+        <h2>Verifikasi QR Code Surat Izin</h2>
+        <p class="hint">Masukkan kode verifikasi QR atau tempelkan hasil scan scanner QR satpam.</p>
+        
+        <div class="field" style="margin-top:14px;">
+          <label for="input-qr-code">Kode QR / String Verifikasi</label>
+          <input class="input" id="input-qr-code" placeholder="Contoh: ARENA-QR-ARENA-202611-0001-APPROVED">
+        </div>
+
+        <div id="scan-result" style="display:none; margin-top:16px; border-radius:12px; padding:16px;"></div>
+
+        <div class="step-actions" style="margin-top:18px;">
+          <button class="btn btn-ghost" onclick="UI.modal.close('m-scan-qr')">Tutup</button>
+          <button class="btn" id="btn-proses-scan">Periksa Keaslian QR</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Detail QR surat izin -->
+    <div class="overlay" id="m-qr">
+      <div class="modal narrow">
+        <h2 id="qr-title">Surat Izin Resmi</h2>
+        <div class="qr-box" id="qr-box"></div>
+        <dl class="kv" id="qr-info"></dl>
+        <div class="actions"><button class="btn btn-ghost" onclick="UI.modal.close('m-qr')">Tutup</button></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/shell.js"></script>
+  <script src="../assets/js/dasboard-satpam.js"></script>
+<script src="../assets/js/responsive.js"></script>
+</body>
+</html>

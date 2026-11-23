@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Approver - ARENA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/pages/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/dasboard-approver.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Menu: Dashboard (GET get_pending.php + riwayat) -->
+    <section class="view" data-view="dashboard">
+      <div class="stat-row">
+        <div class="card stat"><div class="label">Menunggu Tinjauan Saya</div><div class="value" id="st-tunggu">0</div></div>
+        <div class="card stat"><div class="label">Sudah Saya Setujui</div><div class="value" id="st-setuju">0</div></div>
+        <div class="card stat"><div class="label">Permintaan Revisi</div><div class="value" id="st-revisi">0</div></div>
+        <div class="card stat"><div class="label">Sudah Saya Tolak</div><div class="value" id="st-tolak">0</div></div>
+      </div>
+      <h2 class="section-title">Daftar Pengajuan Menunggu Giliran Tinjauan Anda</h2>
+      <div id="list-dashboard"></div>
+    </section>
+
+    <!-- Menu: Antrean Persetujuan -->
+    <section class="view" data-view="antrean">
+      <h2 class="section-title">Semua Antrean Persetujuan Giliran Anda</h2>
+      <div id="list-antrean"></div>
+    </section>
+
+    <!-- Menu: Arsip Kegiatan (riwayat keputusan saya, dari approval_log) -->
+    <section class="view" data-view="arsip">
+      <div class="card arsip-card">
+        <h2 class="card-title">Arsip Riwayat Keputusan Persetujuan Saya</h2>
+        <div class="table-wrap"><table class="table" id="tbl-arsip"></table></div>
+      </div>
+    </section>
+
+    <!-- Modal: lihat berkas PDF proposal -->
+    <div class="overlay" id="m-pdf"><div class="modal pdf-modal">
+      <h2 id="pdf-title">Proposal Kegiatan</h2>
+      <div class="preview" id="pdf-preview">[ Pratinjau PDF proposal resmi ]</div>
+      <div class="actions"><button class="btn btn-ghost" onclick="UI.modal.close('m-pdf')">Tutup Pratinjau</button></div>
+    </div></div>
+
+    <!-- Modal konfirmasi keputusan (Disetujui / Minta Revisi / Ditolak) -->
+    <div class="overlay" id="m-confirm"><div class="modal confirm-modal">
+      <h2 id="cf-title">Konfirmasi Keputusan</h2>
+      <p id="cf-desc">Pastikan pertimbangan Anda sudah sesuai dengan regulasi peminjaman tempat kampus.</p>
+      <div class="cf-note" id="cf-note-wrap">
+        <label for="cf-note" id="cf-note-label">Catatan &amp; Alasan Keputusan</label>
+        <textarea class="textarea" id="cf-note" rows="3" placeholder="Tuliskan catatan arahan revisi atau pertimbangan persetujuan/penolakan..."></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn btn-cancel" id="cf-cancel">Batal</button>
+        <button class="btn" id="cf-submit">Kirim Keputusan</button>
+      </div>
+    </div></div>
+  </div>
+
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/shell.js"></script>
+  <script src="../assets/js/dasboard-approver.js"></script>
+<script src="../assets/js/responsive.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verifikasi Surat Izin - ARENA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/pages/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/verifikasi.css">
+</head>
+<body class="verif-page">
+  <!-- Halaman PUBLIK (tanpa login): tujuan QR Code. Padanan backend/public/verifikasi.php + get_verifikasi.php -->
+  <main class="verif-wrap">
+    <div class="brand"><div class="brand-logo">A</div>ARENA <span class="muted small">Verifikasi Surat Izin</span></div>
+
+    <div class="card verif-card" id="hasil" aria-live="polite">
+      <div class="muted">Memeriksa dokumen...</div>
+    </div>
+
+    <form class="card verif-form" id="form-id">
+      <label for="f-id">Periksa kode verifikasi lain</label>
+      <div class="row">
+        <input class="input" id="f-id" placeholder="Tempel kode verifikasi (UUID)" autocomplete="off">
+        <button class="btn" type="submit">Periksa</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/verifikasi.js"></script>
+</body>
+</html>

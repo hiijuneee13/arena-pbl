@@ -1,0 +1,115 @@
+/* Styling khusus Dashboard Approver (Kajur / Wadir / DosPem / Presiden BEM) - Light Theme */
+
+/* ---- Dashboard: kartu statistik (4 kolom sejajar) ---- */
+.stat-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.stat-row .card + .card { margin-top: 0; }
+
+/* ---- Kartu pengajuan ---- */
+.req + .req { margin-top: 16px; }
+
+/* ---- Tombol aksi ---- */
+.card-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.btn-pill { border-radius: var(--radius-pill); padding: 8px 20px; font-size: 12px; font-weight: 700; }
+.card-actions .btn-approve, .card-actions .btn-reject { min-width: 110px; }
+
+.btn-approve { 
+  background: var(--ok); 
+  color: #fff; 
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+}
+.btn-approve:hover { 
+  background: #047857; 
+  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.35); 
+}
+
+.btn-reject { 
+  background: var(--bad); 
+  color: #fff; 
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+}
+.btn-reject:hover { 
+  background: #B91C1C; 
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.35); 
+}
+
+/* ---- Arsip Kegiatan ---- */
+.arsip-card { padding: 18px 20px 8px; }
+.arsip-card .card-title { font-size: 17px; margin-bottom: 14px; color: var(--text-pure); }
+.arsip-card .table th { padding: 8px 8px; font-size: 12px; }
+.arsip-card .table td { padding: 14px 8px; vertical-align: middle; }
+.arsip-card .table td:last-child { color: var(--text-pure); }
+.arsip-card .badge { min-width: 76px; text-align: center; padding: 4px 12px; }
+
+/* ---- Modal konfirmasi (Disetujui / Ditolak) ---- */
+.confirm-modal { 
+  width: min(580px, 92vw); 
+  text-align: center; 
+  background: #FFFFFF; 
+  border: 1px solid var(--line); 
+  border-radius: 24px; 
+  padding: 40px 36px; 
+  justify-items: center; 
+  gap: 12px; 
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2); 
+}
+.confirm-modal h2 { font: 700 26px var(--font-head); color: var(--text-pure); }
+.confirm-modal p { font: 500 13.5px/1.6 var(--font-body); max-width: 460px; margin: 0; color: var(--muted); }
+.confirm-modal .cf-note { width: 100%; max-width: 480px; text-align: left; margin-top: 14px; }
+.confirm-modal .cf-note[hidden] { display: none; }
+.confirm-modal .cf-note label { display: block; font: 600 13.5px var(--font-head); margin-bottom: 8px; color: var(--text-pure); }
+.confirm-modal .cf-note .textarea { 
+  min-height: 75px; 
+  background: #FFFFFF; 
+  border: 1px solid #CBD5E1; 
+  border-radius: 12px; 
+  padding: 12px 16px; 
+  resize: vertical; 
+}
+.confirm-modal .actions { justify-content: center; gap: 18px; margin-top: 20px; }
+.confirm-modal .btn { min-width: 140px; border-radius: var(--radius-pill); padding: 11px 26px; font-size: 15px; font-weight: 700; }
+.confirm-modal .btn-cancel { 
+  background: #F1F5F9; 
+  border: 1px solid #CBD5E1; 
+  color: #475569; 
+}
+.confirm-modal .btn-cancel:hover { background: #E2E8F0; color: #0F172A; }
+
+/* ---- Modal lihat PDF ---- */
+.pdf-modal { width: min(1080px, 94vw); max-height: 92vh; }
+.pdf-modal .preview { 
+  min-height: 60vh; 
+  background: #F8FAFC; 
+  border: 1px solid #E2E8F0; 
+  border-radius: 20px; 
+  display: grid; 
+  place-items: center; 
+  color: var(--muted); 
+  font-size: 13.5px; 
+}
+.pdf-modal .actions { justify-content: flex-end; }
+
+@media (max-width: 900px) {
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .confirm-modal .actions { gap: 12px; }
+  .confirm-modal .btn { min-width: 120px; }
+}
+
+.arsip-card .table td:nth-child(3), .arsip-card .table td:nth-child(5),
+.arsip-card .table th:nth-child(3), .arsip-card .table th:nth-child(5) { white-space: nowrap; }
+.arsip-card .table td:last-child { min-width: 180px; }
+.sidebar-foot .help { text-align: left; }
+
+/* ===== RESPONSIVE APPROVER ===== */
+@media (max-width: 1024px) {
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .stat-row { grid-template-columns: minmax(0, 1fr); }
+  .card-actions .btn { flex: 1 1 calc(50% - 10px); min-width: 0; justify-content: center; }
+  .card-actions .btn-approve, .card-actions .btn-reject { min-width: 0; }
+  .arsip-card .table td:last-child { min-width: 0; }
+  .arsip-card .table td:nth-child(3), .arsip-card .table td:nth-child(5) { white-space: normal; }
+  .pdf-modal .actions .btn { width: 100%; }
+}

@@ -1,0 +1,151 @@
+/* =====================================================================
+   dasboard-admin.css - Dashboard Admin TU (Light Theme)
+   Palet: Dominan Putih, Biru Royal & Slate Kontras Tinggi
+   ===================================================================== */
+:root {
+  --row-line: #E2E8F0;
+  --navy: #EFF6FF;
+  --navy-line: #BFDBFE;
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar { 
+  background: #FFFFFF; 
+  border-color: var(--panel-border); 
+  border-radius: 16px; 
+  padding: 22px 18px; 
+  gap: 8px; 
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+}
+.brand { font-size: 22px; gap: 12px; margin: 4px 0 20px 6px; }
+.brand-logo { 
+  width: 38px; 
+  height: 38px; 
+  border-radius: 10px; 
+  background: var(--grad); 
+}
+.menu-item { 
+  background: transparent; 
+  border: 1px solid transparent; 
+  border-radius: 12px; 
+  padding: 11px 16px; 
+  font-size: 14px; 
+  font-weight: 500; 
+  color: var(--muted); 
+}
+.menu-item:hover { 
+  background: var(--surface-2); 
+  color: var(--text-pure); 
+}
+.menu-item.active { 
+  background: #EFF6FF; 
+  color: #1D4ED8; 
+  border-color: #BFDBFE; 
+}
+.sidebar-foot { padding: 14px 6px 4px; }
+.sidebar-foot .logout { color: var(--danger); font-size: 13.5px; font-weight: 600; }
+
+/* ---------- Kartu & judul ---------- */
+.card { border-color: var(--panel-border); border-radius: 16px; padding: 24px 26px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04); }
+.card-title { font-size: 17px; margin-bottom: 16px; color: var(--text-pure); }
+.section-title { font-size: 20px; margin: 26px 0 14px; color: var(--text-pure); }
+.card-tall { min-height: calc(100vh - 140px); }
+.small { font-size: 12px; }
+
+/* Kartu statistik */
+.stat { padding: 22px 24px; border-radius: 16px; }
+.stat .label { font: 600 13.5px var(--font-head); color: var(--muted); }
+.stat .value { font: 700 36px var(--font-head); margin-top: 8px; color: var(--text-pure); }
+.stat .hint { margin-top: 8px; font-size: 12px; color: var(--green); font-weight: 600; }
+
+/* Baris Managemen Ruang + Log Aktivitas */
+.grid.split { grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); margin-top: 18px; align-items: start; }
+
+/* Laporan rekapitulasi */
+.grid.rekap { gap: 32px; }
+.rekap .stat { padding: 28px 32px; min-height: 140px; }
+.rekap .stat .label { font-size: 13px; }
+.rekap .stat .value { font-size: 38px; margin-top: 8px; }
+
+/* ---------- Tabel ---------- */
+.rtable { width: 100%; border-collapse: collapse; font-family: var(--font-head); }
+.rtable th { color: var(--muted); font-weight: 600; font-size: 12px; text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--row-line); }
+.rtable td { padding: 18px 14px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--row-line); vertical-align: middle; color: var(--text); }
+.rtable tbody tr { transition: background var(--dur); }
+.rtable tbody tr:hover { background: #F8FAFC; }
+.rtable .c { text-align: center; }
+.rtable .r { text-align: right; }
+.rtable td.muted { color: var(--muted); }
+
+/* Tabel Managemen Ruang */
+#tbl-ruang { table-layout: fixed; }
+#tbl-ruang td { padding: 20px 14px; }
+#tbl-ruang .pill { min-width: 0; padding: 5px 16px; white-space: nowrap; }
+
+/* Tombol aksi di tabel */
+.rtable td.r { padding-right: 18px; }
+.rtable .btn { border-radius: var(--radius-pill); min-width: 84px; padding: 6px 16px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.rtable .btn.btn-ghost { background: #FFFFFF; border: 1px solid #CBD5E1; color: var(--text); }
+
+/* ---------- Badge status ruang ---------- */
+.pill { 
+  display: inline-block; 
+  text-align: center; 
+  padding: 4px 16px; 
+  border-radius: var(--radius-pill); 
+  border: 1px solid; 
+  font: 600 12px var(--font-head); 
+  white-space: nowrap; 
+}
+.pill.aktif, .pill.sibuk   { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+.pill.nonaktif, .pill.kosong { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+
+/* ---------- Filter dropdown ---------- */
+.filters { display: flex; gap: 12px; flex-wrap: wrap; }
+.dropdown-btn { 
+  min-width: 160px; 
+  padding: 9px 16px; 
+  border-radius: 12px; 
+  background: #FFFFFF; 
+  border: 1px solid #CBD5E1; 
+  color: var(--text-pure);
+  font: 500 12.5px var(--font-head); 
+  transition: all var(--dur); 
+}
+.dropdown-btn:hover { border-color: var(--accent); }
+.dropdown-menu { background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 12px; padding: 6px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1); }
+.dropdown-menu li { position: relative; font: 500 12.5px var(--font-head); padding: 9px 12px; border-radius: 6px; color: var(--text); }
+.dropdown-menu li + li { border-top: 1px solid #F1F5F9; }
+.dropdown-menu li:hover { background: #EFF6FF; color: #1D4ED8; }
+.dropdown-menu li.sel { background: #EFF6FF; color: #1D4ED8; font-weight: 700; }
+
+.sub-menu { 
+  display: none; 
+  position: absolute; 
+  left: 100%; 
+  top: -1px; 
+  min-width: 150px; 
+  margin: 0; 
+  padding: 6px; 
+  list-style: none; 
+  z-index: 25;
+  background: #FFFFFF; 
+  border: 1px solid #CBD5E1; 
+  border-radius: 8px; 
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+}
+.dropdown-menu li:hover > .sub-menu, .dropdown-menu li.open-sub > .sub-menu { display: block; }
+.sub-menu li:hover { background: #EFF6FF; color: #1D4ED8; }
+
+/* Log aktivitas */
+.log-item { font-size: 12px; margin: 0 0 12px; line-height: 1.5; color: var(--text); }
+.log-item .neg { color: var(--bad); font-weight: 600; }
+
+/* ===== RESPONSIVE ADMIN (file ini tidak dimuat dashboard-admin.html; aturan siap pakai bila dimuat) ===== */
+@media (max-width: 768px) {
+  #tbl-ruang { table-layout: auto; }
+  .rtable { min-width: 560px; }
+  .grid.rekap { gap: 14px; }
+  .rekap .stat { padding: 16px 18px; min-height: 0; }
+  .rekap .stat .value { font-size: 30px; }
+}

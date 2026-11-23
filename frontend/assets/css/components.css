@@ -1,0 +1,10 @@
+/* =====================================================================
+   ARENA - components.css
+   Catatan: gaya sidebar, kartu, statistik, tombol, badge, dan tabel
+   sekarang HANYA didefinisikan di pages/main.css (satu sumber agar
+   tidak bentrok). File ini dibiarkan ada supaya tautan <link> di
+   semua halaman tetap valid; alias badge lama dipertahankan di bawah.
+   ===================================================================== */
+.badge.pending  { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+.badge.approved { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+.badge.rejected { background: var(--red-bg);   border-color: var(--red-border);   color: var(--red); }

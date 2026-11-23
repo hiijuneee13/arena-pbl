@@ -1,0 +1,16 @@
+:root {
+  --bg-main: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --sidebar-bg: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --accent-blue: #2563EB;
+  --accent-hover: #1D4ED8;
+  --badge-green-bg: #ECFDF5;
+  --badge-green-text: #059669;
+  --badge-yellow-bg: #FFFBEB;
+  --badge-yellow-text: #D97706;
+  --badge-red-bg: #FEF2F2;
+  --badge-red-text: #DC2626;
+  --border-color: #E2E8F0;
+}
