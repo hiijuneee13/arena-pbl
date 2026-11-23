@@ -97,6 +97,12 @@
     return call('mahasiswa/kirim_revisi.php', { method: 'POST', body: fd });
   }
 
+  // p: { id_reservasi, alasan } -> POST mahasiswa/batalkan_reservasi.php
+  async function batalkanReservasi(p) {
+    if (!p || !p.id_reservasi) return err('ID pengajuan tidak valid.');
+    return postJson('mahasiswa/batalkan_reservasi.php', { id_reservasi: p.id_reservasi, alasan: (p.alasan || '').trim() });
+  }
+
   async function listGedungAktif() {
     return getJson('mahasiswa/list_gedung_aktif.php');
   }
@@ -209,6 +215,12 @@
     return postJson('admin/toggle_user.php', { id_user, status_aktif });
   }
 
+  // p: { nama_lengkap, email, role (mahasiswa|approver|satpam|admin), password, nama_organisasi?, nama_jabatan? }
+  async function tambahUser(p) {
+    if (!p || !p.nama_lengkap || !p.email || !p.password || !p.role) return err('Data akun belum lengkap.');
+    return postJson('admin/tambah_user.php', p);
+  }
+
   /* ================= PROFIL & PUBLIK ================= */
 
   // Mengubah nama lengkap (users.nama) dan / atau username (users.username)
@@ -227,11 +239,11 @@
 
   global.API = {
     ymd, verifyUrl, qrUrl, BACKEND,
-    riwayatReservasi, buatReservasi, kirimRevisi, listGedungAktif, cekKetersediaan, jadwalAcara,
+    riwayatReservasi, buatReservasi, kirimRevisi, batalkanReservasi, listGedungAktif, cekKetersediaan, jadwalAcara,
     getPending, prosesApproval, riwayatApproval,
     dashboardSatpam, scanQR,
     dashboardAdmin, getGedung, getJadwalGlobal, updateStatusGedung, terbitkanSurat, logAktivitas, rekapPemakaian,
-    getAlurGedung, getSatpamGedung, getUsers, toggleUser,
+    getAlurGedung, getSatpamGedung, getUsers, toggleUser, tambahUser,
     updateProfil, getVerifikasi
   };
 })(window);

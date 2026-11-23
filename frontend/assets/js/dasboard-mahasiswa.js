@@ -3,7 +3,7 @@
    Fitur Lengkap:
      - Multi-Tempat (Gedung Utuh vs Ruangan)
      - Multi-Hari (Tanggal Mulai s/d Tanggal Selesai)
-     - Penanggung Jawab Acara (Ketua Pelaksana & No HP/WA)
+     - Penanggung Jawab Acara (Nama, NIM & No HP/WA)
      - Versioning Proposal & Alur Lanjut dari Tahap Peminta Revisi
      - QR Code Resmi saat Disetujui
    ===================================================================== */
@@ -132,7 +132,13 @@
     const jMulai = val('f-mulai');
     const jSelesai = val('f-selesai');
 
-    const res = await API.cekKetersediaan(form.gedung.id_gedung, tglMulai, tglSelesai, jMulai, jSelesai);
+    const res = await API.cekKetersediaan(form.gedung.id_gedung, tglMulai, tglSelesai, jMulai, jSelesai,
+      form.ruangan ? form.ruangan.id_ruangan : null);
+    if (res.status !== 'success') {
+      hint.className = 'hint bad';
+      hint.textContent = res.message || 'Gagal memeriksa ketersediaan.';
+      return;
+    }
     const d = res.data;
 
     if (d.di_luar_jam_operasional) {
@@ -148,7 +154,7 @@
     }
 
     hint.className = 'hint ok';
-    hint.textContent = `Fasilitas tersedia! Jam operasional gedung: ${d.jam_operasional}. Tidak ada jadwal bentrok pada tanggal ini.`;
+    hint.textContent = `Fasilitas tersedia! Jam operasional gedung: ${d.jam_operasional}. Tidak ada jadwal bentrok pada rentang waktu ini.`;
   }
 
   $('f-tgl-mulai').addEventListener('change', () => {
@@ -165,7 +171,8 @@
   async function validate(n) {
     if (n === 2) {
       if (!val('f-nama')) return 'Nama kegiatan wajib diisi.';
-      if (!val('f-pj-nama')) return 'Nama Penanggung Jawab (Ketua Pelaksana) wajib diisi.';
+      if (!val('f-pj-nama')) return 'Nama Penanggung Jawab wajib diisi.';
+      if (!val('f-pj-nim')) return 'NIM Penanggung Jawab wajib diisi.';
       if (!val('f-pj-kontak')) return 'Kontak WhatsApp / HP Penanggung Jawab wajib diisi.';
     }
     if (n === 3) {
@@ -173,9 +180,11 @@
       if (!val('f-tgl-mulai') || !val('f-tgl-selesai')) return 'Tentukan tanggal mulai dan selesai kegiatan.';
       if (val('f-tgl-selesai') < val('f-tgl-mulai')) return 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.';
       if (!val('f-mulai') || !val('f-selesai')) return 'Lengkapi jam mulai dan jam selesai.';
-      if (val('f-selesai') <= val('f-mulai')) return 'Jam selesai harus lebih besar dari jam mulai!';
+      if ((val('f-tgl-selesai') + ' ' + val('f-selesai')) <= (val('f-tgl-mulai') + ' ' + val('f-mulai'))) return 'Waktu selesai harus lebih besar dari waktu mulai!';
 
-      const res = await API.cekKetersediaan(form.gedung.id_gedung, val('f-tgl-mulai'), val('f-tgl-selesai'), val('f-mulai'), val('f-selesai'));
+      const res = await API.cekKetersediaan(form.gedung.id_gedung, val('f-tgl-mulai'), val('f-tgl-selesai'), val('f-mulai'), val('f-selesai'),
+        form.ruangan ? form.ruangan.id_ruangan : null);
+      if (res.status !== 'success') return res.message || 'Gagal memeriksa ketersediaan.';
       if (res.data.di_luar_jam_operasional) {
         return `Kegiatan berada di luar jam operasional gedung (${res.data.jam_operasional}).`;
       }
@@ -233,7 +242,7 @@
       <p style="margin-top:0; color:#334155;">Periksa kembali kebenaran data pengajuan Anda sebelum mengirimkan permohonan ke sistem.</p>
       <dl>
         <dt>Nama Kegiatan</dt><dd>${esc(val('f-nama'))}</dd>
-        <dt>Penanggung Jawab</dt><dd>${esc(val('f-pj-nama'))} &bull; ${esc(val('f-pj-kontak'))}</dd>
+        <dt>Penanggung Jawab</dt><dd>${esc(val('f-pj-nama'))} (NIM ${esc(val('f-pj-nim'))}) &bull; ${esc(val('f-pj-kontak'))}</dd>
         <dt>Organisasi</dt><dd>${esc(val('f-org'))}</dd>
         <dt>Fasilitas Dipinjam</dt><dd>${esc(tempatText)}</dd>
         <dt>Waktu Pelaksanaan</dt><dd>${esc(tglText)}, Pukul ${esc(val('f-mulai'))} - ${esc(val('f-selesai'))} WIB</dd>
@@ -248,16 +257,14 @@
 
     const tempatArr = [{
       id_gedung: form.gedung.id_gedung,
-      nama_gedung: form.gedung.nama_gedung,
-      id_ruangan: form.ruangan ? form.ruangan.id_ruangan : null,
-      nama_ruangan: form.ruangan ? form.ruangan.nama_ruangan : '-',
-      tipe_sewa: form.ruangan ? 'Ruangan' : 'Gedung Utuh'
+      id_ruangan: form.ruangan ? form.ruangan.id_ruangan : null
     }];
 
     const res = await API.buatReservasi({
       nama_acara: val('f-nama'),
       deskripsi: val('f-deskripsi'),
       penanggung_jawab_nama: val('f-pj-nama'),
+      penanggung_jawab_nim: val('f-pj-nim'),
       penanggung_jawab_kontak: val('f-pj-kontak'),
       tgl_mulai: val('f-tgl-mulai'),
       tgl_selesai: val('f-tgl-selesai'),
@@ -281,7 +288,7 @@
   }
 
   function resetWizard() {
-    ['f-nama', 'f-deskripsi', 'f-pj-nama', 'f-pj-kontak'].forEach((id) => { $(id).value = ''; });
+    ['f-nama', 'f-deskripsi', 'f-pj-nama', 'f-pj-nim', 'f-pj-kontak'].forEach((id) => { $(id).value = ''; });
     form.file = null; fileEl.value = '';
     dzText.textContent = 'Seret file proposal, atau klik untuk memilih file';
     go(1);
@@ -331,13 +338,23 @@
           </div>` : ''}
         ${(r.logs || []).some((l) => l.catatan) ? `<button class="btn btn-ghost btn-sm" data-lihat-catatan="${esc(r.id_reservasi)}">Lihat Catatan</button> ` : ''}
         ${isApproved ? `<a class="btn btn-ghost btn-sm" href="${esc(API.verifyUrl(r.id_reservasi))}" target="_blank" rel="noopener">Lihat Verifikasi Surat</a> ` : ''}
+        ${bolehBatal(r) ? `<button class="btn btn-sm btn-outline-danger btn-batal" data-id="${esc(r.id_reservasi)}" data-acara="${esc(r.nama_acara)}">Batalkan Peminjaman</button>` : ''}
         ${isApproved ? `<button class="btn btn-sm btn-lihat-qr" data-id="${esc(r.id_reservasi)}" data-nomor="${esc(r.nomor_pengajuan)}" data-acara="${esc(r.nama_acara)}" data-gedung="${esc(r.nama_gedung)}" data-waktu="${esc(tglStr)}">Lihat QR Code Resmi</button>` : ''}
       </div>`;
     }).join('') || '<div class="card empty">Belum ada pengajuan peminjaman. Mulai dari menu "Ajukan Peminjaman".</div>';
   }
 
+  /* Pengajuan masih bisa dibatalkan selama belum ditolak/dibatalkan; yang sudah disetujui hanya sebelum acara dimulai */
+  function bolehBatal(r) {
+    if (['Pending', 'In-Progress', 'Need-Revision'].includes(r.status_akhir)) return true;
+    if (r.status_akhir !== 'Approved') return false;
+    const mulai = new Date(`${r.tgl_mulai || r.tgl_acara}T${String(r.jam_mulai).slice(0, 5)}:00`);
+    return new Date() < mulai;
+  }
+
   function posisiText(r) {
     const nama = r.posisi_approval;
+    if (r.status_akhir === 'Dibatalkan') return 'Pengajuan ini telah dibatalkan.';
     if (r.status_akhir === 'Approved') return 'Seluruh tahap persetujuan selesai.';
     if (r.status_akhir === 'Rejected') return `Pengajuan ditolak pada tahap <b>${esc(nama)}</b>.`;
     if (r.status_akhir === 'Need-Revision') return `Perlu revisi dari <b>${esc(nama)}</b>.`;
@@ -384,6 +401,14 @@
       UI.modal.open('m-revisi');
     }
 
+    const btnBatal = e.target.closest('.btn-batal');
+    if (btnBatal) {
+      activeBatalId = btnBatal.dataset.id;
+      $('batal-acara').textContent = btnBatal.dataset.acara;
+      $('batal-alasan').value = '';
+      UI.modal.open('m-batal');
+    }
+
     const btnQr = e.target.closest('.btn-lihat-qr');
     if (btnQr) {
       const id = btnQr.dataset.id;
@@ -404,6 +429,20 @@
       UI.modal.open('m-qr-surat');
     }
   });
+
+  /* Submit Batalkan Peminjaman (POST mahasiswa/batalkan_reservasi.php) */
+  let activeBatalId = null;
+  $('btn-konfirmasi-batal').onclick = async () => {
+    if (!activeBatalId) return;
+    $('btn-konfirmasi-batal').disabled = true;
+    const res = await API.batalkanReservasi({ id_reservasi: activeBatalId, alasan: $('batal-alasan').value.trim() });
+    $('btn-konfirmasi-batal').disabled = false;
+    if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
+    UI.toast(res.message || 'Pengajuan berhasil dibatalkan.', 'ok');
+    UI.modal.close('m-batal');
+    activeBatalId = null;
+    renderRiwayat();
+  };
 
   /* Submit Revisi Modal */
   $('btn-submit-revisi').onclick = async () => {
@@ -448,11 +487,11 @@
   // disetujui: Akan Datang / Sedang Berlangsung / Selesai (dihitung dari rentang tanggal + jam); lainnya: status pengajuan
   const statusJadwal = (j) => {
     if (j.status_akhir !== 'Approved') return j.status_akhir;
-    const today = hariIni(), now = new Date().toTimeString().slice(0, 5);
-    const jm = String(j.jam_mulai).slice(0, 5), js = String(j.jam_selesai).slice(0, 5);
-    if (today < tglMulai(j)) return 'Akan Datang';
-    if (today > tglSelesai(j)) return 'Selesai';
-    return now < jm ? 'Akan Datang' : now <= js ? 'Sedang Berlangsung' : 'Selesai';
+    // acara = satu rentang kontinu (tgl_mulai jam_mulai) s/d (tgl_selesai jam_selesai), sama dengan database
+    const kini = new Date();
+    const mulai = new Date(`${tglMulai(j)}T${String(j.jam_mulai).slice(0, 5)}:00`);
+    const selesai = new Date(`${tglSelesai(j)}T${String(j.jam_selesai).slice(0, 5)}:00`);
+    return kini < mulai ? 'Akan Datang' : kini <= selesai ? 'Sedang Berlangsung' : 'Selesai';
   };
   const jadwalDipilih = () => jd.data.filter((j) => jd.gedung === SEMUA || j.nama_gedung === jd.gedung);
 
@@ -474,7 +513,7 @@
 
   function renderJadwal() {
     const today = hariIni();
-    const baris = (j) => `<tr><td>${esc(UI.fmtJam(j.jam_mulai))}-${esc(UI.fmtJam(j.jam_selesai))}</td><td>${esc(j.nama_gedung)}</td><td>${esc(namaPeminjam(j.nama_organisasi))}</td>`
+    const baris = (j) => `<tr><td>${esc(UI.fmtJam(j.jam_mulai))}-${esc(UI.fmtJam(j.jam_selesai))}</td><td>${esc(j.nama_gedung)}${j.nama_ruangan && j.nama_ruangan !== 'Seluruh Gedung' ? ' - ' + esc(j.nama_ruangan) : ''}</td><td>${esc(namaPeminjam(j.nama_organisasi))}</td>`
       + `<td>${esc(labelTgl(j))}</td><td>${esc(j.nama_acara)}</td><td>${UI.badge(statusJadwal(j))}</td></tr>`;
     const rows = jadwalDipilih().filter((j) => jatuhPada(j, today));
     $('tbl-hari-ini').innerHTML = '<thead><tr><th>Waktu</th><th>Ruangan/Gedung</th><th>Peminjam</th><th>Tanggal</th><th>Acara</th><th>Status</th></tr></thead><tbody>'
@@ -495,11 +534,32 @@
       const tgl = prefix + String(d).padStart(2, '0');
       const ev = list.filter((j) => jatuhPada(j, tgl));
       const chips = ev.length
-        ? ev.map((j) => `<span class="badge warn ${j.status_akhir === 'Approved' ? '' : 'wait'}" title="${esc(j.nama_acara)} - ${esc(j.nama_gedung)} (${esc(UI.fmtRentang(j.jam_mulai, j.jam_selesai))}) - ${esc(UI.STATUS_LABEL[j.status_akhir] || j.status_akhir)}">${esc(j.nama_acara)}</span>`).join('')
+        ? ev.map((j) => `<span class="badge warn klik ${j.status_akhir === 'Approved' ? '' : 'wait'}" role="button" tabindex="0" data-jadwal="${jd.data.indexOf(j)}" title="${esc(j.nama_acara)} - ${esc(j.nama_gedung)} (${esc(UI.fmtRentang(j.jam_mulai, j.jam_selesai))}) - ${esc(UI.STATUS_LABEL[j.status_akhir] || j.status_akhir)}">${esc(j.nama_acara)}</span>`).join('')
         : (tgl >= today ? '<span class="badge ok">Kosong</span>' : '');
       el.insertAdjacentHTML('beforeend', `<div class="cell ${tgl === today ? 'today' : ''}"><small>${d}</small>${chips}</div>`);
     }
   }
+  /* ---- Modal detail jadwal: dibuka saat badge acara (bukan "Kosong") di kalender diklik ----
+     Memakai delegasi klik pada #cal, jadi tetap jalan setelah kalender dirender ulang (auto-refresh 30 detik). */
+  function detailJadwal(j) {
+    if (!j) return null;
+    const ruangan = j.nama_ruangan && j.nama_ruangan !== 'Seluruh Gedung' ? esc(j.nama_ruangan) : 'Seluruh Gedung';
+    const pj = j.penanggung_jawab_nama
+      ? `${esc(j.penanggung_jawab_nama)}${j.penanggung_jawab_kontak ? `<small>${esc(j.penanggung_jawab_kontak)}</small>` : ''}`
+      : '-';
+    const status = statusJadwal(j);
+    return { judul: j.nama_acara, rows: [
+      ['Peminjam', esc(namaPeminjam(j.nama_organisasi))],
+      ['Penanggung Jawab', pj],
+      ['Gedung / Fasilitas', `${esc(j.nama_gedung || '-')}<small>${ruangan}</small>`],
+      ['Tanggal', esc(labelTgl(j))],
+      ['Jam', esc(UI.fmtRentang(j.jam_mulai, j.jam_selesai))],
+      ['Status Pengajuan', UI.badge(j.status_akhir)],
+      ...(status !== j.status_akhir ? [['Status Acara', UI.badge(status)]] : []),
+    ] };
+  }
+  UI.pasangKlikJadwal($('cal'), (i) => detailJadwal(jd.data[i]));
+
   $('cal-prev').onclick = () => { jd.m--; if (jd.m < 0) { jd.m = 11; jd.y--; } renderJadwal(); };
   $('cal-next').onclick = () => { jd.m++; if (jd.m > 11) { jd.m = 0; jd.y++; } renderJadwal(); };
 

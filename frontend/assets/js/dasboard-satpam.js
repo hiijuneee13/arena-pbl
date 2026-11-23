@@ -129,11 +129,28 @@
       const tgl = prefix + String(d).padStart(2, '0');
       const ev = jadwalSemua.filter((j) => (tgl >= j.tgl_mulai && tgl <= j.tgl_selesai));
       const chips = ev.length
-        ? ev.map((j) => `<span class="badge ok" title="${esc(j.nama_acara)} (${esc(j.penanggung_jawab_nama)})">${esc(j.nama_acara)}</span>`).join('')
+        ? ev.map((j) => `<span class="badge ok klik" role="button" tabindex="0" data-jadwal="${jadwalSemua.indexOf(j)}" title="${esc(j.nama_acara)} (${esc(j.penanggung_jawab_nama || j.nama_peminjam || '-')})">${esc(j.nama_acara)}</span>`).join('')
         : '';
       el.insertAdjacentHTML('beforeend', `<div class="cell ${tgl === today ? 'today' : ''}"><small>${d}</small>${chips}</div>`);
     }
   }
+
+  /* Modal detail jadwal: klik badge acara di kalender (modal-nya dibuat oleh UI.bukaDetailJadwal) */
+  UI.pasangKlikJadwal($('cal'), (i) => {
+    const j = jadwalSemua[i];
+    if (!j) return null;
+    const pj = j.penanggung_jawab_nama || j.nama_peminjam;
+    const ruangan = j.nama_ruangan && j.nama_ruangan !== 'Seluruh Gedung' ? esc(j.nama_ruangan) : 'Seluruh Gedung';
+    return { judul: j.nama_acara, rows: [
+      ['Peminjam', esc(j.nama_organisasi || j.nama_peminjam || '-')],
+      ['Penanggung Jawab', pj ? `${esc(pj)}${j.penanggung_jawab_kontak ? `<small>${esc(j.penanggung_jawab_kontak)}</small>` : ''}` : '-'],
+      ['Gedung / Fasilitas', `${esc(j.nama_gedung || '-')}<small>${ruangan}</small>`],
+      ['Tanggal', esc(j.tgl_mulai === j.tgl_selesai ? UI.fmtTgl(j.tgl_mulai) : `${UI.fmtTgl(j.tgl_mulai)} s/d ${UI.fmtTgl(j.tgl_selesai)}`)],
+      ['Jam', esc(UI.fmtRentang(j.jam_mulai, j.jam_selesai))],
+      ['Status Pengajuan', UI.badge('Approved')],
+      ['Status Kegiatan', UI.badge(j.status_waktu)],
+    ] };
+  });
 
   $('cal-prev').onclick = () => { cal.m--; if (cal.m < 0) { cal.m = 11; cal.y--; } renderKalender(hariIni()); };
   $('cal-next').onclick = () => { cal.m++; if (cal.m > 11) { cal.m = 0; cal.y++; } renderKalender(hariIni()); };

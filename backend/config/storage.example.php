@@ -1,11 +1,14 @@
 <?php
 // Konfigurasi Neon Object Storage (S3-Compatible)
 // JANGAN commit file ini ke GitHub! Tambahkan ke .gitignore.
-const S3_ENDPOINT   = 'https://br-floral-hall-b3o90zfu.storage.c-4.ap-southeast-1.aws.neon.tech';
-const S3_REGION     = 'ap-southeast-1';
-const S3_BUCKET     = 'uploads'; // nama bucket yang kamu buat di Neon
-const S3_ACCESS_KEY = 
-const S3_SECRET_KEY = 
+
+const S3_ENDPOINT = 'https://YOUR-ENDPOINT';
+const S3_REGION = 'ap-southeast-1';
+const S3_BUCKET = 'uploads';
+
+const S3_ACCESS_KEY = '';
+const S3_SECRET_KEY = '';
+
 
 /**
  * Mengunggah file lokal (misal $_FILES['file_proposal']['tmp_name']) ke Neon S3 Storage.

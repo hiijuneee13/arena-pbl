@@ -9,6 +9,11 @@
 <link rel="stylesheet" href="../assets/css/pages/main.css">
 <style>
   body { background: #F8FAFC; color: #0F172A; }
+  /* ikon mata di dalam kolom kata sandi (sama seperti halaman login) */
+  .pass-wrap { position: relative; display: flex; align-items: center; }
+  .pass-wrap .input { width: 100%; padding-right: 46px; }
+  .toggle-pwd { position: absolute; right: 10px; background: none; border: none; color: #64748B; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; transition: color .15s; }
+  .toggle-pwd:hover { color: #0F172A; }
   .view { display: none; }
   .view.active { display: block; animation: up .3s both; }
   @keyframes up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -173,10 +178,38 @@
             <h2>Manajemen Akun Pengguna</h2>
             <p class="card-sub">Buat akun baru atau nonaktifkan akun tanpa menghapus riwayat masa lalu.</p>
           </div>
+          <button type="button" class="btn btn-sm" id="btn-tambah-user">+ Tambah Akun</button>
         </div>
         <div class="table-wrap"><div id="tbl-users"></div></div>
       </div>
     </section>
+
+    <!-- Modal: Tambah Akun Pengguna Baru -->
+    <div class="overlay" id="m-user">
+      <div class="modal" style="max-width:520px;" role="dialog" aria-modal="true" aria-labelledby="user-judul">
+        <h2 id="user-judul">Tambah Akun Baru</h2>
+        <div class="field"><label for="u-nama">Nama Lengkap <span class="wajib">*</span></label><input class="input" id="u-nama" maxlength="100" placeholder="Contoh: Budi Santoso" autocomplete="off"></div>
+        <div class="field"><label for="u-email">Email <span class="wajib">*</span></label><input class="input" id="u-email" type="email" maxlength="120" placeholder="nama@arena.ac.id" autocomplete="off"></div>
+        <div class="field"><label for="u-role">Peran (Role) <span class="wajib">*</span></label>
+          <select class="select" id="u-role">
+            <option value="mahasiswa">Mahasiswa (Organisasi Peminjam)</option>
+            <option value="approver">Approver</option>
+            <option value="satpam">Satpam</option>
+            <option value="admin">Admin TU</option>
+          </select>
+        </div>
+        <div class="field" id="u-extra-wrap"><label for="u-extra" id="u-extra-label">Nama Organisasi</label><input class="input" id="u-extra" maxlength="120" autocomplete="off"></div>
+        <div class="field"><label for="u-pass">Kata Sandi Awal <span class="wajib">*</span></label><div class="pass-wrap"><input class="input" id="u-pass" type="password" maxlength="100" autocomplete="new-password" placeholder="Isi kata sandi sesuai keinginan admin">
+            <button type="button" class="toggle-pwd" id="btn-lihat-pass" aria-label="Lihat kata sandi">
+              <svg id="u-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button></div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" onclick="UI.modal.close('m-user')">Batal</button>
+          <button type="button" class="btn" id="btn-simpan-user">Simpan Akun</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ================= VIEW 7: LOG AKTIVITAS ================= -->
     <section class="view" data-view="logs">
@@ -222,11 +255,12 @@ const esc = UI.esc;
 const TH = '';   // gaya tabel dari .table di main.css
 const TD = '';
 
-const store = { gedung: [], reservasi: [], users: [], logs: [], satpam: [] };
+const store = { gedung: [], reservasi: [], users: [], logs: [], satpam: [], alur: {} };
 async function loadStore() {
-  const [g, d] = await Promise.all([API.getGedung(), API.dashboardAdmin()]);
+  const [g, d, l] = await Promise.all([API.getGedung(), API.dashboardAdmin(), API.logAktivitas()]);
   if (g.status === 'success') store.gedung = g.data || [];
   if (d.status === 'success') store.reservasi = d.data_reservasi || [];
+  if (l.status === 'success') store.logs = l.data || [];          // urutan: terbaru di atas
 }
 
 /* Render Data Dashboard */
@@ -274,7 +308,7 @@ async function renderDashboard() {
               <td class="${TD}"><b>${esc(m.nama_acara)}</b></td>
               <td class="${TD}"><span class="badge warn">${esc(m.nama_tahap || 'Approver')}</span></td>
               <td class="${TD}" style="color:#B45309;font-weight:700">${m.hari_macet} Hari</td>
-              <td class="${TD}"><button onclick="UI.toast('Pemberitahuan telah dikirimkan ke kontak pejabat approver terkait.', 'ok')" class="btn btn-sm btn-warn">Kirim Reminder</button></td>
+              <td class="${TD}"><button onclick="UI.toast('Pengiriman pengingat otomatis belum tersedia. Hubungi approver tahap ini secara langsung.', 'bad')" class="btn btn-sm btn-warn">Kirim Reminder</button></td>
             </tr>
           `).join('')}
         </tbody>
@@ -309,7 +343,7 @@ async function renderDashboard() {
 
   // Log Aktivitas Ringkas
   const logs = store.logs;
-  $('#log-summary').innerHTML = logs.slice(-4).reverse().map((l) => `
+  $('#log-summary').innerHTML = logs.slice(0, 4).map((l) => `
     <div class="log-item">
       <div class="t">${esc(l.jenis_aktivitas)}: ${esc(l.target_entitas || '')}</div>
       <div class="d">${esc(l.detail)}</div>
@@ -386,14 +420,14 @@ async function renderKelolaGedung() {
       </thead>
       <tbody>
         ${gList.map((g) => {
-          const rList = API.ruanganGedung(g.id_gedung);
+          const rList = g.fasilitas ? String(g.fasilitas).split(', ') : [];     // v_gedung.fasilitas = daftar nama ruangan dari tabel ruangan
           const isAktif = g.status_operasional === 'Aktif';
           return `
             <tr>
               <td class="${TD}"><b>${esc(g.nama_gedung)}</b><br><small class="muted">${esc(g.kode_gedung)} &bull; ${esc(g.lokasi)}</small></td>
-              <td class="${TD}">${esc(g.jam_operasional_buka.slice(0,5))} - ${esc(g.jam_operasional_tutup.slice(0,5))} WIB</td>
+              <td class="${TD}">${esc(String(g.jam_operasional_buka).slice(0,5))} - ${esc(String(g.jam_operasional_tutup).slice(0,5))} WIB</td>
               <td class="${TD}">${g.wajib_proposal ? '<span style="color:#1D4ED8;font-weight:700">Wajib</span>' : '<span class="muted">Opsional</span>'}</td>
-              <td class="${TD}">${rList.length} Ruangan (${rList.map((r) => r.kode_ruangan).join(', ') || '-'})</td>
+              <td class="${TD}">${rList.length} Ruangan (${rList.join(', ') || '-'})</td>
               <td class="${TD}"><span class="badge ${isAktif ? 'ok' : 'bad'}">${esc(g.status_operasional)}</span></td>
               <td class="${TD}">
                 <button onclick="toggleGedung('${g.id_gedung}')" class="btn btn-sm ${isAktif ? 'btn-outline-danger' : 'btn-outline-ok'}">
@@ -422,23 +456,23 @@ async function toggleGedung(idGedung) {
   renderDashboard();
 }
 
-/* Render Alur Persetujuan Gedung Dinamis (Fitur Rizal - Admin 3) */
+/* Render Alur Persetujuan Gedung (dibaca dari tabel alur_persetujuan; hanya tampilan) */
 async function renderAlurGedung() {
   await loadStore();
+  const res = await API.getAlurGedung();
+  if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
+  store.alur = res.data || {};
   const gList = store.gedung;
 
   $('#list-alur-gedung').innerHTML = gList.map((g) => {
-    const flows = API.alurGedung(g.id_gedung);
-    if (!flows.length) flows.push({ tahap_ke: 1, nama_tahap: 'Persetujuan Pimpinan' });
-
+    const flows = store.alur[String(g.id_gedung)] || [];
     return `
       <div class="card">
         <div class="card-head line">
           <div>
             <h3>${esc(g.nama_gedung)}</h3>
-            <p class="card-sub">Total ${flows.length} Tahapan Alur Persetujuan Berjenjang</p>
+            <p class="card-sub">${flows.length ? `Total ${flows.length} Tahapan Alur Persetujuan Berjenjang` : 'Alur persetujuan belum diatur di database'}</p>
           </div>
-          <button onclick="UI.toast('Konfigurasi alur tersimpan aktif di basis data.', 'ok')" class="btn btn-sm">Simpan Alur</button>
         </div>
         <div class="flow">
           ${flows.map((f, i) => `
@@ -454,18 +488,19 @@ async function renderAlurGedung() {
   }).join('');
 }
 
-/* Render Penugasan Satpam (Fitur Rizal - Admin 4) */
-function renderSatpam() {
+/* Render Penugasan Satpam (dibaca dari tabel satpam_gedung) */
+async function renderSatpam() {
+  const res = await API.getSatpamGedung();
+  if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
+  store.satpam = res.data || [];
   const assignments = store.satpam;
   $('#tbl-satpam-gedung').innerHTML = `
     <table class="table">
       <thead>
         <tr>
           <th class="${TH}">Nama Personel Satpam</th>
-          <th class="${TH}">Kontak</th>
           <th class="${TH}">Gedung Tugas Pengamanan</th>
-          <th class="${TH}">Shift</th>
-          <th class="${TH}">Status Penugasan</th>
+          <th class="${TH}">Status Akun</th>
         </tr>
       </thead>
       <tbody>
@@ -475,20 +510,21 @@ function renderSatpam() {
           return `
             <tr>
               <td class="${TD}"><b>${esc(u.nama_lengkap || 'Satpam')}</b><br><small class="muted">${esc(u.email || '-')}</small></td>
-              <td class="${TD}">${esc(u.no_hp || '-')}</td>
               <td class="${TD}"><b>${esc(g.nama_gedung || '-')}</b> (${esc(g.lokasi || '-')})</td>
-              <td class="${TD}">${esc(sg.shift || 'All')}</td>
-              <td class="${TD}"><span class="badge ok">Aktif Bertugas</span></td>
+              <td class="${TD}"><span class="badge ${u.status_aktif === false ? 'bad' : 'ok'}">${u.status_aktif === false ? 'Akun Nonaktif' : 'Aktif Bertugas'}</span></td>
             </tr>
           `;
-        }).join('')}
+        }).join('') || '<tr><td colspan="3" style="text-align:center;color:#94A3B8">Belum ada penugasan satpam.</td></tr>'}
       </tbody>
     </table>
   `;
 }
 
 /* Render Kelola User (Fitur Rizal - Admin 1) */
-function renderUsers() {
+async function renderUsers() {
+  const res = await API.getUsers();
+  if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
+  store.users = res.data || [];
   const uList = store.users;
   $('#tbl-users').innerHTML = `
     <table class="table">
@@ -511,7 +547,7 @@ function renderUsers() {
               <td class="${TD}">${esc(u.nama_jabatan || (u.nama_organisasi || '-'))}</td>
               <td class="${TD}"><span class="badge ${isAktif ? 'ok' : 'bad'}">${isAktif ? 'Aktif' : 'Nonaktif'}</span></td>
               <td class="${TD}">
-                <button onclick="toggleUser('${u.id_user}')" class="btn btn-sm ${isAktif ? 'btn-outline-danger' : 'btn-outline-ok'}">
+                <button onclick="toggleUser('${u.id_user}', ${isAktif ? 'false' : 'true'})" class="btn btn-sm ${isAktif ? 'btn-outline-danger' : 'btn-outline-ok'}">
                   ${isAktif ? 'Nonaktifkan' : 'Aktifkan'}
                 </button>
               </td>
@@ -523,12 +559,58 @@ function renderUsers() {
   `;
 }
 
-function toggleUser() {
-  UI.toast('Pengaturan akun belum tersedia di backend.', 'bad');
+/* Tambah Akun Baru (POST admin/tambah_user.php) */
+const EXTRA_USER = { mahasiswa: 'Nama Organisasi', approver: 'Nama Jabatan' };   // satpam & admin tidak perlu isian tambahan
+function sesuaikanFormUser() {
+  const ekstra = EXTRA_USER[$('#u-role').value];
+  $('#u-extra-wrap').style.display = ekstra ? '' : 'none';
+  if (ekstra) { $('#u-extra-label').textContent = ekstra; $('#u-extra').placeholder = ekstra === 'Nama Organisasi' ? 'Contoh: HIMA Teknik Sipil' : 'Contoh: Dosen Pembina'; }
+}
+$('#u-role').addEventListener('change', sesuaikanFormUser);
+const MATA_TERBUKA = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+const MATA_CORET = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+$('#btn-lihat-pass').addEventListener('click', () => {   // klik ikon mata: tampilkan / sembunyikan kata sandi (seperti di login)
+  const tampil = $('#u-pass').type === 'password';
+  $('#u-pass').type = tampil ? 'text' : 'password';
+  $('#u-eye').innerHTML = tampil ? MATA_CORET : MATA_TERBUKA;
+  $('#btn-lihat-pass').setAttribute('aria-label', tampil ? 'Sembunyikan kata sandi' : 'Lihat kata sandi');
+});
+$('#btn-tambah-user').addEventListener('click', () => {
+  ['u-nama', 'u-email', 'u-extra', 'u-pass'].forEach((id) => { document.getElementById(id).value = ''; });
+  $('#u-role').value = 'mahasiswa';
+  $('#u-pass').type = 'password'; $('#u-eye').innerHTML = MATA_TERBUKA; $('#btn-lihat-pass').setAttribute('aria-label', 'Lihat kata sandi');
+  sesuaikanFormUser();
+  UI.modal.open('m-user');
+});
+$('#btn-simpan-user').addEventListener('click', async () => {
+  const v = (id) => document.getElementById(id).value.trim();
+  const role = $('#u-role').value, email = v('u-email'), pass = document.getElementById('u-pass').value;
+  const ekstra = EXTRA_USER[role];
+  if (!v('u-nama')) return UI.toast('Nama lengkap wajib diisi.', 'bad');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return UI.toast('Format email tidak valid.', 'bad');
+  if (ekstra && !v('u-extra')) return UI.toast(ekstra + ' wajib diisi.', 'bad');
+  if (!pass) return UI.toast('Kata sandi wajib diisi.', 'bad');   // isi kata sandi bebas, ditentukan admin
+  $('#btn-simpan-user').disabled = true;
+  const res = await API.tambahUser({ nama_lengkap: v('u-nama'), email, role, password: pass, nama_organisasi: role === 'mahasiswa' ? v('u-extra') : '', nama_jabatan: role === 'approver' ? v('u-extra') : '' });
+  $('#btn-simpan-user').disabled = false;
+  if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
+  UI.toast(res.message || 'Akun baru berhasil dibuat.', 'ok');
+  UI.modal.close('m-user');
+  renderUsers();
+});
+
+async function toggleUser(idUser, aktifBaru) {
+  const res = await API.toggleUser(idUser, aktifBaru);
+  if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
+  UI.toast(res.message, 'ok');
+  renderUsers();
 }
 
 /* Render Audit Logs (Fitur Rizal - Admin 6) */
-function renderLogs() {
+async function renderLogs() {
+  const res = await API.logAktivitas();
+  if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
+  store.logs = res.data || [];
   const logs = store.logs;
   $('#tbl-audit-logs').innerHTML = `
     <table class="table">
@@ -541,7 +623,7 @@ function renderLogs() {
         </tr>
       </thead>
       <tbody>
-        ${logs.slice().reverse().map((l) => `
+        ${logs.map((l) => `
           <tr>
             <td class="${TD}"><small>${esc(l.created_at)}</small></td>
             <td class="${TD}"><b>${esc(l.jenis_aktivitas)}</b></td>

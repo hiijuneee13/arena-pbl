@@ -64,6 +64,44 @@
     close(id) { document.getElementById(id).classList.remove('open'); },
   };
 
+  /* ---------- Modal Detail Jadwal (dipakai kalender Mahasiswa & Satpam) ----------
+     Markup modal dibuat otomatis saat pertama dipakai, jadi halaman tidak perlu menyalin HTML-nya.
+     detail = { judul: 'Nama Acara', rows: [['Label', '<html aman>'], ...] } */
+  function bukaDetailJadwal(detail) {
+    let ov = document.getElementById('m-jadwal');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.className = 'overlay';
+      ov.id = 'm-jadwal';
+      ov.innerHTML = `<div class="modal jadwal-modal" role="dialog" aria-modal="true" aria-labelledby="jd-judul">
+        <div class="jd-head"><span class="jd-kicker">Detail Jadwal Acara</span><h2 id="jd-judul"></h2></div>
+        <dl class="jd-list" id="jd-isi"></dl>
+        <div class="actions"><button type="button" class="btn" id="jd-tutup">Tutup</button></div>
+      </div>`;
+      document.body.appendChild(ov);
+      ov.querySelector('#jd-tutup').onclick = () => modal.close('m-jadwal');
+      ov.addEventListener('mousedown', (e) => { if (e.target === ov) modal.close('m-jadwal'); });      // klik di luar kartu = tutup
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.close('m-jadwal'); }); // Esc = tutup
+    }
+    ov.querySelector('#jd-judul').textContent = detail.judul || '-';
+    ov.querySelector('#jd-isi').innerHTML = detail.rows.map(([l, v]) => `<div class="jd-row"><dt>${l}</dt><dd>${v}</dd></div>`).join('');
+    modal.open('m-jadwal');
+  }
+
+  /* Delegasi klik/Enter pada badge jadwal (.badge[data-jadwal="<index>"]) di dalam elemen kalender.
+     ambil(index) mengembalikan detail untuk bukaDetailJadwal; tetap jalan walau kalender dirender ulang. */
+  function pasangKlikJadwal(el, ambil) {
+    const buka = (e) => {
+      const chip = e.target.closest('.badge[data-jadwal]');
+      if (!chip) return;
+      e.stopPropagation();
+      const d = ambil(+chip.dataset.jadwal);
+      if (d) bukaDetailJadwal(d);
+    };
+    el.addEventListener('click', buka);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); buka(e); } });
+  }
+
   /* ---------- Pemformat ---------- */
   const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const fmtTgl = (ymd) => { if (!ymd) return '-'; const [y, m, d] = String(ymd).slice(0, 10).split('-'); return `${d} ${BULAN[+m - 1]} ${y}`; };   // 2026-11-10 -> 10 November 2026
@@ -108,5 +146,5 @@
     }).join('') + '</div>';
   }
 
-  global.UI = { toast, go, dropdown, modal, badge, esc, fmtTgl, fmtJam, fmtRentang, fmtWaktu, statusAcara, tracker, STATUS_LABEL };
+  global.UI = { toast, go, dropdown, modal, bukaDetailJadwal, pasangKlikJadwal, badge, esc, fmtTgl, fmtJam, fmtRentang, fmtWaktu, statusAcara, tracker, STATUS_LABEL };
 })(window);
