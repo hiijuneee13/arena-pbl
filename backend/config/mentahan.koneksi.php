@@ -7,7 +7,7 @@ $host     = "ep-wispy-glade-b3gxn00u-pooler.c-4.ap-southeast-1.aws.neon.tech";
 $port     = "5432";
 $dbname   = "neondb";
 $user     = "neondb_owner";
-$password = "";
+$password = "ganti_dengan_password_asli_anda"; // ganti dengan password asli yang kamu dapatkan dari Neon
 
 try {
     // Wajib menyertakan sslmode=require untuk koneksi terenkripsi ke Neon

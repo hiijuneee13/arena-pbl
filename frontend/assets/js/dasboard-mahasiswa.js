@@ -156,14 +156,36 @@
     hint.className = 'hint ok';
     hint.textContent = `Fasilitas tersedia! Jam operasional gedung: ${d.jam_operasional}. Tidak ada jadwal bentrok pada rentang waktu ini.`;
   }
+  
+  /* Tanggal yang sudah lewat tidak bisa dipilih. Kalender sudah menonaktifkan tanggal lampau (atribut min).
+     Jika tanggal lampau diketik manual, nilainya dikembalikan dan pesan muncul SETELAH kolom ditinggalkan (blur),
+     bukan saat mengetik, supaya tahun bisa diketik digit demi digit (2 -> 20 -> 202 -> 2027). */
+  const sudahLewat = (ymd) => !!ymd && ymd < API.ymd(new Date());
+  function tolakTanggalLewat(el, nama, gantiDengan) {
+    if (!sudahLewat(el.value)) return false;
+    el.value = gantiDengan;
+    UI.toast(`${nama} tidak boleh tanggal yang sudah lewat. Pilih hari ini atau tanggal setelahnya.`, 'bad');
+    return true;
+  }
 
-  $('f-tgl-mulai').addEventListener('change', () => {
+  function setelahTanggalMulai() {
+    $('f-tgl-selesai').min = val('f-tgl-mulai') || API.ymd(new Date());   // tanggal selesai tidak bisa sebelum tanggal mulai
     if (val('f-tgl-selesai') < val('f-tgl-mulai')) {
       $('f-tgl-selesai').value = $('f-tgl-mulai').value;
     }
     refreshHint();
+  }
+
+  $('f-tgl-mulai').addEventListener('change', () => { if (!sudahLewat(val('f-tgl-mulai'))) setelahTanggalMulai(); });
+  $('f-tgl-mulai').addEventListener('blur', () => {
+    if (tolakTanggalLewat($('f-tgl-mulai'), 'Tanggal mulai', API.ymd(new Date()))) setelahTanggalMulai();
   });
-  $('f-tgl-selesai').addEventListener('change', refreshHint);
+  $('f-tgl-selesai').addEventListener('change', () => { if (!sudahLewat(val('f-tgl-selesai'))) refreshHint(); });
+  $('f-tgl-selesai').addEventListener('blur', () => {
+    if (tolakTanggalLewat($('f-tgl-selesai'), 'Tanggal selesai', val('f-tgl-mulai') || API.ymd(new Date()))) refreshHint();
+  });
+   
+
   $('f-mulai').addEventListener('change', refreshHint);
   $('f-selesai').addEventListener('change', refreshHint);
 
@@ -178,6 +200,8 @@
     if (n === 3) {
       if (!form.gedung) return 'Pilih tempat/gedung terlebih dahulu.';
       if (!val('f-tgl-mulai') || !val('f-tgl-selesai')) return 'Tentukan tanggal mulai dan selesai kegiatan.';
+            if (sudahLewat(val('f-tgl-mulai'))) return 'Tanggal mulai sudah lewat. Pilih hari ini atau tanggal setelahnya.';
+      if (sudahLewat(val('f-tgl-selesai'))) return 'Tanggal selesai sudah lewat. Pilih hari ini atau tanggal setelahnya.';
       if (val('f-tgl-selesai') < val('f-tgl-mulai')) return 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.';
       if (!val('f-mulai') || !val('f-selesai')) return 'Lengkapi jam mulai dan jam selesai.';
       if ((val('f-tgl-selesai') + ' ' + val('f-selesai')) <= (val('f-tgl-mulai') + ' ' + val('f-mulai'))) return 'Waktu selesai harus lebih besar dari waktu mulai!';

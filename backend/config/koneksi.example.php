@@ -17,7 +17,7 @@ $db_host = getenv('ARENA_DB_HOST') ?: 'localhost';
 $db_port = getenv('ARENA_DB_PORT') ?: '5432';
 $db_name = getenv('ARENA_DB_NAME') ?: 'arena_db';
 $db_user = getenv('ARENA_DB_USER') ?: 'postgres';
-$db_pass = getenv('ARENA_DB_PASS') ?: 'npg_Zj2emd7WIplh';
+$db_pass = getenv('ARENA_DB_PASS') ?: 'ganti_dengan_password_asli_anda'; // ganti dengan password asli yang kamu dapatkan dari Neon
 
 try {
     $pdo = new PDO(
@@ -38,3 +38,4 @@ try {
     echo json_encode(['status' => 'error', 'message' => 'Tidak dapat terhubung ke database.']);
     exit;
 }
+
