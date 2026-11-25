@@ -1,5 +1,6 @@
 <?php
-// Alur persetujuan tiap gedung (tabel alur_persetujuan + jabatan). Hanya baca.
+// Alur persetujuan tiap gedung (tabel alur_persetujuan + jabatan).
+// GET -> data: { "<id_gedung>": [{ tahap_ke, jabatan_id, cakupan, nama_tahap, nama_jabatan }] }. Pengubahan: simpan_alur.php
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
@@ -8,7 +9,7 @@ require_once '../../config/helpers.php';
 wajib_login(['admin']);
 
 try {
-    $stmt = $pdo->query("SELECT ap.gedung_id AS id_gedung, ap.urutan AS tahap_ke, j.nama AS nama_jabatan
+    $stmt = $pdo->query("SELECT ap.gedung_id AS id_gedung, ap.urutan AS tahap_ke, j.nama AS nama_jabatan, j.id AS jabatan_id, j.cakupan
                          FROM alur_persetujuan ap
                          JOIN jabatan j ON j.id = ap.jabatan_id
                          ORDER BY ap.gedung_id, ap.urutan");
@@ -16,6 +17,8 @@ try {
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
         $per_gedung[(string)$r['id_gedung']][] = [
             "tahap_ke"     => (int)$r['tahap_ke'],
+            "jabatan_id"   => (int)$r['jabatan_id'],
+            "cakupan"      => $r['cakupan'],
             "nama_tahap"   => label_jabatan($r['nama_jabatan']),
             "nama_jabatan" => $r['nama_jabatan']
         ];

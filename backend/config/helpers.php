@@ -86,6 +86,17 @@ function url_dasar_backend() {
     return ($https ? 'https' : 'http') . '://' . $host . rtrim($dasar, '/\\');
 }
 
+// Alamat halaman bukti persetujuan resmi (frontend/pages/verifikasi.html) yang dibuka saat QR di-scan.
+// Frontend berada sejajar dengan folder backend (.../backend  ->  .../frontend/pages/verifikasi.html).
+// Mengembalikan null kalau berkas halaman itu tidak ada di server.
+function url_halaman_verifikasi($kode = '') {
+    if (!is_file(dirname(__DIR__, 2) . '/frontend/pages/verifikasi.html')) { return null; }
+    $dasar  = url_dasar_backend();                                   // contoh: http://host/arena-pbl/backend
+    $tujuan = preg_replace('#/backend$#', '', $dasar) . '/frontend/pages/verifikasi.html';
+    $kode   = trim((string)$kode);
+    return $kode === '' ? $tujuan : $tujuan . '?id=' . rawurlencode($kode);
+}
+
 // URL berkas proposal. Kolom dokumen_reservasi.path_file hanya berisi NAMA FILE (mis. proposal_ab12.pdf);
 // file disimpan di backend/uploads/. basename() juga menormalkan data lama yang berawalan "uploads/".
 function url_berkas($path_file) {

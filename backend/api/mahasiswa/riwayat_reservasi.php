@@ -20,7 +20,7 @@ try {
     $riwayat = petakan_reservasi($stmt->fetchAll(PDO::FETCH_ASSOC));
 
     $daftar_id = array_column($riwayat, 'id_reservasi');
-    $tempat_per = $logs_per = $proposal_per = [];
+    $tempat_per = $logs_per = $proposal_per = $tahap_per = [];
 
     if (!empty($daftar_id)) {
         $ids = '{' . implode(',', array_map('intval', $daftar_id)) . '}';
@@ -59,6 +59,24 @@ try {
             ];
         }
 
+        // 3b. Daftar SEMUA tahap approval tiap pengajuan, berurutan (reservasi_approval + jabatan).
+        //     Dipakai frontend agar setiap titik stepper menampilkan nama jabatannya (bukan hanya tahap yang aktif).
+        //     Memakai alur yang benar-benar terbentuk untuk pengajuan ini (sudah menggabungkan gedung yang dipinjam).
+        $stmt_a = $pdo->prepare("SELECT ra.reservasi_id AS id_reservasi, ra.urutan, ra.status, j.nama AS nama_jabatan
+                                 FROM reservasi_approval ra
+                                 JOIN jabatan j ON j.id = ra.jabatan_id
+                                 WHERE ra.reservasi_id = ANY(CAST(:ids AS integer[]))
+                                 ORDER BY ra.reservasi_id ASC, ra.urutan ASC");
+        $stmt_a->execute([':ids' => $ids]);
+        foreach ($stmt_a->fetchAll(PDO::FETCH_ASSOC) as $a) {
+            $tahap_per[$a['id_reservasi']][] = [
+                "tahap_ke"     => (int)$a['urutan'],
+                "nama_tahap"   => label_jabatan($a['nama_jabatan']),
+                "nama_jabatan" => $a['nama_jabatan'],
+                "status"       => $a['status']          // menunggu / disetujui / revisi / ditolak
+            ];
+        }
+
         // 4. Mengambil riwayat versi proposal dari View v_proposal_reservasi
         $stmt_p = $pdo->prepare("SELECT id_riwayat, id_reservasi, file_url, revisi_ke, nama_file_asli, catatan_revisi, waktu_upload
                                  FROM v_proposal_reservasi
@@ -86,6 +104,7 @@ try {
         $riwayat[$i]['tgl_acara']    = $item['tgl_mulai'];
         $riwayat[$i]['tempat']       = $tempat_per[$id] ?? [];
         $riwayat[$i]['logs']         = $logs_per[$id] ?? [];
+        $riwayat[$i]['daftar_tahap'] = $tahap_per[$id] ?? [];
         $riwayat[$i]['proposals']    = $proposal_per[$id] ?? [];
     }
 

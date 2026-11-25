@@ -23,9 +23,10 @@ function status_waktu_acara($tgl_mulai, $tgl_selesai, $jam_mulai, $jam_selesai, 
     return ($tgl_selesai === $hari_ini) ? $label['selesai_hari_ini'] : $label['selesai'];
 }
 
-// Alamat halaman verifikasi surat yang disajikan backend (public/verifikasi.php), dipakai sebagai isi QR.
+// Isi QR Code: alamat lengkap halaman bukti persetujuan (frontend/pages/verifikasi.html?id=<UUID>).
+// Kalau halaman frontend tidak ada di server, dipakai public/verifikasi.php yang tetap bisa dibuka.
 function url_verifikasi_backend($kode) {
-    return url_dasar_backend() . '/public/verifikasi.php?id=' . rawurlencode($kode);
+    return url_halaman_verifikasi($kode) ?? (url_dasar_backend() . '/public/verifikasi.php?id=' . rawurlencode($kode));
 }
 
 // Gambar QR (dibuat layanan qrserver.com, sama seperti frontend) yang isinya alamat verifikasi surat

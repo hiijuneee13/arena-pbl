@@ -69,6 +69,43 @@
   color: var(--text-pure);
 }
 #info-gedung { margin-top: 4px; }
+
+/* ---------- Dropdown Ruangan multi-pilih (Langkah 3) ---------- */
+#dd-ruangan .dropdown { display: block; width: 100%; }
+#dd-ruangan .dropdown-btn {
+  width: 100%;
+  background: #FFFFFF;
+  border-color: #CBD5E1;
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text-pure);
+}
+.dd-multi .dd-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-multi .dropdown-menu {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  max-height: 220px;                       /* daftar panjang di-scroll, tidak melewati batas bawah layar */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.dd-multi.up .dropdown-menu { top: auto; bottom: calc(100% + 6px); }
+.dd-multi .dropdown-menu li { padding: 0; }
+.dd-multi .dd-opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; margin: 0;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer;
+}
+.dd-multi .dd-opt input { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.dd-multi .dd-txt { flex: 1; min-width: 0; }
+.dd-multi .dd-txt b { font-weight: inherit; }
+.dd-multi .dd-txt small { display: block; margin-top: 1px; color: var(--muted); font-size: 11.5px; font-weight: 500; }
+.dd-multi .dd-tag {
+  flex: none; font-style: normal; font-size: 11px; font-weight: 700;
+  color: var(--bad); background: #FEF2F2; border-radius: 999px; padding: 2px 8px;
+}
+.dd-multi .dd-tag[hidden] { display: none; }
 .input[readonly] { opacity: .9; cursor: default; background: #F1F5F9; color: #334155; }
 .file-chip small { color: var(--muted); margin-left: 8px; font-weight: 500; }
 #list-riwayat .req + .req { margin-top: 16px; }

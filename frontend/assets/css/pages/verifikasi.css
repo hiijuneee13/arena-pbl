@@ -1,31 +1,74 @@
-/* Halaman publik verifikasi surat izin - Light Theme */
-.verif-page { display: grid; place-items: start center; padding: 48px 16px; background: #F8FAFC; min-height: 100vh; }
-.verif-wrap { width: min(640px, 100%); display: grid; gap: 20px; }
-.verif-wrap .brand { margin: 0 0 6px; }
+/* Halaman publik Bukti Persetujuan Resmi - Light Theme, responsif HP & desktop, ramah cetak */
+.verif-page { display: grid; place-items: start center; padding: 40px 16px 56px; background: #F1F5F9; min-height: 100vh; }
+.verif-wrap { width: min(680px, 100%); display: grid; gap: 18px; }
+.verif-wrap .brand { margin: 0 0 4px; justify-content: center; }
 .verif-wrap .brand .small { margin-left: 8px; font: 500 13px var(--font-body); color: var(--muted); }
 .small { font-size: 12px; }
 
-.verif-card { display: grid; gap: 22px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; padding: 28px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); }
-.verif-status { display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 16px; border: 1px solid; }
+/* Kartu utama, bergaya surat / sertifikat resmi */
+.verif-card { display: grid; gap: 22px; background: #FFFFFF; border: 1px solid #E2E8F0; border-top: 6px solid var(--accent); border-radius: 18px; padding: 28px; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.07); }
+.verif-loading { color: var(--muted); text-align: center; padding: 18px 0; font-size: 14px; }
+
+/* Lencana status */
+.verif-status { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 14px; border: 1px solid; }
 .verif-status.valid { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
 .verif-status.warn  { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
 .verif-status.bad   { background: var(--red-bg);   border-color: var(--red-border);   color: var(--bad); }
+.verif-icon { width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; border: 2px solid currentColor; display: grid; place-items: center; font: 800 24px var(--font-head); background: #fff; }
+.verif-msg { font: 800 18px var(--font-head); letter-spacing: -0.2px; line-height: 1.25; }
+.verif-sub { margin-top: 4px; font-size: 12.5px; font-weight: 500; line-height: 1.5; color: var(--muted); }
 
-.verif-icon { 
-  width: 50px; 
-  height: 50px; 
-  flex-shrink: 0; 
-  border-radius: 50%; 
-  border: 2px solid currentColor; 
-  display: grid; 
-  place-items: center; 
-  font: 800 24px var(--font-head); 
-}
-.verif-msg { font: 700 17px var(--font-head); letter-spacing: -0.3px; }
-.verif-card .kv dd { word-break: break-word; color: var(--text-pure); }
-.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+/* Nomor surat */
+.verif-nomor { display: flex; flex-wrap: wrap; gap: 12px 32px; padding: 14px 18px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 12px; }
+.verif-nomor span { display: block; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.verif-nomor strong { display: block; margin-top: 2px; font: 700 15px var(--font-head); color: var(--text-pure); word-break: break-word; }
 
+/* Bagian-bagian isi */
+.verif-sec h2 { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0; font: 700 15px var(--font-head); color: var(--text-pure); }
+.verif-sec-sub { margin: -2px 0 12px; font-size: 12.5px; color: var(--muted); }
+.verif-kv { display: grid; gap: 0; margin: 0; }
+.verif-kv .kv-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 4px 16px; padding: 9px 0; font-size: 14px; }
+.verif-kv .kv-row + .kv-row { border-top: 1px solid #F1F5F9; }
+.verif-kv dt { color: var(--muted); }
+.verif-kv dd { margin: 0; font-weight: 600; color: var(--text-pure); overflow-wrap: anywhere; }
+.verif-kv dd a { color: var(--accent); text-decoration: none; }
+
+/* Lembar pengesahan: satu kartu per approver */
+.pengesahan { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pengesahan-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 16px; border: 1px solid #E2E8F0; border-left: 4px solid var(--green); border-radius: 12px; background: #FCFDFD; }
+.pengesahan-no { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: #fff; font: 700 14px var(--font-head); }
+.pengesahan-jabatan { font: 700 14.5px var(--font-head); color: var(--text-pure); }
+.pengesahan-jabatan span { font: 500 12px var(--font-body); color: var(--muted); }
+.pengesahan-nama { margin-top: 2px; font-size: 14px; font-weight: 600; color: #1E293B; overflow-wrap: anywhere; }
+.pengesahan-waktu { margin-top: 2px; font-size: 12.5px; color: var(--muted); }
+.pengesahan-status { padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #F1F5F9; color: var(--muted); white-space: nowrap; }
+.pengesahan-status.ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+
+.verif-hubungi { margin: 0; font-size: 13.5px; color: var(--muted); }
+
+/* Form periksa kode lain */
 .verif-form label { font-weight: 600; font-size: 14px; display: block; margin-bottom: 8px; color: var(--text-pure); }
 .verif-form .row { display: flex; gap: 10px; }
-.verif-form .row .input { flex: 1; }
-.verif-form .demo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.verif-form .row .input { flex: 1; min-width: 0; }
+.verif-foot { margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
+
+/* HP */
+@media (max-width: 560px) {
+  .verif-page { padding: 20px 12px 40px; }
+  .verif-card { padding: 20px 16px; gap: 18px; }
+  .verif-status { padding: 14px; gap: 12px; }
+  .verif-icon { width: 40px; height: 40px; font-size: 20px; }
+  .verif-msg { font-size: 16px; }
+  .verif-kv .kv-row { grid-template-columns: 1fr; gap: 2px; }
+  .pengesahan-item { grid-template-columns: 30px minmax(0, 1fr); padding: 12px; }
+  .pengesahan-no { width: 30px; height: 30px; font-size: 13px; }
+  .pengesahan-status { grid-column: 2; justify-self: start; }
+  .verif-form .row { flex-direction: column; }
+}
+
+/* Cetak / simpan PDF: hanya surat, tanpa form */
+@media print {
+  .verif-page { background: #fff; padding: 0; }
+  .verif-form, .verif-foot { display: none; }
+  .verif-card { box-shadow: none; border-color: #CBD5E1; }
+}

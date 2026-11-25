@@ -33,7 +33,7 @@
 
   /* ---- State wizard ---- */
   const STEPS = ['Unduh Surat Peminjaman', 'Data Kegiatan', 'Gedung & Jadwal', 'Upload Proposal', 'Konfirmasi'];
-  const form = { gedung: null, ruangan: null, file: null };
+  const form = { gedung: null, ruangan: [], file: null };      // ruangan = daftar ruangan terpilih; kosong = Gedung Utuh
   let step = 1, gedungList = [], sending = false;
   let activeRevisiId = null;
 
@@ -88,38 +88,113 @@
     refreshHint();
   }
 
+  /* Dropdown ruangan multi-pilih: "Gedung Utuh" ATAU beberapa ruangan (checkbox).
+     form.ruangan = ruangan yang dicentang; kosong berarti Gedung Utuh. Memilih Gedung Utuh menghapus centang
+     ruangan satuan, dan mencentang ruangan satuan melepas Gedung Utuh (selalu ada satu pilihan yang aktif). */
+  const UTUH = 'Gedung Utuh (Semua Ruang)';
+  let ruanganUI = null;                                         // { setTersedia(daftar, utuhTersedia) } milik dropdown yang tampil
+
+  const ringkasRuangan = (nama) => {
+    if (!nama.length) return UTUH;
+    return nama.length <= 3 ? nama.join(', ') : `${nama.slice(0, 3).join(', ')} +${nama.length - 3} lainnya`;
+  };
+  const teksTempat = (g, ruangan) => (ruangan.length
+    ? `${g.nama_gedung} (${ruangan.map((r) => r.kode_ruangan).join(', ')})`
+    : `${g.nama_gedung} (Gedung Utuh)`);
+
   function updateRuanganDropdown(g) {
-    const boxRuangan = $('dd-ruangan');
-    boxRuangan.innerHTML = '';
-    form.ruangan = null;
+    const box = $('dd-ruangan');
+    box.innerHTML = '';
+    form.ruangan = [];
+    ruanganUI = null;
 
     if (!g) return;
 
     $('info-gedung').textContent = `${g.lokasi} • Jam Operasional: ${g.jam_operasional} ${g.wajib_proposal ? '• Proposal Wajib' : '• Proposal Opsional'}`;
 
-    const items = ['Gedung Utuh (Semua Ruang)'];
     const rList = g.ruangan || [];
-    rList.forEach((r) => items.push(`${r.kode_ruangan} - ${r.nama_ruangan} (Kapasitas ${r.kapasitas})`));
+    const terpilih = new Set();                                  // id_ruangan yang dicentang
 
-    boxRuangan.appendChild(UI.dropdown({
-      label: 'Gedung Utuh (Semua Ruang)',
-      items: items,
-      onSelect: (val) => {
-        if (val === 'Gedung Utuh (Semua Ruang)') {
-          form.ruangan = null;
-          $('info-ruangan').textContent = 'Menyewa keseluruhan gedung untuk acara besar.';
-        } else {
-          const kode = val.split(' - ')[0];
-          form.ruangan = rList.find((r) => r.kode_ruangan === kode) || null;
-          $('info-ruangan').textContent = form.ruangan ? `${form.ruangan.lantai} • Fasilitas: ${form.ruangan.fasilitas || '-'}` : '';
-        }
-        refreshHint();
+    const opsi = (atribut, judul, sub) => `<li><label class="dd-opt"><input type="checkbox" ${atribut}>`
+      + `<span class="dd-txt"><b>${esc(judul)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span><em class="dd-tag" hidden>Terisi</em></label></li>`;
+    const subRuangan = (r) => [Number(r.kapasitas) > 0 ? `Kapasitas ${r.kapasitas}` : null, r.lantai && r.lantai !== '-' ? r.lantai : null]
+      .filter(Boolean).join(' • ');
+
+    const el = document.createElement('div');
+    el.className = 'dropdown dd-multi';
+    el.innerHTML = '<button type="button" class="dropdown-btn" aria-haspopup="true" aria-expanded="false"><span class="dd-label"></span></button>'
+      + '<ul class="dropdown-menu">'
+      + opsi('data-all', UTUH, 'Menyewa seluruh gedung')
+      + rList.map((r) => opsi(`data-room value="${esc(r.id_ruangan)}"`, r.kode_ruangan, subRuangan(r))).join('')
+      + '</ul>';
+    const btn = el.querySelector('.dropdown-btn'), menu = el.querySelector('.dropdown-menu'), label = el.querySelector('.dd-label');
+    const cbUtuh = menu.querySelector('input[data-all]');
+    const cbRuang = [...menu.querySelectorAll('input[data-room]')];
+
+    function sync(tanpaHint) {
+      form.ruangan = rList.filter((r) => terpilih.has(String(r.id_ruangan)));
+      const utuh = form.ruangan.length === 0;
+      const nama = form.ruangan.map((r) => r.kode_ruangan);
+      cbUtuh.checked = utuh;
+      cbUtuh.closest('li').classList.toggle('sel', utuh);
+      cbRuang.forEach((c) => { c.checked = terpilih.has(c.value); c.closest('li').classList.toggle('sel', c.checked); });
+      label.textContent = ringkasRuangan(nama);
+      btn.title = utuh ? UTUH : nama.join(', ');
+      const kapasitas = form.ruangan.reduce((n, r) => n + (Number(r.kapasitas) || 0), 0);
+      $('info-ruangan').textContent = utuh
+        ? 'Menyewa keseluruhan gedung untuk acara besar.'
+        : `${nama.length} ruangan dipilih${kapasitas ? ` • Total kapasitas ${kapasitas}` : ''}`;
+      if (!tanpaHint) refreshHint();
+    }
+
+    menu.addEventListener('change', (e) => {
+      const c = e.target;
+      if (c === cbUtuh) terpilih.clear();                        // Gedung Utuh dipilih -> centang ruangan satuan dihapus
+      else if (c.checked) terpilih.add(c.value);                 // ruangan dicentang -> Gedung Utuh otomatis lepas
+      else terpilih.delete(c.value);                             // tidak ada ruangan tersisa -> kembali ke Gedung Utuh
+      sync();
+    });
+    menu.addEventListener('click', (e) => e.stopPropagation());  // klik di dalam daftar tidak menutup dropdown (penutup global ada di ui.js)
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.dropdown.open').forEach((d) => d !== el && d.classList.remove('open'));
+      const buka = !el.classList.contains('open');
+      el.classList.toggle('open', buka);
+      if (buka) {                                                // daftar dibuka ke atas bila ruang di bawah tombol tidak cukup
+        const r = btn.getBoundingClientRect(), butuh = Math.min(menu.scrollHeight, 220) + 14;
+        el.classList.toggle('up', window.innerHeight - r.bottom < butuh && r.top > window.innerHeight - r.bottom);
+        menu.scrollTop = 0;
       }
-    }));
+    });
+    el.addEventListener('keydown', (e) => { if (e.key === 'Escape' && el.classList.contains('open')) { el.classList.remove('open'); btn.focus(); } });
+    new MutationObserver(() => btn.setAttribute('aria-expanded', String(el.classList.contains('open'))))
+      .observe(el, { attributes: true, attributeFilter: ['class'] });
+
+    // Tanda "Terisi" pada pilihan, dari hasil cek ketersediaan terakhir (tidak menonaktifkan pilihan)
+    ruanganUI = {
+      setTersedia(daftar, utuhTersedia) {
+        const peta = new Map((daftar || []).map((x) => [String(x.id_ruangan), x.tersedia]));
+        cbRuang.forEach((c) => { c.closest('label').querySelector('.dd-tag').hidden = peta.get(c.value) !== false; });
+        cbUtuh.closest('label').querySelector('.dd-tag').hidden = utuhTersedia !== false;
+      }
+    };
+
+    box.appendChild(el);
+    sync(true);
   }
 
   /* Pengecekan Ketersediaan & Bentrok */
+  // "R.101, R.102 sudah terisi oleh "Acara" (25 November 2026, 08.00 - 17.00)"; untuk Gedung Utuh disebut ruangan yang dipakai acara lain
+  const rincianBentrok = (daftar) => daftar.map((b) => {
+    const waktu = `${UI.fmtTgl(b.tgl_acara)}, ${UI.fmtRentang(b.jam_mulai, b.jam_selesai)}`;
+    if (form.ruangan.length) return `${(b.ruangan_bentrok || []).join(', ')} sudah terisi oleh "${b.nama_acara}" (${waktu})`;
+    return `Gedung ini sudah terisi oleh "${b.nama_acara}"${b.tempat_terpakai ? ` di ${b.tempat_terpakai}` : ''} (${waktu})`;
+  }).join('; ');
+
+  let hintSeq = 0;                                               // hanya jawaban pengecekan terbaru yang boleh tampil
   async function refreshHint() {
+    const seq = ++hintSeq;
     const hint = $('jadwal-hint');
     if (!form.gedung || !val('f-tgl-mulai')) {
       hint.textContent = 'Pilih tempat dan tanggal untuk melihat ketersediaan & jam operasional.';
@@ -133,13 +208,15 @@
     const jSelesai = val('f-selesai');
 
     const res = await API.cekKetersediaan(form.gedung.id_gedung, tglMulai, tglSelesai, jMulai, jSelesai,
-      form.ruangan ? form.ruangan.id_ruangan : null);
+      form.ruangan.map((r) => r.id_ruangan));
+    if (seq !== hintSeq) return;
     if (res.status !== 'success') {
       hint.className = 'hint bad';
       hint.textContent = res.message || 'Gagal memeriksa ketersediaan.';
       return;
     }
     const d = res.data;
+    if (ruanganUI) ruanganUI.setTersedia(d.ruangan, d.gedung_utuh_tersedia);
 
     if (d.di_luar_jam_operasional) {
       hint.className = 'hint bad';
@@ -149,43 +226,21 @@
 
     if (d.bentrok && d.bentrok.length > 0) {
       hint.className = 'hint bad';
-      hint.textContent = 'Jadwal Bentrok! Tempat sudah terisi: ' + d.bentrok.map((b) => `${b.nama_acara} (${UI.fmtRentang(b.jam_mulai, b.jam_selesai)})`).join(', ');
+      hint.textContent = 'Jadwal Bentrok! ' + rincianBentrok(d.bentrok);
       return;
     }
 
     hint.className = 'hint ok';
     hint.textContent = `Fasilitas tersedia! Jam operasional gedung: ${d.jam_operasional}. Tidak ada jadwal bentrok pada rentang waktu ini.`;
   }
-  
-  /* Tanggal yang sudah lewat tidak bisa dipilih. Kalender sudah menonaktifkan tanggal lampau (atribut min).
-     Jika tanggal lampau diketik manual, nilainya dikembalikan dan pesan muncul SETELAH kolom ditinggalkan (blur),
-     bukan saat mengetik, supaya tahun bisa diketik digit demi digit (2 -> 20 -> 202 -> 2027). */
-  const sudahLewat = (ymd) => !!ymd && ymd < API.ymd(new Date());
-  function tolakTanggalLewat(el, nama, gantiDengan) {
-    if (!sudahLewat(el.value)) return false;
-    el.value = gantiDengan;
-    UI.toast(`${nama} tidak boleh tanggal yang sudah lewat. Pilih hari ini atau tanggal setelahnya.`, 'bad');
-    return true;
-  }
 
-  function setelahTanggalMulai() {
-    $('f-tgl-selesai').min = val('f-tgl-mulai') || API.ymd(new Date());   // tanggal selesai tidak bisa sebelum tanggal mulai
+  $('f-tgl-mulai').addEventListener('change', () => {
     if (val('f-tgl-selesai') < val('f-tgl-mulai')) {
       $('f-tgl-selesai').value = $('f-tgl-mulai').value;
     }
     refreshHint();
-  }
-
-  $('f-tgl-mulai').addEventListener('change', () => { if (!sudahLewat(val('f-tgl-mulai'))) setelahTanggalMulai(); });
-  $('f-tgl-mulai').addEventListener('blur', () => {
-    if (tolakTanggalLewat($('f-tgl-mulai'), 'Tanggal mulai', API.ymd(new Date()))) setelahTanggalMulai();
   });
-  $('f-tgl-selesai').addEventListener('change', () => { if (!sudahLewat(val('f-tgl-selesai'))) refreshHint(); });
-  $('f-tgl-selesai').addEventListener('blur', () => {
-    if (tolakTanggalLewat($('f-tgl-selesai'), 'Tanggal selesai', val('f-tgl-mulai') || API.ymd(new Date()))) refreshHint();
-  });
-   
-
+  $('f-tgl-selesai').addEventListener('change', refreshHint);
   $('f-mulai').addEventListener('change', refreshHint);
   $('f-selesai').addEventListener('change', refreshHint);
 
@@ -200,20 +255,18 @@
     if (n === 3) {
       if (!form.gedung) return 'Pilih tempat/gedung terlebih dahulu.';
       if (!val('f-tgl-mulai') || !val('f-tgl-selesai')) return 'Tentukan tanggal mulai dan selesai kegiatan.';
-            if (sudahLewat(val('f-tgl-mulai'))) return 'Tanggal mulai sudah lewat. Pilih hari ini atau tanggal setelahnya.';
-      if (sudahLewat(val('f-tgl-selesai'))) return 'Tanggal selesai sudah lewat. Pilih hari ini atau tanggal setelahnya.';
       if (val('f-tgl-selesai') < val('f-tgl-mulai')) return 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.';
       if (!val('f-mulai') || !val('f-selesai')) return 'Lengkapi jam mulai dan jam selesai.';
       if ((val('f-tgl-selesai') + ' ' + val('f-selesai')) <= (val('f-tgl-mulai') + ' ' + val('f-mulai'))) return 'Waktu selesai harus lebih besar dari waktu mulai!';
 
       const res = await API.cekKetersediaan(form.gedung.id_gedung, val('f-tgl-mulai'), val('f-tgl-selesai'), val('f-mulai'), val('f-selesai'),
-        form.ruangan ? form.ruangan.id_ruangan : null);
+        form.ruangan.map((r) => r.id_ruangan));
       if (res.status !== 'success') return res.message || 'Gagal memeriksa ketersediaan.';
       if (res.data.di_luar_jam_operasional) {
         return `Kegiatan berada di luar jam operasional gedung (${res.data.jam_operasional}).`;
       }
       if (res.data.bentrok && res.data.bentrok.length > 0) {
-        return `Jadwal bentrok dengan acara: "${res.data.bentrok[0].nama_acara}".`;
+        return 'Jadwal bentrok! ' + rincianBentrok(res.data.bentrok);
       }
     }
     if (n === 4) {
@@ -258,9 +311,7 @@
       ? UI.fmtTgl(val('f-tgl-mulai'))
       : `${UI.fmtTgl(val('f-tgl-mulai'))} s/d ${UI.fmtTgl(val('f-tgl-selesai'))}`;
 
-    const tempatText = form.ruangan 
-      ? `${form.gedung.nama_gedung} - ${form.ruangan.nama_ruangan} (${form.ruangan.kode_ruangan})`
-      : `${form.gedung.nama_gedung} (Gedung Utuh)`;
+    const tempatText = teksTempat(form.gedung, form.ruangan);      // mis. Gedung Sipil (R.101, R.102, R.201)
 
     $('confirm-box').innerHTML = `
       <p style="margin-top:0; color:#334155;">Periksa kembali kebenaran data pengajuan Anda sebelum mengirimkan permohonan ke sistem.</p>
@@ -279,10 +330,10 @@
   async function submit() {
     sending = true; $('btn-next').disabled = true;
 
-    const tempatArr = [{
-      id_gedung: form.gedung.id_gedung,
-      id_ruangan: form.ruangan ? form.ruangan.id_ruangan : null
-    }];
+    // satu baris tempat per ruangan terpilih (reservasi_item); tanpa ruangan = seluruh gedung
+    const tempatArr = form.ruangan.length
+      ? form.ruangan.map((r) => ({ id_gedung: form.gedung.id_gedung, id_ruangan: r.id_ruangan }))
+      : [{ id_gedung: form.gedung.id_gedung, id_ruangan: null }];
 
     const res = await API.buatReservasi({
       nama_acara: val('f-nama'),
@@ -315,6 +366,7 @@
     ['f-nama', 'f-deskripsi', 'f-pj-nama', 'f-pj-nim', 'f-pj-kontak'].forEach((id) => { $(id).value = ''; });
     form.file = null; fileEl.value = '';
     dzText.textContent = 'Seret file proposal, atau klik untuk memilih file';
+    updateRuanganDropdown(form.gedung);                          // pilihan ruangan kembali ke Gedung Utuh
     go(1);
     refreshHint();
   }
@@ -519,6 +571,19 @@
   };
   const jadwalDipilih = () => jd.data.filter((j) => jd.gedung === SEMUA || j.nama_gedung === jd.gedung);
 
+  // Backend mengirim satu baris per ruangan; acara yang sama di gedung yang sama digabung supaya tidak muncul berulang di kalender
+  function gabungRuangan(rows) {
+    const peta = new Map();
+    (rows || []).forEach((j) => {
+      const nama = j.nama_ruangan && j.nama_ruangan !== 'Seluruh Gedung' ? j.nama_ruangan : null;
+      const kunci = `${j.id_reservasi}:${j.id_gedung}`;
+      const ada = peta.get(kunci);
+      if (!ada) peta.set(kunci, Object.assign({}, j, { _ruangan: nama ? [nama] : [] }));
+      else if (nama && !ada._ruangan.includes(nama)) ada._ruangan.push(nama);
+    });
+    return [...peta.values()].map((j) => Object.assign(j, { nama_ruangan: j._ruangan.length ? j._ruangan.join(', ') : 'Seluruh Gedung' }));
+  }
+
   async function loadJadwal() {
     const [res, ged] = await Promise.all([API.jadwalAcara(), API.listGedungAktif()]);
     if (res.status !== 'success') {
@@ -526,7 +591,7 @@
       $('cal').innerHTML = '';
       return;
     }
-    jd.data = res.data;
+    jd.data = gabungRuangan(res.data);
     if (!jd.dd) {                                               // dropdown gedung dibuat sekali
       jd.dd = true;
       $('filter-gedung').appendChild(UI.dropdown({ label: SEMUA, value: SEMUA, items: [SEMUA, ...(ged.data || []).map((g) => g.nama_gedung)],

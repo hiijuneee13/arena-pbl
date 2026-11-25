@@ -1,5 +1,10 @@
 <?php
-// Penugasan satpam ke gedung (tabel satpam_gedung). Hanya baca.
+// Penugasan satpam ke gedung (tabel satpam_gedung).
+// GET -> {
+//   data   : [{ user:{id_user,nama_lengkap,email,status_aktif}, gedung:{id_gedung,nama_gedung,lokasi} }]   (satu baris per penugasan)
+//   satpam : [{ id_user, nama_lengkap, email, status_aktif, gedung:[{id_gedung,nama_gedung}] }]            (SEMUA satpam, termasuk yang belum bertugas)
+// }
+// Pengubahan: simpan_satpam_gedung.php
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
@@ -16,6 +21,7 @@ try {
                          LEFT JOIN jurusan j ON j.id = g.jurusan_id
                          ORDER BY u.nama, g.nama");
     $data = [];
+    $gedung_per_satpam = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
         $data[] = [
             "user"   => [
@@ -30,8 +36,23 @@ try {
                 "lokasi"      => $r['lokasi']
             ]
         ];
+        $gedung_per_satpam[$r['id_user']][] = ["id_gedung" => (int)$r['id_gedung'], "nama_gedung" => $r['nama_gedung']];
     }
-    echo json_encode(["status" => "success", "data" => $data]);
+
+    $semua = $pdo->query("SELECT u.id, u.nama, u.email, u.is_active
+                          FROM satpam s JOIN users u ON u.id = s.user_id
+                          ORDER BY u.nama")->fetchAll(PDO::FETCH_ASSOC);
+    $satpam = [];
+    foreach ($semua as $s) {
+        $satpam[] = [
+            "id_user"      => (string)$s['id'],
+            "nama_lengkap" => $s['nama'],
+            "email"        => $s['email'],
+            "status_aktif" => filter_var($s['is_active'], FILTER_VALIDATE_BOOLEAN),
+            "gedung"       => $gedung_per_satpam[$s['id']] ?? []
+        ];
+    }
+    echo json_encode(["status" => "success", "data" => $data, "satpam" => $satpam]);
 } catch (PDOException $e) {
     error_log("get_satpam_gedung.php: " . $e->getMessage());
     http_response_code(500);

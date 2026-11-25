@@ -132,11 +132,15 @@
   /* Penelusur tahap approval dari tahap_ke/total_tahap + status_akhir.
      done = sudah lewat, now = sedang di tahap ini, rej = ditolak di tahap ini */
   function tracker(r, labels) {
-    // Jumlah & posisi tahap berasal dari backend (total_tahap, tahap_ke, nama_tahap / posisi_approval)
-    const total = Number(r.total_tahap) || 1;
+    // Jumlah & posisi tahap berasal dari backend (total_tahap, tahap_ke, nama_tahap / posisi_approval).
+    // daftar_tahap = SEMUA tahap approval berurutan ([{ tahap_ke, nama_tahap }]), jadi tiap titik selalu bernama jabatan
+    // (sebelum diproses, sedang diproses, maupun setelah Disetujui). "Tahap N" hanya cadangan terakhir bila daftar tidak dikirim.
+    const daftar = Array.isArray(r.daftar_tahap) ? r.daftar_tahap : [];
+    const total = daftar.length || Number(r.total_tahap) || 1;
     const idx = Math.max(0, (Number(r.tahap_ke) || 1) - 1);
     const sekarang = r.nama_tahap || r.nama_tahap_sekarang || r.posisi_approval;           // nama tahap yang sedang berjalan
-    const nama = (i) => (labels && labels[i]) || (i === idx && sekarang && sekarang !== 'Selesai' ? sekarang : `Tahap ${i + 1}`);
+    const nama = (i) => (labels && labels[i]) || (daftar[i] && daftar[i].nama_tahap)
+      || (i === idx && sekarang && sekarang !== 'Selesai' ? sekarang : `Tahap ${i + 1}`);
     return '<div class="mini-steps">' + Array.from({ length: total }, (_, i) => {
       let cls = '';
       if (r.status_akhir === 'Approved') cls = 'done';

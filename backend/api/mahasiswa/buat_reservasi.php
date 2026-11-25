@@ -113,6 +113,23 @@ if (!$tempat) {
     echo json_encode(["status" => "error", "message" => "Pilih minimal satu tempat yang valid!"]);
     exit;
 }
+if (count($tempat) > 50) {
+    echo json_encode(["status" => "error", "message" => "Maksimal 50 tempat dalam satu pengajuan."]);
+    exit;
+}
+
+// Satu gedung: pilih seluruh gedung ATAU beberapa ruangan tertentu, tidak boleh keduanya
+// (aturan yang sama dijaga trigger item_validasi di database; di sini supaya pesannya langsung jelas)
+$gedung_utuh = [];
+$gedung_ruangan = [];
+foreach ($tempat as $t) {
+    if ($t['id_ruangan'] === null) { $gedung_utuh[$t['id_gedung']] = true; }
+    else                           { $gedung_ruangan[$t['id_gedung']] = true; }
+}
+if (array_intersect_key($gedung_utuh, $gedung_ruangan)) {
+    echo json_encode(["status" => "error", "message" => "Untuk satu gedung pilih gedung utuh ATAU ruangan tertentu, tidak boleh keduanya."]);
+    exit;
+}
 
 // Aturan Anti-Deadlock Database: urutkan gedung_id ASC
 $tempat = array_values($tempat);

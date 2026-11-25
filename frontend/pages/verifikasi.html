@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verifikasi Surat Izin - ARENA</title>
+  <title>Bukti Persetujuan Resmi - ARENA</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/global.css">
@@ -11,13 +11,13 @@
   <link rel="stylesheet" href="../assets/css/pages/verifikasi.css">
 </head>
 <body class="verif-page">
-  <!-- Halaman PUBLIK (tanpa login): tujuan QR Code. Padanan backend/public/verifikasi.php + get_verifikasi.php -->
+  <!-- Halaman PUBLIK (tanpa login): tujuan QR Code Surat Izin Resmi. Data dari backend/public/get_verifikasi.php -->
   <main class="verif-wrap">
-    <div class="brand"><div class="brand-logo">A</div>ARENA <span class="muted small">Verifikasi Surat Izin</span></div>
+    <div class="brand"><div class="brand-logo">A</div>ARENA <span class="muted small">Bukti Persetujuan Resmi</span></div>
 
-    <div class="card verif-card" id="hasil" aria-live="polite">
-      <div class="muted">Memeriksa dokumen...</div>
-    </div>
+    <article class="verif-card" id="hasil" aria-live="polite">
+      <div class="verif-loading">Memeriksa dokumen...</div>
+    </article>
 
     <form class="card verif-form" id="form-id">
       <label for="f-id">Periksa kode verifikasi lain</label>
@@ -26,6 +26,8 @@
         <button class="btn" type="submit">Periksa</button>
       </div>
     </form>
+
+    <p class="verif-foot">Halaman ini dibuat otomatis oleh sistem ARENA - Aplikasi Reservasi dan Operasional Area Kampus.</p>
   </main>
 
   <script src="../assets/js/api.js"></script>

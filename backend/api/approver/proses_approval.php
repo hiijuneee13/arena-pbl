@@ -83,8 +83,15 @@ try {
         "next_posisi" => $posisi_selanjutnya
     ];
 
+    // Approval terakhir: database sudah membuat kode verifikasi (fn_proses_approval). Sertakan nomor surat
+    // resmi (ARENA-YYYYMM-NNNN) dan alamat halaman bukti persetujuan yang menjadi isi QR Code.
     if (!empty($hasil['hasil_kode'])) {
         $respon["kode_verifikasi"] = $hasil['hasil_kode'];
+        $respon["url_verifikasi"]  = url_halaman_verifikasi($hasil['hasil_kode'])
+                                     ?? (url_dasar_backend() . '/public/verifikasi.php?id=' . rawurlencode($hasil['hasil_kode']));
+        $sn = $pdo->prepare("SELECT nomor_pengajuan FROM v_reservasi WHERE id_reservasi = :id");
+        $sn->execute([':id' => $id_reservasi]);
+        $respon["nomor_surat"] = $sn->fetchColumn() ?: null;
     }
     echo json_encode($respon);
 

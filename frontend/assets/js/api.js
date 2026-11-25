@@ -43,10 +43,13 @@
   const getJson = (path, params) => call(path + (params ? '?' + qs(params) : ''));
   const postJson = (path, body) => call(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
-  // Link & QR surat: hanya memakai kode verifikasi (UUID), bukan nomor urut yang mudah ditebak
+  // Link & QR surat: URL LENGKAP ke halaman bukti persetujuan publik (frontend/pages/verifikasi.html),
+  // hanya memakai kode verifikasi (UUID), bukan nomor urut yang mudah ditebak.
+  // Dibentuk dari alamat situs yang sedang dipakai, sehingga saat QR dipindai HP langsung membuka browser ke halaman itu.
+  const VERIF_PAGE = new URL('../../pages/verifikasi.html', SCRIPT_SRC).href;        // .../frontend/pages/verifikasi.html
   function verifyUrl(id) {
     const kode = kodeById[String(id)];
-    return kode ? new URL('public/verifikasi.php?id=' + encodeURIComponent(kode), BACKEND).href : '#';
+    return kode ? VERIF_PAGE + '?id=' + encodeURIComponent(kode) : '#';
   }
   function qrUrl(id) {
     return 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(verifyUrl(id));
@@ -67,6 +70,7 @@
 
   // p: { nama_acara, deskripsi, tgl_mulai, tgl_selesai, jam_mulai, jam_selesai, penanggung_jawab_nama/nim/kontak,
   //      tempat: [{ id_gedung, id_ruangan }], file }   -> multipart/form-data ke buat_reservasi.php
+  //      tempat berisi satu entri per ruangan (beberapa ruangan boleh), atau satu entri tanpa id_ruangan = seluruh gedung
   async function buatReservasi(p) {
     const fd = new FormData();
     fd.append('nama_acara', (p.nama_acara || '').trim());
@@ -107,9 +111,11 @@
     return getJson('mahasiswa/list_gedung_aktif.php');
   }
 
+  // id_ruangan: satu id, array id (beberapa ruangan sekaligus), atau kosong (= seluruh gedung)
   async function cekKetersediaan(id_gedung, tgl_mulai, tgl_selesai, jam_mulai, jam_selesai, id_ruangan) {
+    const daftar = Array.isArray(id_ruangan) ? id_ruangan : (id_ruangan ? [id_ruangan] : []);
     return getJson('mahasiswa/cek_ketersediaan.php', {
-      id_gedung, id_ruangan, tgl_mulai, tgl_selesai: tgl_selesai || tgl_mulai, jam_mulai, jam_selesai
+      id_gedung, id_ruangan: daftar.join(','), tgl_mulai, tgl_selesai: tgl_selesai || tgl_mulai, jam_mulai, jam_selesai
     });
   }
 

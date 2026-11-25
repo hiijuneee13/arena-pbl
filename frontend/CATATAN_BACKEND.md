@@ -24,7 +24,7 @@ Akun demo (password semua `password123`): `admin@arena.ac.id`, `hima_sipil@arena
 | Satpam | `satpam/dashboard_satpam.php`, `satpam/scan_qr.php` |
 | Admin | `admin/dashboard_admin.php`, `get_gedung.php`, `update_status_gedung.php`, `log_aktivitas.php`, `get_alur_gedung.php`, `get_satpam_gedung.php`, `get_users.php`, `toggle_user.php`, `get_referensi_akun.php`, `tambah_user.php` |
 | Profil › ganti sandi | `auth/profile.php?action=password` |
-| Verifikasi publik (QR) | `public/verifikasi.php?id=<UUID>` |
+| Verifikasi publik (QR) | `public/get_verifikasi.php?id=<UUID>` (data JSON, tanpa login); QR berisi `frontend/pages/verifikasi.html?id=<UUID>`; `public/verifikasi.php?id=<UUID>` hanya mengalihkan ke halaman itu |
 
 ## Keputusan desain
 - Jadwal = satu rentang kontinu `waktu_mulai`–`waktu_selesai` (mengikuti database); multi-hari didukung.
@@ -41,5 +41,8 @@ Akun demo (password semua `password123`): `admin@arena.ac.id`, `hima_sipil@arena
 - Penanggung jawab di kalender jadwal berasal dari `reservasi.pj_nama` / `reservasi.pj_kontak`.
 - `assets/js/data.js` adalah sisa lapisan data mock versi lama (ID UUID, skema lama). Tidak dimuat oleh halaman mana pun; aman dihapus.
 - `database/01_schema_table_&_relation.sql` adalah salinan lama yang terpotong (tabel `dokumen_reservasi` tidak lengkap dan tanpa `log_aktivitas`). Pakai `01_schema_table_relation.sql`.
-- Form pengajuan memilih satu gedung/ruangan; backend sudah menerima banyak tempat (`tempat[]`).
+- Form pengajuan memilih satu gedung dan boleh banyak ruangan di gedung itu (checkbox), atau Gedung Utuh. Tiap ruangan menjadi satu baris
+  `reservasi_item` lewat `tempat[]`; satu gedung tidak boleh mencampur Gedung Utuh dan ruangan (dijaga trigger `item_validasi`).
+  `cek_ketersediaan.php` menerima `id_ruangan` berupa beberapa id dipisah koma dan mengembalikan ruangan mana yang bentrok.
+  Setelah mengubah `03_view.sql` dan `04_function_triger.sql`, jalankan ulang keduanya (aman diulang).
 - Verifikasi publik hanya menerima kode UUID (`reservasi.kode_verifikasi`).
