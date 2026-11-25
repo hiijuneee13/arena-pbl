@@ -215,7 +215,14 @@
     return postJson('admin/toggle_user.php', { id_user, status_aktif });
   }
 
-  // p: { nama_lengkap, email, role (mahasiswa|approver|satpam|admin), password, nama_organisasi?, nama_jabatan? }
+  // Pilihan form Tambah Akun yang berasal dari database: jabatan, jurusan, dosen pembimbing
+  async function getReferensiAkun() {
+    return getJson('admin/get_referensi_akun.php');
+  }
+
+  // p: { nama_lengkap, email, role (mahasiswa|approver|satpam|admin), password,
+  //      mahasiswa: nama_organisasi, id_dosen_pembimbing
+  //      approver : id_jabatan, id_jurusan (hanya untuk jabatan ber-cakupan jurusan) }
   async function tambahUser(p) {
     if (!p || !p.nama_lengkap || !p.email || !p.password || !p.role) return err('Data akun belum lengkap.');
     return postJson('admin/tambah_user.php', p);
@@ -243,7 +250,7 @@
     getPending, prosesApproval, riwayatApproval,
     dashboardSatpam, scanQR,
     dashboardAdmin, getGedung, getJadwalGlobal, updateStatusGedung, terbitkanSurat, logAktivitas, rekapPemakaian,
-    getAlurGedung, getSatpamGedung, getUsers, toggleUser, tambahUser,
+    getAlurGedung, getSatpamGedung, getUsers, toggleUser, getReferensiAkun, tambahUser,
     updateProfil, getVerifikasi
   };
 })(window);

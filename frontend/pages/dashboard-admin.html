@@ -198,7 +198,10 @@
             <option value="admin">Admin TU</option>
           </select>
         </div>
-        <div class="field" id="u-extra-wrap"><label for="u-extra" id="u-extra-label">Nama Organisasi</label><input class="input" id="u-extra" maxlength="120" autocomplete="off"></div>
+        <div class="field" id="u-extra-wrap"><label for="u-extra" id="u-extra-label">Nama Organisasi</label><input class="input" id="u-extra" maxlength="150" autocomplete="off" placeholder="Contoh: HIMA Teknik Sipil"></div>
+        <div class="field" id="u-dospem-wrap"><label for="u-dospem">Dosen Pembimbing <span style="font-weight:400;color:#64748B;">(opsional)</span></label><select class="select" id="u-dospem"></select><small id="u-dospem-info" style="display:none;color:#64748B;margin-top:4px;"></small></div>
+        <div class="field" id="u-jabatan-wrap"><label for="u-jabatan">Jabatan <span class="wajib">*</span></label><select class="select" id="u-jabatan"></select></div>
+        <div class="field" id="u-jurusan-wrap"><label for="u-jurusan">Jurusan <span class="wajib">*</span></label><select class="select" id="u-jurusan"></select></div>
         <div class="field"><label for="u-pass">Kata Sandi Awal <span class="wajib">*</span></label><div class="pass-wrap"><input class="input" id="u-pass" type="password" maxlength="100" autocomplete="new-password" placeholder="Isi kata sandi sesuai keinginan admin">
             <button type="button" class="toggle-pwd" id="btn-lihat-pass" aria-label="Lihat kata sandi">
               <svg id="u-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -559,14 +562,38 @@ async function renderUsers() {
   `;
 }
 
-/* Tambah Akun Baru (POST admin/tambah_user.php) */
-const EXTRA_USER = { mahasiswa: 'Nama Organisasi', approver: 'Nama Jabatan' };   // satpam & admin tidak perlu isian tambahan
+/* Tambah Akun Baru (POST admin/tambah_user.php)
+   Jabatan, jurusan, dan dosen pembimbing dipilih dari data database (admin/get_referensi_akun.php),
+   karena tabel approver / organisasi menyimpannya sebagai foreign key. */
+let referensi = null;                                       // { jabatan, jurusan, dosen_pembimbing }
+async function muatReferensiAkun() {
+  const res = await API.getReferensiAkun();             // selalu ambil ulang, supaya dosen/jabatan yang baru ditambahkan langsung muncul
+  if (res.status !== 'success') { UI.toast(res.message || 'Gagal memuat pilihan akun.', 'bad'); return null; }
+  referensi = res;
+  const isi = (id, rows, nilai, teks, kosong) => {
+    $('#' + id).innerHTML = `<option value="">${kosong}</option>` + (rows || []).map((r) => `<option value="${esc(r[nilai])}">${esc(r[teks])}</option>`).join('');
+  };
+  isi('u-dospem', res.dosen_pembimbing, 'id_user', 'nama', 'Tanpa dosen pembimbing (isi nanti)');
+  const info = $('#u-dospem-info');
+  info.style.display = (res.dosen_pembimbing || []).length ? 'none' : '';
+  info.textContent = 'Belum ada akun dosen pembimbing. Tambahkan dulu akun Approver dengan jabatan dosen pembimbing.';
+  isi('u-jabatan', res.jabatan, 'id_jabatan', 'nama_jabatan', 'Pilih jabatan');
+  isi('u-jurusan', res.jurusan, 'id_jurusan', 'nama_jurusan', 'Pilih jurusan');
+  return referensi;
+}
+const butuhJurusan = () => {                                // jabatan ber-cakupan 'jurusan' (mis. Ketua Jurusan) wajib terikat ke satu jurusan
+  const j = referensi && referensi.jabatan.find((x) => x.id_jabatan === $('#u-jabatan').value);
+  return !!j && j.cakupan === 'jurusan';
+};
 function sesuaikanFormUser() {
-  const ekstra = EXTRA_USER[$('#u-role').value];
-  $('#u-extra-wrap').style.display = ekstra ? '' : 'none';
-  if (ekstra) { $('#u-extra-label').textContent = ekstra; $('#u-extra').placeholder = ekstra === 'Nama Organisasi' ? 'Contoh: HIMA Teknik Sipil' : 'Contoh: Dosen Pembina'; }
+  const role = $('#u-role').value;
+  $('#u-extra-wrap').style.display = role === 'mahasiswa' ? '' : 'none';
+  $('#u-dospem-wrap').style.display = role === 'mahasiswa' ? '' : 'none';
+  $('#u-jabatan-wrap').style.display = role === 'approver' ? '' : 'none';
+  $('#u-jurusan-wrap').style.display = role === 'approver' && butuhJurusan() ? '' : 'none';   // satpam & admin tidak perlu isian tambahan
 }
 $('#u-role').addEventListener('change', sesuaikanFormUser);
+$('#u-jabatan').addEventListener('change', sesuaikanFormUser);
 const MATA_TERBUKA = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
 const MATA_CORET = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
 $('#btn-lihat-pass').addEventListener('click', () => {   // klik ikon mata: tampilkan / sembunyikan kata sandi (seperti di login)
@@ -575,23 +602,32 @@ $('#btn-lihat-pass').addEventListener('click', () => {   // klik ikon mata: tamp
   $('#u-eye').innerHTML = tampil ? MATA_CORET : MATA_TERBUKA;
   $('#btn-lihat-pass').setAttribute('aria-label', tampil ? 'Sembunyikan kata sandi' : 'Lihat kata sandi');
 });
-$('#btn-tambah-user').addEventListener('click', () => {
+$('#btn-tambah-user').addEventListener('click', async () => {
   ['u-nama', 'u-email', 'u-extra', 'u-pass'].forEach((id) => { document.getElementById(id).value = ''; });
   $('#u-role').value = 'mahasiswa';
   $('#u-pass').type = 'password'; $('#u-eye').innerHTML = MATA_TERBUKA; $('#btn-lihat-pass').setAttribute('aria-label', 'Lihat kata sandi');
+  await muatReferensiAkun();
+  ['u-dospem', 'u-jabatan', 'u-jurusan'].forEach((id) => { document.getElementById(id).value = ''; });
   sesuaikanFormUser();
   UI.modal.open('m-user');
 });
 $('#btn-simpan-user').addEventListener('click', async () => {
   const v = (id) => document.getElementById(id).value.trim();
   const role = $('#u-role').value, email = v('u-email'), pass = document.getElementById('u-pass').value;
-  const ekstra = EXTRA_USER[role];
   if (!v('u-nama')) return UI.toast('Nama lengkap wajib diisi.', 'bad');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return UI.toast('Format email tidak valid.', 'bad');
-  if (ekstra && !v('u-extra')) return UI.toast(ekstra + ' wajib diisi.', 'bad');
+  if (role === 'mahasiswa' && !v('u-extra')) return UI.toast('Nama organisasi wajib diisi.', 'bad');
+  if (role === 'approver' && !v('u-jabatan')) return UI.toast('Jabatan wajib dipilih.', 'bad');
+  if (role === 'approver' && butuhJurusan() && !v('u-jurusan')) return UI.toast('Jurusan wajib dipilih untuk jabatan ini.', 'bad');
   if (!pass) return UI.toast('Kata sandi wajib diisi.', 'bad');   // isi kata sandi bebas, ditentukan admin
   $('#btn-simpan-user').disabled = true;
-  const res = await API.tambahUser({ nama_lengkap: v('u-nama'), email, role, password: pass, nama_organisasi: role === 'mahasiswa' ? v('u-extra') : '', nama_jabatan: role === 'approver' ? v('u-extra') : '' });
+  const res = await API.tambahUser({
+    nama_lengkap: v('u-nama'), email, role, password: pass,
+    nama_organisasi: role === 'mahasiswa' ? v('u-extra') : '',
+    id_dosen_pembimbing: role === 'mahasiswa' ? v('u-dospem') : '',
+    id_jabatan: role === 'approver' ? v('u-jabatan') : '',
+    id_jurusan: role === 'approver' && butuhJurusan() ? v('u-jurusan') : ''
+  });
   $('#btn-simpan-user').disabled = false;
   if (res.status !== 'success') { UI.toast(res.message, 'bad'); return; }
   UI.toast(res.message || 'Akun baru berhasil dibuat.', 'ok');
