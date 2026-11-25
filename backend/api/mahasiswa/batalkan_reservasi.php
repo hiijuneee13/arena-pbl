@@ -1,65 +1,89 @@
 <?php
 /*
- * DRAFT - Batalkan Peminjaman (dipanggil API.batalkanReservasi di frontend)
+ * Batalkan Peminjaman oleh pengaju (dipanggil API.batalkanReservasi di frontend).
  * Request : POST JSON { "id_reservasi": "...", "alasan": "..." (opsional) }
  * Response: { "status": "success|error", "message": "..." }
  *
- * Nama tabel/kolom/session di bagian "SESUAIKAN" di bawah ditulis tanpa melihat skema database,
- * jadi cocokkan dulu dengan database asli sebelum dipakai.
+ * Pengajuan yang dibatalkan memakai status 'dibatalkan_sistem' (satu-satunya nilai pembatalan yang diizinkan
+ * skema). Dengan status ini jadwalnya otomatis dilepas (fn_cek_bentrok / v_jadwal_global hanya menghitung
+ * diproses, revisi, disetujui), hilang dari kotak masuk approver, dan QR surat tidak berlaku lagi.
  */
 session_start();
 header('Content-Type: application/json');
 require_once '../../config/koneksi.php';
 require_once '../../config/helpers.php';
 
-wajib_login();
-
-// ---- SESUAIKAN dengan database ARENA ----
-const TABEL_RESERVASI   = 'reservasi';
-const KOLOM_PEMOHON     = 'id_user';               // pemilik pengajuan
-const STATUS_DIBATALKAN = 'dibatalkan';            // nilai status_db untuk pengajuan batal
-const STATUS_BISA_BATAL = ['diproses', 'revisi', 'disetujui'];
-$id_user = $_SESSION['id_user'] ?? null;
-// -----------------------------------------
+wajib_login(['pengaju']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(["status" => "error", "message" => "Metode tidak diizinkan."]);
+    echo json_encode(["status" => "error", "message" => "Method tidak diizinkan. Gunakan POST."]);
     exit;
 }
 
-$in = json_decode(file_get_contents('php://input'), true) ?: [];
-$id_reservasi = trim((string)($in['id_reservasi'] ?? ''));
-$alasan = mb_substr(trim((string)($in['alasan'] ?? '')), 0, 300);
+$in = json_decode(file_get_contents('php://input'), true);
+if (!is_array($in)) { $in = $_POST; }
 
-if ($id_reservasi === '' || !$id_user) {
+$id_reservasi = trim((string)($in['id_reservasi'] ?? ''));
+$alasan = trim((string)($in['alasan'] ?? ($in['catatan'] ?? '')));
+$alasan = function_exists('mb_substr') ? mb_substr($alasan, 0, 300) : substr($alasan, 0, 300);
+
+if (!ctype_digit($id_reservasi)) {
     http_response_code(400);
     echo json_encode(["status" => "error", "message" => "Data pembatalan tidak valid."]);
     exit;
 }
+$id_user = (int)$_SESSION['id_user'];
 
 try {
-    // Hanya pemilik pengajuan yang boleh membatalkan, dan hanya selagi statusnya masih aktif.
-    // TODO: untuk status 'disetujui', tolak pembatalan bila acara sudah dimulai (frontend sudah menyembunyikan tombolnya).
-    $in_status = implode(',', array_fill(0, count(STATUS_BISA_BATAL), '?'));
-    $st = $pdo->prepare("SELECT status_db FROM " . TABEL_RESERVASI . "
-                         WHERE id_reservasi = ? AND " . KOLOM_PEMOHON . " = ? AND status_db IN ($in_status)");
-    $st->execute(array_merge([$id_reservasi, $id_user], STATUS_BISA_BATAL));
-    if (!$st->fetch()) {
+    $pdo->beginTransaction();
+
+    // Hanya pemilik pengajuan yang boleh membatalkan; baris dikunci supaya tidak bentrok dengan keputusan approver
+    $st = $pdo->prepare("SELECT status, (waktu_mulai <= now()) AS sudah_mulai
+                         FROM reservasi
+                         WHERE id = :id AND organisasi_id = :uid
+                         FOR UPDATE");
+    $st->execute([':id' => (int)$id_reservasi, ':uid' => $id_user]);
+    $r = $st->fetch();
+
+    if (!$r) {
+        $pdo->rollBack();
         http_response_code(404);
-        echo json_encode(["status" => "error", "message" => "Pengajuan tidak ditemukan atau sudah tidak bisa dibatalkan."]);
+        echo json_encode(["status" => "error", "message" => "Pengajuan tidak ditemukan."]);
+        exit;
+    }
+    if (!in_array($r['status'], ['diproses', 'revisi', 'disetujui'], true)) {
+        $pdo->rollBack();
+        echo json_encode(["status" => "error", "message" => "Pengajuan ini sudah tidak bisa dibatalkan."]);
+        exit;
+    }
+    // Acara yang sudah disetujui hanya bisa dibatalkan sebelum acara dimulai
+    if ($r['status'] === 'disetujui' && filter_var($r['sudah_mulai'], FILTER_VALIDATE_BOOLEAN)) {
+        $pdo->rollBack();
+        echo json_encode(["status" => "error", "message" => "Acara sudah dimulai, pengajuan tidak bisa dibatalkan."]);
         exit;
     }
 
-    $up = $pdo->prepare("UPDATE " . TABEL_RESERVASI . " SET status_db = ?
-                         WHERE id_reservasi = ? AND " . KOLOM_PEMOHON . " = ?");
-    $up->execute([STATUS_DIBATALKAN, $id_reservasi, $id_user]);
+    $catatan = 'Dibatalkan oleh pengaju' . ($alasan !== '' ? ': ' . $alasan : '');
 
-    // TODO: simpan $alasan ke tabel log/riwayat approval bila ada (kolom catatan).
-    echo json_encode(["status" => "success", "message" => "Pengajuan berhasil dibatalkan."]);
+    $up = $pdo->prepare("UPDATE reservasi SET status = 'dibatalkan_sistem', alasan_batal = :alasan WHERE id = :id");
+    $up->execute([':alasan' => $catatan, ':id' => (int)$id_reservasi]);
+
+    $lg = $pdo->prepare("INSERT INTO reservasi_riwayat (reservasi_id, aktor_id, aksi, catatan)
+                         VALUES (:id, :uid, 'dibatalkan_sistem', :catatan)");
+    $lg->execute([':id' => (int)$id_reservasi, ':uid' => $id_user, ':catatan' => $catatan]);
+
+    $pdo->commit();
+
+    echo json_encode(["status" => "success", "message" => "Pengajuan berhasil dibatalkan dan jadwalnya dilepas."]);
 } catch (PDOException $e) {
-    error_log("batalkan_reservasi.php: " . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(["status" => "error", "message" => "Gagal membatalkan pengajuan."]);
+    if ($pdo->inTransaction()) { $pdo->rollBack(); }
+    if ($e->getCode() === 'P0001') {
+        echo json_encode(["status" => "error", "message" => pesan_dari_exception($e)]);
+    } else {
+        error_log("batalkan_reservasi.php: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => "Gagal membatalkan pengajuan."]);
+    }
 }
 ?>
