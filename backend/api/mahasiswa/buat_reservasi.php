@@ -212,16 +212,10 @@ try {
 
     $pdo->beginTransaction();
 
-    // 1. Simpan berkas jika ada. Yang disimpan di database hanya NAMA FILE (path_file).
+    // 1. Siapkan nama berkas. Yang disimpan di database hanya NAMA FILE (path_file).
     $nama_file_simpan = null;
     if ($ada_file) {
         $nama_file_simpan = 'proposal_' . bin2hex(random_bytes(10)) . '.pdf';
-        $folder_upload = __DIR__ . '/../../uploads';
-        if (!is_dir($folder_upload)) { mkdir($folder_upload, 0755, true); }
-        $direktori_simpan = realpath($folder_upload) . DIRECTORY_SEPARATOR . $nama_file_simpan;
-        if (!move_uploaded_file($file['tmp_name'], $direktori_simpan)) {
-            batalkan($pdo, $direktori_simpan, "Gagal mengunggah berkas proposal ke server.");
-        }
     }
 
     // 2. Insert tabel utama reservasi (kolom sesuai skema: organisasi_id, pj_nama, pj_nim, pj_kontak)
@@ -273,6 +267,9 @@ try {
     $stmt_app = $pdo->prepare("SELECT fn_buat_approval(:id)");
     $stmt_app->execute([':id' => $id_reservasi]);
 
+    // 6. Unggah berkas setelah semua pemeriksaan database lolos; bila gagal, pengajuan dibatalkan
+    if ($ada_file) { $direktori_simpan = simpan_berkas_proposal($file['tmp_name'], $nama_file_simpan); }
+
     $pdo->commit();
 
     echo json_encode([
@@ -288,6 +285,9 @@ try {
         error_log("buat_reservasi.php: " . $e->getMessage());
         batalkan($pdo, $direktori_simpan, "Terjadi kesalahan database saat membuat reservasi.", 500);
     }
+} catch (RuntimeException $e) {
+    error_log("buat_reservasi.php: " . $e->getMessage());
+    batalkan($pdo, $direktori_simpan, $e->getMessage());
 } catch (Exception $e) {
     error_log("buat_reservasi.php: " . $e->getMessage());
     batalkan($pdo, $direktori_simpan, "Terjadi kesalahan server saat membuat reservasi.", 500);

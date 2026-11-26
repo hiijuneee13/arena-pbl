@@ -97,11 +97,52 @@ function url_halaman_verifikasi($kode = '') {
     return $kode === '' ? $tujuan : $tujuan . '?id=' . rawurlencode($kode);
 }
 
-// URL berkas proposal. Kolom dokumen_reservasi.path_file hanya berisi NAMA FILE (mis. proposal_ab12.pdf);
-// file disimpan di backend/uploads/. basename() juga menormalkan data lama yang berawalan "uploads/".
+// Neon Object Storage dipakai bila config/storage.php ada dan kuncinya terisi.
+// Tanpa file itu, berkas proposal disimpan di backend/uploads/ seperti biasa.
+function storage_neon_aktif() {
+    $konfigurasi = __DIR__ . '/storage.php';
+    if (!is_file($konfigurasi)) { return false; }
+    require_once $konfigurasi;
+    return function_exists('upload_ke_s3') && defined('S3_ACCESS_KEY') && S3_ACCESS_KEY !== '';
+}
+
+// Menyimpan PDF proposal. Mengembalikan path file lokal, atau null bila tersimpan di Neon Storage.
+// Gagal -> RuntimeException berisi pesan yang aman ditampilkan ke pengguna.
+function simpan_berkas_proposal($file_sementara, $nama_file) {
+    if (storage_neon_aktif()) {
+        if (!function_exists('curl_init')) {
+            throw new RuntimeException('Gagal mengunggah ke Neon Storage: ekstensi cURL PHP belum aktif.');
+        }
+        if (!is_uploaded_file($file_sementara)) { throw new RuntimeException('Berkas unggahan tidak valid.'); }
+        try {
+            upload_ke_s3($file_sementara, $nama_file, 'application/pdf');
+        } catch (RuntimeException $e) {
+            error_log('upload Neon Storage: ' . $e->getMessage());       // rincian lengkap hanya di log server
+            preg_match('/\(HTTP (\d+)\): (.*)/s', $e->getMessage(), $m);
+            $http = $m[1] ?? '0';
+            if (preg_match('#<Code>([^<]+)</Code>#', $m[2] ?? '', $kode)) { $alasan = $kode[1]; }
+            else { $alasan = $http === '0' ? trim($m[2] ?? '') : ''; }
+            throw new RuntimeException(trim("Gagal mengunggah ke Neon Storage (HTTP $http) $alasan"));
+        }
+        return null;
+    }
+
+    $folder = __DIR__ . '/../uploads';
+    if (!is_dir($folder)) { mkdir($folder, 0755, true); }
+    $tujuan = realpath($folder) . DIRECTORY_SEPARATOR . $nama_file;
+    if (!move_uploaded_file($file_sementara, $tujuan)) {
+        throw new RuntimeException('Gagal mengunggah berkas proposal ke server.');
+    }
+    return $tujuan;
+}
+
+// URL berkas proposal. Kolom dokumen_reservasi.path_file hanya berisi NAMA FILE (mis. proposal_ab12.pdf).
+// Berkas yang ada di backend/uploads/ dibuka dari server; selain itu dari Neon Storage (URL sementara 1 jam).
+// basename() juga menormalkan data lama yang berawalan "uploads/".
 function url_berkas($path_file) {
     $nama = basename(str_replace('\\', '/', (string)$path_file));
     if ($nama === '' || $nama === '.' || $nama === '..') { return null; }
+    if (!is_file(__DIR__ . '/../uploads/' . $nama) && storage_neon_aktif()) { return url_presigned_s3($nama); }
     return url_dasar_backend() . '/uploads/' . rawurlencode($nama);
 }
 
