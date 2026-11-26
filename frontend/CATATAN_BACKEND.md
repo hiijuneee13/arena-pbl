@@ -41,8 +41,41 @@ Akun demo (password semua `password123`): `admin@arena.ac.id`, `hima_sipil@arena
 - Penanggung jawab di kalender jadwal berasal dari `reservasi.pj_nama` / `reservasi.pj_kontak`.
 - `assets/js/data.js` adalah sisa lapisan data mock versi lama (ID UUID, skema lama). Tidak dimuat oleh halaman mana pun; aman dihapus.
 - `database/01_schema_table_&_relation.sql` adalah salinan lama yang terpotong (tabel `dokumen_reservasi` tidak lengkap dan tanpa `log_aktivitas`). Pakai `01_schema_table_relation.sql`.
-- Form pengajuan memilih satu gedung dan boleh banyak ruangan di gedung itu (checkbox), atau Gedung Utuh. Tiap ruangan menjadi satu baris
-  `reservasi_item` lewat `tempat[]`; satu gedung tidak boleh mencampur Gedung Utuh dan ruangan (dijaga trigger `item_validasi`).
-  `cek_ketersediaan.php` menerima `id_ruangan` berupa beberapa id dipisah koma dan mengembalikan ruangan mana yang bentrok.
-  Setelah mengubah `03_view.sql` dan `04_function_triger.sql`, jalankan ulang keduanya (aman diulang).
+- Form pengajuan memilih satu gedung/ruangan; backend sudah menerima banyak tempat (`tempat[]`).
 - Verifikasi publik hanya menerima kode UUID (`reservasi.kode_verifikasi`).
+
+## Halaman admin: pengelolaan data (Tahap A)
+
+Kode ada di `assets/js/admin-kelola.js` (dimuat oleh `pages/dashboard-admin.html`).
+
+| Menu | Fitur | Endpoint |
+|---|---|---|
+| Fasilitas & Ruangan | Tambah/ubah gedung, aktif/nonaktif gedung, kelola lantai dan ruangan | `get_kelola_gedung`, `simpan_gedung`, `simpan_lantai`, `simpan_ruangan`, `update_status_gedung` |
+| Data Master | Tambah/ubah jurusan dan jabatan | `get_master`, `simpan_jurusan`, `simpan_jabatan` |
+| Kelola Akun | Buat/ubah akun, reset password, aktif/nonaktif | `get_users`, `simpan_user`, `reset_password`, `toggle_user` |
+| Alur Persetujuan | Atur urutan tahap (jabatan) tiap gedung lewat form "Tahap 1..n" | `get_alur_gedung`, `simpan_alur` |
+| Penugasan Satpam | Centang gedung tugas tiap satpam | `get_satpam_gedung`, `simpan_satpam_gedung` |
+
+Form dan dialog konfirmasi memakai satu pembuat modal (`AdminKelola.formModal`) dengan gaya `.overlay`/`.modal` yang sama dengan halaman lain.
+
+## Timeline, pencarian/filter/paginasi, dan reminder (Tahap C)
+
+Kode: `assets/js/timeline.js`, `assets/js/listtools.js`, plus `admin-kelola.js` (reminder).
+
+| Halaman | Fitur | Endpoint |
+|---|---|---|
+| Mahasiswa > Riwayat | Cari/filter status/paginasi (sisi klien, 5 per halaman) + tombol "Riwayat Lengkap" | `timeline_reservasi` |
+| Approver > Antrean & Arsip | Tombol Riwayat Pengajuan, filter arsip | `timeline_reservasi` |
+| Admin > Pengajuan | Cari, status, gedung, rentang tanggal, paginasi server | `cari_reservasi`, `timeline_reservasi` |
+| Admin > Log Aktivitas | Cari, jenis aksi, rentang tanggal, paginasi server | `log_aktivitas` |
+| Admin > Antrean Macet | "Kirim Reminder": pratinjau email lalu buka aplikasi email (`mailto:`) | `siapkan_reminder` |
+
+## Kalender form pengajuan (Flatpickr) & tanggal terpesan
+- `GET backend/api/mahasiswa/tanggal_terpesan.php?id_gedung=1&id_ruangan=1,3` (ruangan kosong = Gedung Utuh)
+  -> `data.tanggal_penuh[]` (seluruh jam operasional terisi, termasuk dua reservasi berurutan; tanggal ini dinonaktifkan di kalender)
+  dan `data.tanggal_sebagian[]` (terisi sebagian jam; tetap bisa dipilih, diberi titik). Cakupan: hari ini s/d ~1 tahun.
+  Aturan bentrok sama dengan `fn_cek_bentrok`; bila beberapa ruangan dipilih, tanggal tidak bisa dipakai jika salah satu ruangan sudah penuh.
+- `API.tanggalTerpesan(id_gedung, id_ruangan)` dipanggil ulang tiap gedung/ruangan berubah.
+- `buat_reservasi.php`: tanggal mulai/selesai di masa lalu ditolak; setiap tempat dicek bentrok lebih dulu dan pesan error menyebut ruangan + acara
+  yang bentrok (trigger `item_validasi` tetap menjadi pengaman terakhir).
+- Flatpickr 4.6.13 dimuat dari cdnjs di `dashboard-mahasiswa.html`; bila CDN gagal, input kembali ke `type="date"` dengan `min` hari ini.

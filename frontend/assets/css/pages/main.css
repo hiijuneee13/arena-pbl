@@ -1334,3 +1334,9 @@ img, svg, video { max-width: 100%; }
   .table.rcards td:first-child { display: block; text-align: left; font-weight: 700; padding: 8px 0 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
   .table.rcards td:first-child::before { content: none; }
 }
+
+/* Ikon mata pada field password (form Tambah Akun / Reset Password) */
+.pass-wrap { position: relative; display: flex; align-items: center; }
+.pass-wrap .input { width: 100%; padding-right: 46px; }
+.pass-wrap .toggle-pwd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; padding: 6px; background: none; border: none; border-radius: 6px; color: #64748B; cursor: pointer; transition: color .15s; }
+.pass-wrap .toggle-pwd:hover { color: #0F172A; }

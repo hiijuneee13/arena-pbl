@@ -69,6 +69,99 @@
   color: var(--text-pure);
 }
 #info-gedung { margin-top: 4px; }
+.input[readonly] { opacity: .9; cursor: default; background: #F1F5F9; color: #334155; }
+.file-chip small { color: var(--muted); margin-left: 8px; font-weight: 500; }
+#list-riwayat .req + .req { margin-top: 16px; }
+#list-riwayat .btn-sm { margin-top: 8px; }
+.revisi-box { background: #FFFBEB; border: 1px solid #FDE68A; padding: 14px; border-radius: 12px; margin: 10px 0 12px; }
+.revisi-title { font-weight: 700; color: #92400E; margin-bottom: 4px; }
+.revisi-note { color: #B45309; font-size: 13px; }
+.revisi-box .btn-revisi { margin-top: 10px; background: #D97706; color: #fff; }
+
+/* ---- Menu Jadwal Acara (kalender + tabel hari ini) ---- */
+.view[data-view="jadwal"] > .card + .card { margin-top: 16px; }
+.cal-month { 
+  padding: 9px 18px; 
+  border-radius: 10px; 
+  background: #FFFFFF; 
+  border: 1px solid #CBD5E1; 
+  font: 700 15px var(--font-head); 
+  color: var(--text-pure);
+}
+.cal .cell { align-content: start; justify-items: stretch; min-height: 96px; }
+.cal .cell small { color: var(--muted); justify-self: start; font-weight: 600; }
+.cal .cell.blank { background: transparent; border-color: transparent; }
+.cal .cell.blank:hover { transform: none; }
+.cal .cell.today { 
+  border-color: var(--accent); 
+  background: #EFF6FF;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.2); 
+}
+.cal .cell.today small { color: #1D4ED8; font-weight: 700; }
+.cal .cell .badge { 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  font-size: 10.5px; 
+  padding: 3px 8px; 
+  max-width: 100%; 
+  text-align: center; 
+}
+.cal .cell .badge.wait { border-style: dashed; background: #FFFBEB; border-color: #FDE68A; color: #D97706; }
+
+@media (max-width: 900px) { 
+  .cal { gap: 6px; } 
+  .cal .cell { min-height: 70px; padding: 6px 4px; } 
+  .template-box { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---- Modal Lihat Catatan ---- */
+.catatan-modal { width: min(880px, 92vw); max-height: 88vh; overflow-y: auto; padding: 30px 34px; border-radius: 24px; }
+.catatan-modal .actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.cat-event { text-align: center; color: var(--muted); font-size: 12px; font-weight: 500; margin-bottom: -4px; }
+.cat-item + .cat-item { margin-top: 26px; padding-top: 26px; border-top: 1px solid var(--line); }
+.cat-heading { text-align: center; font: 700 22px var(--font-head); color: var(--text-pure); margin: 0 0 8px; }
+.cat-status { display: flex; justify-content: center; margin-bottom: 16px; }
+.cat-photo { width: min(100%, 560px); margin: 0 auto 16px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #F1F5F9; }
+.cat-photo img { display: block; width: 100%; height: auto; }
+.cat-photo-empty { min-height: 260px; display: grid; place-items: center; padding: 24px; text-align: center; font: 700 17px var(--font-head); color: var(--text-pure); }
+.cat-note { background: #F1F5F9; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; min-height: 96px; font-size: 14px; line-height: 1.6; color: var(--text-pure); }
+
+/* ===== RESPONSIVE MAHASISWA ===== */
+@media (max-width: 1024px) {
+  .stepper { overflow: visible; }
+  .step { width: auto; flex: 1 1 0; min-width: 0; }
+  .template-box { gap: 16px; }
+}
+@media (max-width: 768px) {
+  .template-box { flex-direction: column; align-items: stretch; padding: 16px; }
+  .template-info { align-items: flex-start; gap: 12px; }
+  .template-box .btn { width: 100%; justify-content: center; }
+  .step .circle { width: 44px; height: 44px; font-size: 16px; }
+  .step-line { margin-top: 21px; }
+  .step { font-size: 11px; }
+  .dropzone { min-height: 110px; padding: 14px; }
+  .pf-form-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .stepper { margin: 4px 0 18px; }
+  .step .circle { width: 34px; height: 34px; font-size: 14px; }
+  .step-line { margin-top: 16px; }
+  .step { font-size: 10px; gap: 6px; }
+  .step:not(.active) span { display: none; }       /* hanya langkah aktif yang menampilkan label */
+  .template-icon { width: 42px; height: 42px; }
+  .template-box h2 { font-size: 16px; }
+  /* kalender: tetap 7 kolom, badge jadi titik penanda */
+  .cal { gap: 4px; }
+  .cal .dow { font-size: 10px; padding: 4px 0; overflow: hidden; }
+  .cal .cell { min-height: 54px; padding: 4px; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: flex-start; align-items: flex-start; gap: 3px; }
+  .cal .cell small, .cal .cell > :first-child { flex: 0 0 100%; font-size: 11px; }
+  .cal .cell .badge { font-size: 0; width: 8px; height: 8px; min-width: 0; padding: 0; border-radius: 50%; flex: none; display: inline-block; }
+  .cal .cell:hover { transform: none; }
+  .catatan-modal { padding: 18px 14px; }
+  .cat-heading { font-size: 18px; }
+  .cat-photo-empty { min-height: 160px; }
+}
 
 /* ---------- Dropdown Ruangan multi-pilih (Langkah 3) ---------- */
 #dd-ruangan .dropdown { display: block; width: 100%; }
@@ -199,3 +292,16 @@
   .cat-heading { font-size: 18px; }
   .cat-photo-empty { min-height: 160px; }
 }
+
+/* ---- Kalender Flatpickr (Tanggal Mulai / Selesai) ---- */
+/* input tampilan Flatpickr bersifat readonly: tampil seperti input biasa (bukan abu-abu terkunci) */
+#f-tgl-mulai + input.input, #f-tgl-selesai + input.input { cursor: pointer; opacity: 1; background: #FFFFFF; color: var(--text-pure); }
+.flatpickr-calendar { font-family: var(--font-body); border-radius: 14px; box-shadow: 0 14px 35px -8px rgba(15, 23, 42, 0.2); border: 1px solid #E2E8F0; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover { background: var(--accent); border-color: var(--accent); }
+.flatpickr-day.today:not(.selected) { border-color: var(--accent); }
+/* tanggal lewat (minDate) & tanggal penuh: abu-abu, tidak bisa diklik */
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover { color: #CBD5E1; background: #F8FAFC; cursor: not-allowed; }
+.flatpickr-day.hari-penuh.flatpickr-disabled { color: #94A3B8; background: #F1F5F9; text-decoration: line-through; }
+/* terisi sebagian jam: masih bisa dipilih, diberi titik penanda */
+.flatpickr-day.hari-sebagian { position: relative; }
+.flatpickr-day.hari-sebagian::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: #F59E0B; }

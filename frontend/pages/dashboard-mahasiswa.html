@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/global.css">
   <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
   <link rel="stylesheet" href="../assets/css/pages/main.css">
   <link rel="stylesheet" href="../assets/css/pages/dashboard-mahasiswa.css">
 </head>
@@ -68,15 +69,15 @@
               <p class="hint" id="info-gedung"></p>
             </div>
             <div class="field">
-              <label>Pilihan Ruangan / Gedung Utuh <span class="opsional">(boleh pilih lebih dari satu ruangan)</span></label>
+              <label>Pilihan Ruangan / Gedung Utuh</label>
               <div id="dd-ruangan"></div>
               <p class="hint" id="info-ruangan"></p>
             </div>
           </div>
 
           <div class="grid cols-2">
-            <div class="field"><label for="f-tgl-mulai">Tanggal Mulai Kegiatan</label><input class="input" id="f-tgl-mulai" type="date"></div>
-            <div class="field"><label for="f-tgl-selesai">Tanggal Selesai (Multi-Hari = Satu Rentang Kontinu)</label><input class="input" id="f-tgl-selesai" type="date"></div>
+            <div class="field"><label for="f-tgl-mulai">Tanggal Mulai Kegiatan</label><input class="input" id="f-tgl-mulai" type="text" placeholder="Pilih tanggal mulai" autocomplete="off"></div>
+            <div class="field"><label for="f-tgl-selesai">Tanggal Selesai (Multi-Hari = Satu Rentang Kontinu)</label><input class="input" id="f-tgl-selesai" type="text" placeholder="Pilih tanggal selesai" autocomplete="off"></div>
           </div>
 
           <div class="grid cols-2">
@@ -116,7 +117,9 @@
     <section class="view" data-view="riwayat">
       <div class="grid cols-4" id="stat-riwayat"></div>
       <h2 class="section-title">Riwayat Peminjaman Tempat</h2>
+      <div id="filter-riwayat"></div>
       <div id="list-riwayat"></div>
+      <div id="pager-riwayat"></div>
     </section>
 
     <!-- Menu: Jadwal Acara -->
@@ -196,10 +199,14 @@
 
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/id.min.js"></script>
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/api.js"></script>
   <script src="../assets/js/ui.js"></script>
   <script src="../assets/js/shell.js"></script>
+  <script src="../assets/js/listtools.js"></script>
+  <script src="../assets/js/timeline.js"></script>
   <script src="../assets/js/dasboard-mahasiswa.js"></script>
 <script src="../assets/js/responsive.js"></script>
 </body>

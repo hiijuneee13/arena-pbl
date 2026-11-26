@@ -70,7 +70,6 @@
 
   // p: { nama_acara, deskripsi, tgl_mulai, tgl_selesai, jam_mulai, jam_selesai, penanggung_jawab_nama/nim/kontak,
   //      tempat: [{ id_gedung, id_ruangan }], file }   -> multipart/form-data ke buat_reservasi.php
-  //      tempat berisi satu entri per ruangan (beberapa ruangan boleh), atau satu entri tanpa id_ruangan = seluruh gedung
   async function buatReservasi(p) {
     const fd = new FormData();
     fd.append('nama_acara', (p.nama_acara || '').trim());
@@ -117,6 +116,12 @@
     return getJson('mahasiswa/cek_ketersediaan.php', {
       id_gedung, id_ruangan: daftar.join(','), tgl_mulai, tgl_selesai: tgl_selesai || tgl_mulai, jam_mulai, jam_selesai
     });
+  }
+
+  // Tanggal yang sudah penuh / terisi sebagian untuk gedung (+ ruangan terpilih) -> kalender form
+  // id_ruangan: id tunggal, array, atau kosong (Gedung Utuh). Data: { tanggal_penuh:[YYYY-MM-DD], tanggal_sebagian:[...] }
+  async function tanggalTerpesan(id_gedung, id_ruangan) {
+    return getJson('mahasiswa/tanggal_terpesan.php', { id_gedung, id_ruangan });
   }
 
   async function jadwalAcara() {
@@ -197,8 +202,24 @@
     return res;
   }
 
-  async function logAktivitas() {
-    return getJson('admin/log_aktivitas.php');
+  // Query: { q, jenis, dari, sampai, page, per_page }  -> { data, total, page, per_page, total_halaman, daftar_jenis }
+  async function logAktivitas(params) {
+    return getJson('admin/log_aktivitas.php', params);
+  }
+
+  // Query: { q, status, gedung_id, dari, sampai, page, per_page }  -> { data, total, page, per_page, total_halaman }
+  async function cariReservasi(params) {
+    return getJson('admin/cari_reservasi.php', params);
+  }
+
+  // Timeline satu pengajuan (pengaju pemilik / approver terkait / admin)
+  async function timelineReservasi(id_reservasi) {
+    return getJson('reservasi/timeline_reservasi.php', { id: id_reservasi });
+  }
+
+  // JSON: { id_reservasi } -> { data:{ to, nama_approver, subject, body, mailto } }
+  async function siapkanReminder(id_reservasi) {
+    return postJson('admin/siapkan_reminder.php', { id_reservasi });
   }
 
   async function rekapPemakaian() {
@@ -219,6 +240,63 @@
 
   async function toggleUser(id_user, status_aktif) {
     return postJson('admin/toggle_user.php', { id_user, status_aktif });
+  }
+
+  /* ---- Pengelolaan admin: master data, gedung/lantai/ruangan, akun ---- */
+
+  // { jurusan:[{id,nama,jumlah_gedung,jumlah_approver}], jabatan:[{id,nama,label,cakupan,dipakai_alur,jumlah_approver}], dosen_pembimbing:[{id,nama}] }
+  async function getMaster() {
+    return getJson('admin/get_master.php');
+  }
+
+  // JSON: { id?, nama }
+  async function simpanJurusan(p) {
+    return postJson('admin/simpan_jurusan.php', p);
+  }
+
+  // JSON: { id?, nama, cakupan: 'organisasi'|'jurusan'|'global' }
+  async function simpanJabatan(p) {
+    return postJson('admin/simpan_jabatan.php', p);
+  }
+
+  // data: [{ id_gedung, nama_gedung, jurusan_id, jam_buka, jam_tutup, wajib_proposal, is_active, lantai:[], ruangan:[] }]
+  async function getKelolaGedung() {
+    return getJson('admin/get_kelola_gedung.php');
+  }
+
+  // JSON: { id?, nama, jurusan_id?, jam_buka:'HH:MM', jam_tutup:'HH:MM', wajib_proposal, salin_alur_dari? }
+  async function simpanGedung(p) {
+    return postJson('admin/simpan_gedung.php', p);
+  }
+
+  // JSON: { aksi:'tambah', gedung_id, nomor } atau { aksi:'hapus', id }
+  async function simpanLantai(p) {
+    return postJson('admin/simpan_lantai.php', p);
+  }
+
+  // JSON: { id?, gedung_id, nama, kapasitas?, lantai_id?, is_active }
+  async function simpanRuangan(p) {
+    return postJson('admin/simpan_ruangan.php', p);
+  }
+
+  // JSON: { id?, role, nama, username, email, password (baru), jabatan_id, jurusan_id, nama_organisasi, dosen_pembimbing_id }
+  async function simpanUser(p) {
+    return postJson('admin/simpan_user.php', p);
+  }
+
+  // JSON: { id_user, password_baru }
+  async function resetPassword(id_user, password_baru) {
+    return postJson('admin/reset_password.php', { id_user, password_baru });
+  }
+
+  // JSON: { gedung_id, jabatan_ids:[...] }  (urutan array = urutan tahap)
+  async function simpanAlur(gedung_id, jabatan_ids) {
+    return postJson('admin/simpan_alur.php', { gedung_id, jabatan_ids });
+  }
+
+  // JSON: { satpam_id, gedung_ids:[...] }  (menggantikan seluruh gedung tugas satpam tsb)
+  async function simpanSatpamGedung(satpam_id, gedung_ids) {
+    return postJson('admin/simpan_satpam_gedung.php', { satpam_id, gedung_ids });
   }
 
   // Pilihan form Tambah Akun yang berasal dari database: jabatan, jurusan, dosen pembimbing
@@ -252,11 +330,14 @@
 
   global.API = {
     ymd, verifyUrl, qrUrl, BACKEND,
-    riwayatReservasi, buatReservasi, kirimRevisi, batalkanReservasi, listGedungAktif, cekKetersediaan, jadwalAcara,
+    riwayatReservasi, buatReservasi, kirimRevisi, batalkanReservasi, listGedungAktif, cekKetersediaan, tanggalTerpesan, jadwalAcara,
     getPending, prosesApproval, riwayatApproval,
     dashboardSatpam, scanQR,
     dashboardAdmin, getGedung, getJadwalGlobal, updateStatusGedung, terbitkanSurat, logAktivitas, rekapPemakaian,
-    getAlurGedung, getSatpamGedung, getUsers, toggleUser, getReferensiAkun, tambahUser,
+    getAlurGedung, getSatpamGedung, getUsers, toggleUser,
+    getMaster, simpanJurusan, simpanJabatan, getKelolaGedung, simpanGedung, simpanLantai, simpanRuangan, simpanUser, resetPassword, simpanAlur, simpanSatpamGedung,
+    cariReservasi, timelineReservasi, siapkanReminder,
+    getReferensiAkun, tambahUser,
     updateProfil, getVerifikasi
   };
 })(window);

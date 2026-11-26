@@ -192,7 +192,7 @@
         tgl_selesai: dayOffset(2), // Multi-hari (3 hari)
         jam_mulai: '08:00:00',
         jam_selesai: '17:00:00',
-        penanggung_jawab_nama: 'Bima Arya Perkasa (Ketua Pelaksana)',
+        penanggung_jawab_nama: 'Bima Arya Perkasa',
         penanggung_jawab_kontak: '081234567899',
         tempat: [
           { id_gedung: G.graha, nama_gedung: 'Graha Theater Utama', tipe_sewa: 'Gedung Utuh', id_ruangan: null, nama_ruangan: '-' }

@@ -3,7 +3,7 @@
    Fitur:
      - Daftar Reservasi Approved Khusus Gedung Tugas yang Dijaga
      - Tampilan Hari Ini, Sedang Berlangsung, dan Akan Datang
-     - Kontak Penanggung Jawab Acara (Ketua Pelaksana & No HP/WA)
+     - Kontak Penanggung Jawab Acara (Nama, NIM & No HP/WA)
      - Pemindaian & Verifikasi QR: Validitas, Status Waktu, Gedung Tugas Cocok/Tidak
    ===================================================================== */
 (function () {

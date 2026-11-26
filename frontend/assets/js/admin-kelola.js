@@ -6,6 +6,7 @@
      3. Kelola Akun          -> buat/ubah akun, reset password  (users, approver, satpam, organisasi)
      4. Alur Persetujuan     -> atur tahap approver per gedung  (alur_persetujuan)
      5. Penugasan Satpam     -> atur gedung tugas satpam        (satpam_gedung)
+     6. Reminder Approver    -> email pengingat antrean macet   (v_antrean_macet)
    Dimuat oleh pages/dashboard-admin.html SEBELUM skrip inline halaman. Fungsi di sini memakai
    $, esc, store, loadStore, renderDashboard yang didefinisikan skrip inline (dipanggil saat runtime).
    Semua data berasal dari endpoint backend/api/admin/* lewat window.API.
@@ -19,7 +20,7 @@
   /* ------------------------------------------------------------------
      Modal form generik
      cfg = {
-       title, subtitle, message, submitLabel, danger, wide,
+       title, subtitle, message, preview (teks pra-format, mis. isi email), submitLabel, danger, wide,
        fields: [{ name, label, type: 'text'|'number'|'time'|'email'|'password'|'select'|'checkbox',
                   options: [{ value, label }], required, readonly, placeholder, hint, maxlength, min, max,
                   half, showIf(values) }],
@@ -37,6 +38,8 @@
     overlay.className = 'overlay open admin-form-overlay';
     const lebar = cfg.wide ? 'min(720px, 94vw)' : 'min(560px, 94vw)';
 
+    const IKON_MATA = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const IKON_MATA_TUTUP = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19c-7 0-11-7-11-7a19.8 19.8 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.9 10.9 0 0 1 12 5c7 0 11 7 11 7a19.8 19.8 0 0 1-3.17 4.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
     const htmlField = (f) => {
       const id = 'af-' + f.name;
       const v = nilai[f.name] == null ? '' : nilai[f.name];
@@ -50,6 +53,8 @@
       } else if (f.type === 'checkbox') {
         input = `<label class="af-check"><input type="checkbox" id="${id}" name="${f.name}"${v === true || v === 'true' || v === 1 ? ' checked' : ''}${f.readonly ? ' disabled' : ''}> <span>${E(f.checkLabel || f.label)}</span></label>`;
         return `<div class="field af-field${f.half ? '' : ' af-full'}" data-field="${f.name}">${hint}${input}</div>`;
+      } else if (f.type === 'textarea') {
+        input = `<textarea class="input" id="${id}" name="${f.name}" rows="${f.rows || 4}"${f.placeholder ? ` placeholder="${E(f.placeholder)}"` : ''}${f.readonly ? ' readonly' : ''} style="resize:vertical;height:auto;min-height:90px">${E(v)}</textarea>`;
       } else {
         const attrs = [
           `type="${f.type || 'text'}"`, `id="${id}"`, `name="${f.name}"`, `class="input"`,
@@ -62,6 +67,9 @@
           f.type === 'password' ? 'autocomplete="new-password"' : ''
         ].filter(Boolean).join(' ');
         input = `<input ${attrs}>`;
+        if (f.type === 'password') {                                    // ikon mata: tampilkan / sembunyikan password
+          input = `<div class="pass-wrap">${input}<button type="button" class="toggle-pwd" aria-label="Tampilkan password" aria-pressed="false" tabindex="-1">${IKON_MATA}</button></div>`;
+        }
       }
       return `<div class="field af-field${f.half ? '' : ' af-full'}" data-field="${f.name}"><label for="${id}">${E(f.label)}${req}</label>${input}${hint}</div>`;
     };
@@ -74,6 +82,7 @@
         </div>
         <form novalidate>
           ${cfg.message ? `<p class="af-message">${E(cfg.message)}</p>` : ''}
+          ${cfg.preview ? `<pre class="af-pre">${E(cfg.preview)}</pre>` : ''}
           <div class="af-grid">${fields.map(htmlField).join('')}</div>
           <div class="af-error" role="alert" hidden></div>
           <div class="actions" style="margin-top:6px">
@@ -85,6 +94,16 @@
     document.body.appendChild(overlay);
 
     const form = overlay.querySelector('form');
+    overlay.addEventListener('click', (e) => {                          // ikon mata (delegasi, tetap jalan walau form dirender ulang)
+      const b = e.target.closest('.toggle-pwd');
+      if (!b) { return; }
+      const inp = b.parentElement.querySelector('input');
+      const tampil = inp.type === 'password';
+      inp.type = tampil ? 'text' : 'password';
+      b.innerHTML = tampil ? IKON_MATA_TUTUP : IKON_MATA;
+      b.setAttribute('aria-pressed', String(tampil));
+      b.setAttribute('aria-label', tampil ? 'Sembunyikan password' : 'Tampilkan password');
+    });
     const boxError = overlay.querySelector('.af-error');
     const btnSimpan = overlay.querySelector('[data-act="simpan"]');
 
@@ -239,8 +258,13 @@
     ];
     if (baru) {
       fields.push({
-        name: 'salin_alur_dari', label: 'Salin Alur Persetujuan Dari', type: 'select',
-        options: [{ value: '', label: 'Jangan salin (atur nanti)' }].concat(store.kelola.filter((x) => x.jumlah_tahap_alur > 0).map((x) => ({ value: x.id_gedung, label: `${x.nama_gedung} (${x.jumlah_tahap_alur} tahap)` }))),
+        name: 'ruangan', label: 'Daftar Ruangan (opsional)', type: 'textarea',
+        placeholder: 'Satu ruangan per baris, mis.\nR.101\nR.102\nLab Komputer',
+        hint: 'Boleh dikosongkan lalu ditambah nanti lewat tombol Ruangan. Pisahkan dengan baris baru atau koma.'
+      });
+      fields.push({
+        name: 'salin_alur_dari', label: ' Alur Birokrasi', type: 'select',
+        options: [{ value: '', label: ' Atur alur ' }].concat(store.kelola.filter((x) => x.jumlah_tahap_alur > 0).map((x) => ({ value: x.id_gedung, label: `${x.nama_gedung} (${x.jumlah_tahap_alur} tahap)` }))),
         hint: 'Gedung tanpa alur persetujuan belum bisa dipinjam.'
       });
     }
@@ -249,7 +273,7 @@
       subtitle: baru ? 'Gedung baru otomatis berstatus aktif.' : g.nama_gedung,
       fields,
       values: baru
-        ? { nama: '', jurusan_id: '', jam_buka: '07:00', jam_tutup: '21:00', wajib_proposal: true, salin_alur_dari: '' }
+        ? { nama: '', jurusan_id: '', jam_buka: '07:00', jam_tutup: '21:00', wajib_proposal: true, ruangan: '', salin_alur_dari: '' }
         : { nama: g.nama_gedung, jurusan_id: g.jurusan_id == null ? '' : g.jurusan_id, jam_buka: g.jam_buka, jam_tutup: g.jam_tutup, wajib_proposal: g.wajib_proposal },
       validate: (v) => (v.jam_tutup <= v.jam_buka ? 'Jam tutup harus lebih besar dari jam buka.' : null),
       onSubmit: (v) => API.simpanGedung(Object.assign({}, v, baru ? {} : { id: g.id_gedung })),
@@ -569,7 +593,9 @@
         showIf: (v) => v.role === 'pengaju' },
       { name: 'dosen_pembimbing_id', label: 'Dosen Pembimbing', type: 'select', required: true,
         options: [{ value: '', label: '-- Pilih dosen pembimbing --' }].concat((m.dosen_pembimbing || []).map((d) => ({ value: d.id, label: d.nama }))),
-        hint: 'Daftar berisi akun approver berjabatan Dosen Pembimbing yang aktif.',
+        hint: (m.dosen_pembimbing || []).length
+          ? 'Daftar berisi akun approver berjabatan Dosen Pembimbing yang aktif.'
+          : 'Belum ada dosen pembimbing aktif. Buat dulu akun Approver dengan jabatan Dosen Pembimbing, lalu buka form ini lagi.',
         showIf: (v) => v.role === 'pengaju' }
     ];
     if (baru) {
@@ -767,6 +793,31 @@
     });
   }
 
+
+  /* ==================================================================
+     6. REMINDER APPROVER (antrean macet)
+     Backend menyiapkan isi email + tautan mailto dan mencatatnya di log; pengiriman dilakukan admin lewat aplikasi emailnya.
+     ================================================================== */
+  async function siapkanReminder(idReservasi, tombol) {
+    if (tombol) { tombol.disabled = true; }
+    const res = await API.siapkanReminder(idReservasi);
+    if (tombol) { tombol.disabled = false; }
+    if (res.status !== 'success') { toast(res.message || 'Gagal menyiapkan email pengingat.', 'bad'); return; }
+    const d = res.data;
+    formModal({
+      title: 'Kirim Reminder ke Approver',
+      subtitle: `Kepada: ${d.nama_approver} <${d.to}>`,
+      message: `Subjek: ${d.subject}`,
+      preview: d.body,
+      submitLabel: 'Buka Aplikasi Email',
+      onSubmit: async () => {
+        global.location.href = d.mailto;
+        return { status: 'success', message: 'Aplikasi email dibuka. Kirim email dari sana agar pengingat sampai.' };
+      },
+      onDone: () => {}
+    });
+  }
+
   /* ------------------------------------------------------------------
      Satu pendengar klik untuk semua tombol aksi di halaman admin (event delegation).
      Tombol di dalam modal ruangan ditangani onKlikRuangan.
@@ -791,6 +842,7 @@
       case 'toggle-user': konfirmasiToggleUser(id, el.dataset.aktif === 'true'); break;
       case 'edit-alur': formAlur(id); break;
       case 'edit-satpam': formSatpam(id); break;
+      case 'reminder': siapkanReminder(id, el); break;
       default: break;
     }
   });

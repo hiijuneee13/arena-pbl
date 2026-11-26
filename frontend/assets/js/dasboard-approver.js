@@ -49,6 +49,7 @@
 
         <div class="card-actions" style="margin-top:16px;">
           <button class="btn btn-pill btn-ghost" data-pdf="${esc(p.id_reservasi)}" data-file="${esc(p.file_proposal || '')}" data-url="${esc(p.url_pdf || '')}" data-acara="${esc(p.nama_acara)}">Lihat Berkas PDF (v${esc(p.versi_proposal || 1)})</button>
+          <button class="btn btn-pill btn-ghost" data-timeline="${esc(p.id_reservasi)}">Riwayat Pengajuan</button>
           <button class="btn btn-pill btn-approve" data-act="approve" data-id="${esc(p.id_reservasi)}">✓ Disetujui</button>
           <button class="btn btn-pill btn-revision" data-act="revision" data-id="${esc(p.id_reservasi)}" style="background:#D97706; color:#fff; box-shadow:0 4px 14px rgba(217,119,6,0.25);">✎ Minta Revisi</button>
           <button class="btn btn-pill btn-reject" data-act="reject" data-id="${esc(p.id_reservasi)}">✕ Ditolak</button>
@@ -58,7 +59,7 @@
   };
 
   /* Tabel Arsip Keputusan */
-  const tabelArsip = (rows) => `
+  const tabelArsip = (rows, pesanKosong) => `
     <thead>
       <tr>
         <th>Nomor / Acara</th>
@@ -67,6 +68,7 @@
         <th>Keputusan Saya</th>
         <th>Catatan Keputusan</th>
         <th>Waktu Proses</th>
+        <th>Riwayat</th>
       </tr>
     </thead>
     <tbody>
@@ -78,8 +80,9 @@
           <td>${UI.badge(a.status || a.keputusan_saya)}</td>
           <td>${esc(a.catatan || '-')}</td>
           <td><small>${esc(a.waktu_proses)}</small></td>
+          <td><button class="btn btn-ghost btn-sm" data-timeline="${esc(a.id_reservasi)}">Lihat</button></td>
         </tr>
-      `).join('') || '<tr><td colspan="6" class="muted">Belum ada riwayat keputusan yang pernah Anda buat.</td></tr>'}
+      `).join('') || `<tr><td colspan="7" class="muted">${pesanKosong}</td></tr>`}
     </tbody>
   `;
 
@@ -101,7 +104,32 @@
     const kosong = '<div class="card empty">Tidak ada antrean baru. Semua pengajuan yang menjadi giliran Anda telah diproses.</div>';
     $('list-dashboard').innerHTML = antrean.slice(0, 3).map(card).join('') || kosong;
     $('list-antrean').innerHTML = antrean.map(card).join('') || kosong;
-    $('tbl-arsip').innerHTML = tabelArsip(riw.data || []);
+    arsip = riw.data || [];
+    if (!arsipBar) {
+      arsipBar = ListTools.bar({
+        host: $('filter-arsip'), pagerHost: $('pager-arsip'), perPage: 10, dates: true,
+        placeholder: 'Cari nama kegiatan, nomor, peminjam, atau catatan...',
+        statuses: [{ value: 'Approve', label: 'Disetujui' }, { value: 'Revision', label: 'Minta Revisi' }, { value: 'Reject', label: 'Ditolak' }],
+        statusLabel: 'Semua Keputusan',
+        onChange: gambarArsip
+      });
+    }
+    gambarArsip();
+  }
+
+  let arsip = [];
+  let arsipBar = null;
+
+  // Arsip keputusan: saring + paginasi di sisi klien
+  function gambarArsip() {
+    const hasil = ListTools.paginate(arsip, arsipBar.state, {
+      teks: (a) => [a.nama_acara, a.nomor_pengajuan, a.penanggung_jawab_nama, a.nama_pemohon, a.nama_instansi, a.catatan].join(' '),
+      status: (a) => a.status || a.keputusan_saya,
+      tanggal: (a) => [a.tgl_acara, a.tgl_acara]
+    });
+    arsipBar.setTotal(hasil.total, hasil.totalHalaman, hasil.halaman);
+    const menyaring = arsipBar.state.q || arsipBar.state.status || arsipBar.state.dari || arsipBar.state.sampai;
+    $('tbl-arsip').innerHTML = tabelArsip(hasil.items, menyaring ? 'Tidak ada keputusan yang cocok dengan pencarian/filter Anda.' : 'Belum ada riwayat keputusan yang pernah Anda buat.');
   }
 
   /* Pratinjau PDF */

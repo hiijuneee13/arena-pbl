@@ -24,10 +24,6 @@
   $('f-pemohon').value = `${user.nama} (${user.email})`;
   
   const todayYmd = API.ymd(new Date());
-  $('f-tgl-mulai').min = todayYmd;
-  $('f-tgl-selesai').min = todayYmd;
-  $('f-tgl-mulai').value = todayYmd;
-  $('f-tgl-selesai').value = todayYmd;
   $('f-mulai').value = '08:00';
   $('f-selesai').value = '17:00';
 
@@ -55,6 +51,87 @@
     $('btn-back').style.visibility = n === 1 ? 'hidden' : 'visible';
     $('btn-next').textContent = n === 5 ? 'Kirim Pengajuan >' : 'Lanjut >';
     if (n === 5) renderConfirm();
+  }
+
+  /* ---- Kalender (Flatpickr): kunci tanggal lewat & tanggal yang sudah penuh ----
+     Nilai input tetap 'YYYY-MM-DD' (altInput hanya tampilan), jadi val('f-tgl-...') dan validasi lain tidak berubah.
+     - minDate "today": tanggal sebelum hari ini abu-abu & tidak bisa diklik.
+     - Tanggal Selesai tidak bisa lebih awal dari Tanggal Mulai, dan tidak melewati tanggal penuh berikutnya.
+     - Tanggal penuh (seluruh jam operasional terisi) untuk gedung/ruangan terpilih diambil dari backend dan dinonaktifkan;
+       tanggal yang baru terisi sebagian tetap bisa dipilih (diberi titik), bentrok jamnya dicek oleh cek ketersediaan. */
+  let tglPenuh = new Set(), tglSebagian = new Set();
+  let fpMulai = null, fpSelesai = null;
+
+  const geserHari = (ymd, n) => { const d = new Date(ymd + 'T00:00:00'); d.setDate(d.getDate() + n); return API.ymd(d); };
+
+  if (typeof flatpickr === 'function') {
+    if (flatpickr.l10ns && flatpickr.l10ns.id) flatpickr.localize(flatpickr.l10ns.id);
+    const dasar = () => ({
+      dateFormat: 'Y-m-d', altInput: true, altFormat: 'j F Y', allowInput: false, disableMobile: true, minDate: 'today',
+      disable: [(d) => tglPenuh.has(API.ymd(d))],
+      onDayCreate: (_d, _s, fp, el) => {
+        const y = API.ymd(el.dateObj);
+        if (tglPenuh.has(y)) { el.classList.add('hari-penuh'); el.title = 'Sudah penuh / terpesan'; }
+        else if (tglSebagian.has(y)) { el.classList.add('hari-sebagian'); el.title = 'Sebagian jam sudah terisi'; }
+      }
+    });
+    fpMulai = flatpickr('#f-tgl-mulai', Object.assign(dasar(), { defaultDate: todayYmd }));
+    fpSelesai = flatpickr('#f-tgl-selesai', Object.assign(dasar(), { defaultDate: todayYmd }));
+  } else {
+    // CDN tidak termuat: pakai input tanggal bawaan browser (batas hari ini tetap berlaku)
+    ['f-tgl-mulai', 'f-tgl-selesai'].forEach((id) => { $(id).type = 'date'; $(id).min = todayYmd; $(id).value = todayYmd; });
+  }
+
+  function setTgl(which, ymd) {
+    const fp = which === 'mulai' ? fpMulai : fpSelesai;
+    if (fp) fp.setDate(ymd, false); else $(which === 'mulai' ? 'f-tgl-mulai' : 'f-tgl-selesai').value = ymd;
+  }
+
+  // Batas Tanggal Selesai: >= Tanggal Mulai dan sebelum tanggal penuh berikutnya. Mengembalikan tanggal maksimum ('' = bebas).
+  function aturBatasSelesai() {
+    const m = val('f-tgl-mulai');
+    const berikut = m ? [...tglPenuh].filter((d) => d > m).sort()[0] : null;
+    const maks = berikut ? geserHari(berikut, -1) : '';
+    if (fpSelesai) { fpSelesai.set('minDate', m || 'today'); fpSelesai.set('maxDate', maks || null); }
+    else if (m) { $('f-tgl-selesai').min = m; if (maks) $('f-tgl-selesai').max = maks; else $('f-tgl-selesai').removeAttribute('max'); }
+    return maks;
+  }
+
+  // Menjaga pasangan tanggal tetap valid setelah salah satunya berubah / data tanggal penuh diperbarui
+  function rapikanTanggal() {
+    const maks = aturBatasSelesai();
+    const m = val('f-tgl-mulai'), sel = val('f-tgl-selesai');
+    if (!sel || sel < m || (maks && sel > maks)) setTgl('selesai', m);
+  }
+
+  // Dipanggil setelah daftar tanggal penuh baru diterima
+  function terapkanTanggal() {
+    if (fpMulai) { fpMulai.redraw(); fpSelesai.redraw(); }
+    const m = val('f-tgl-mulai');
+    if (m && tglPenuh.has(m)) {                                  // tanggal yang sudah dipilih ternyata penuh -> geser ke hari bebas berikutnya
+      let n = m, i = 0;
+      do { n = geserHari(n, 1); } while (tglPenuh.has(n) && ++i < 400);
+      setTgl('mulai', n);
+      UI.toast(`Tanggal ${UI.fmtTgl(m)} sudah penuh untuk pilihan ini. Tanggal dialihkan ke ${UI.fmtTgl(n)}.`, '');
+    }
+    rapikanTanggal();
+    refreshHint();
+  }
+
+  let kunciTanggal = '', seqTanggal = 0;
+  async function muatTanggal(paksa) {
+    if (!form.gedung) return;
+    const ids = form.ruangan.map((r) => r.id_ruangan);
+    const kunci = form.gedung.id_gedung + '|' + ids.join(',');
+    if (!paksa && kunci === kunciTanggal) return;
+    kunciTanggal = kunci;
+    const seq = ++seqTanggal;
+    const res = await API.tanggalTerpesan(form.gedung.id_gedung, ids);
+    if (seq !== seqTanggal) return;                              // pilihan sudah berganti, abaikan jawaban lama
+    if (res.status !== 'success') { kunciTanggal = ''; return; }
+    tglPenuh = new Set(res.data.tanggal_penuh || []);
+    tglSebagian = new Set(res.data.tanggal_sebagian || []);
+    terapkanTanggal();
   }
 
   /* ---- Pilihan Gedung & Ruangan ---- */
@@ -196,6 +273,7 @@
   async function refreshHint() {
     const seq = ++hintSeq;
     const hint = $('jadwal-hint');
+    muatTanggal();                                               // gedung/ruangan berubah -> ambil ulang tanggal penuh
     if (!form.gedung || !val('f-tgl-mulai')) {
       hint.textContent = 'Pilih tempat dan tanggal untuk melihat ketersediaan & jam operasional.';
       hint.className = 'hint';
@@ -235,9 +313,7 @@
   }
 
   $('f-tgl-mulai').addEventListener('change', () => {
-    if (val('f-tgl-selesai') < val('f-tgl-mulai')) {
-      $('f-tgl-selesai').value = $('f-tgl-mulai').value;
-    }
+    rapikanTanggal();
     refreshHint();
   });
   $('f-tgl-selesai').addEventListener('change', refreshHint);
@@ -366,8 +442,8 @@
     ['f-nama', 'f-deskripsi', 'f-pj-nama', 'f-pj-nim', 'f-pj-kontak'].forEach((id) => { $(id).value = ''; });
     form.file = null; fileEl.value = '';
     dzText.textContent = 'Seret file proposal, atau klik untuk memilih file';
-    updateRuanganDropdown(form.gedung);                          // pilihan ruangan kembali ke Gedung Utuh
     go(1);
+    muatTanggal(true);                                           // pengajuan baru mengubah tanggal terpesan
     refreshHint();
   }
 
@@ -391,7 +467,37 @@
       ['Disetujui', hitung('Approved')]
     ].map(([l, v]) => `<div class="card stat reveal"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
 
-    $('list-riwayat').innerHTML = d.map((r, i) => {
+    if (!riwayatBar) {
+      riwayatBar = ListTools.bar({
+        host: $('filter-riwayat'), pagerHost: $('pager-riwayat'), perPage: 5, dates: true,
+        placeholder: 'Cari nama kegiatan, nomor pengajuan, atau tempat...',
+        statuses: [
+          { value: 'In-Progress', label: 'Sedang Diproses' }, { value: 'Need-Revision', label: 'Perlu Revisi' },
+          { value: 'Approved', label: 'Disetujui' }, { value: 'Rejected', label: 'Ditolak' }, { value: 'Dibatalkan', label: 'Dibatalkan Sistem' }
+        ],
+        onChange: gambarRiwayat
+      });
+    }
+    gambarRiwayat();
+  }
+
+  let riwayatBar = null;
+
+  // Menyaring + memotong halaman (di sisi klien), lalu menggambar kartu
+  function gambarRiwayat() {
+    const hasil = ListTools.paginate(riw, riwayatBar.state, {
+      teks: (r) => [r.nama_acara, r.nomor_pengajuan, r.nama_gedung, r.penanggung_jawab_nama].join(' '),
+      status: (r) => r.status_akhir,
+      tanggal: (r) => [r.tgl_mulai || r.tgl_acara, r.tgl_selesai || r.tgl_mulai || r.tgl_acara]
+    });
+    riwayatBar.setTotal(hasil.total, hasil.totalHalaman, hasil.halaman);
+    const menyaring = riwayatBar.state.q || riwayatBar.state.status || riwayatBar.state.dari || riwayatBar.state.sampai;
+    $('list-riwayat').innerHTML = hasil.items.map(kartuRiwayat).join('') ||
+      (menyaring ? '<div class="card empty">Tidak ada pengajuan yang cocok dengan pencarian/filter Anda.</div>'
+                 : '<div class="card empty">Belum ada pengajuan peminjaman. Mulai dari menu "Ajukan Peminjaman".</div>');
+  }
+
+  function kartuRiwayat(r, i) {
       const isMultiHari = r.tgl_mulai && r.tgl_selesai && r.tgl_mulai !== r.tgl_selesai;
       const tglStr = isMultiHari ? `${UI.fmtTgl(r.tgl_mulai)} s/d ${UI.fmtTgl(r.tgl_selesai)}` : UI.fmtTgl(r.tgl_mulai || r.tgl_acara);
       const isNeedRev = r.status_akhir === 'Need-Revision';
@@ -413,11 +519,11 @@
             <button class="btn btn-sm btn-revisi" data-id="${esc(r.id_reservasi)}" data-catatan="${esc(revLog ? revLog.catatan : '')}">Kirim Revisi Proposal &gt;</button>
           </div>` : ''}
         ${(r.logs || []).some((l) => l.catatan) ? `<button class="btn btn-ghost btn-sm" data-lihat-catatan="${esc(r.id_reservasi)}">Lihat Catatan</button> ` : ''}
+        <button class="btn btn-ghost btn-sm" data-timeline="${esc(r.id_reservasi)}">Riwayat Lengkap</button> 
         ${isApproved ? `<a class="btn btn-ghost btn-sm" href="${esc(API.verifyUrl(r.id_reservasi))}" target="_blank" rel="noopener">Lihat Verifikasi Surat</a> ` : ''}
         ${bolehBatal(r) ? `<button class="btn btn-sm btn-outline-danger btn-batal" data-id="${esc(r.id_reservasi)}" data-acara="${esc(r.nama_acara)}">Batalkan Peminjaman</button>` : ''}
         ${isApproved ? `<button class="btn btn-sm btn-lihat-qr" data-id="${esc(r.id_reservasi)}" data-nomor="${esc(r.nomor_pengajuan)}" data-acara="${esc(r.nama_acara)}" data-gedung="${esc(r.nama_gedung)}" data-waktu="${esc(tglStr)}">Lihat QR Code Resmi</button>` : ''}
       </div>`;
-    }).join('') || '<div class="card empty">Belum ada pengajuan peminjaman. Mulai dari menu "Ajukan Peminjaman".</div>';
   }
 
   /* Pengajuan masih bisa dibatalkan selama belum ditolak/dibatalkan; yang sudah disetujui hanya sebelum acara dimulai */
@@ -571,19 +677,6 @@
   };
   const jadwalDipilih = () => jd.data.filter((j) => jd.gedung === SEMUA || j.nama_gedung === jd.gedung);
 
-  // Backend mengirim satu baris per ruangan; acara yang sama di gedung yang sama digabung supaya tidak muncul berulang di kalender
-  function gabungRuangan(rows) {
-    const peta = new Map();
-    (rows || []).forEach((j) => {
-      const nama = j.nama_ruangan && j.nama_ruangan !== 'Seluruh Gedung' ? j.nama_ruangan : null;
-      const kunci = `${j.id_reservasi}:${j.id_gedung}`;
-      const ada = peta.get(kunci);
-      if (!ada) peta.set(kunci, Object.assign({}, j, { _ruangan: nama ? [nama] : [] }));
-      else if (nama && !ada._ruangan.includes(nama)) ada._ruangan.push(nama);
-    });
-    return [...peta.values()].map((j) => Object.assign(j, { nama_ruangan: j._ruangan.length ? j._ruangan.join(', ') : 'Seluruh Gedung' }));
-  }
-
   async function loadJadwal() {
     const [res, ged] = await Promise.all([API.jadwalAcara(), API.listGedungAktif()]);
     if (res.status !== 'success') {
@@ -591,7 +684,7 @@
       $('cal').innerHTML = '';
       return;
     }
-    jd.data = gabungRuangan(res.data);
+    jd.data = res.data;
     if (!jd.dd) {                                               // dropdown gedung dibuat sekali
       jd.dd = true;
       $('filter-gedung').appendChild(UI.dropdown({ label: SEMUA, value: SEMUA, items: [SEMUA, ...(ged.data || []).map((g) => g.nama_gedung)],

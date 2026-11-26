@@ -486,7 +486,7 @@
             <h4>Organisasi Mahasiswa</h4>
             <ul>
               <li>Peminjaman dapat mencakup <b>gedung utuh</b> atau <b>beberapa ruangan</b> sekaligus.</li>
-              <li>Wajib mengisi nama &amp; kontak <b>Ketua Pelaksana</b> sebagai penanggung jawab acara.</li>
+              <li>Wajib mengisi nama &amp; kontak <b>Penanggung Jawab</b> acara (nama, NIM, dan kontak WhatsApp/HP).</li>
               <li>Unggah proposal PDF (maks. 5MB). Format surat dapat diunduh di formulir peminjaman.</li>
               <li>Jika status <b>Need-Revision</b>, unggah versi revisi melalui tombol perbaikan di riwayat.</li>
             </ul>
@@ -510,7 +510,7 @@
               <li>Hanya menampilkan kegiatan di gedung-gedung yang menjadi wilayah tugas Anda.</li>
               <li>Tersedia pemindai QR untuk memeriksa keabsahan surat izin peminjaman di lokasi.</li>
               <li>Status waktu otomatis terdeteksi: <i>Belum Mulai</i>, <i>Sedang Berlangsung</i>, atau <i>Sudah Berakhir</i>.</li>
-              <li>Dilengkapi tombol panggilan darurat langsung ke Ketua Pelaksana kegiatan.</li>
+              <li>Dilengkapi tombol panggilan darurat langsung ke Penanggung Jawab kegiatan.</li>
             </ul>
           </div>
         </div>
