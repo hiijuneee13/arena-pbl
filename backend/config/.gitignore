@@ -1,8 +1,9 @@
-# 1. Kredensial Database & Storage (Wajib diabaikan agar password Neon aman)
+# 1. Kredensial Database, Storage & Email (jangan di-commit)
 backend/config/koneksi.php
+backend/config/storage.php
+backend/config/email.php
 .env
 .env.*
-backend/config/storage.php
 
 # 2. File PDF hasil upload user/testing (Folder tetap dipertahankan lewat .gitkeep)
 backend/uploads/*
