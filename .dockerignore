@@ -1,0 +1,15 @@
+.git
+.gitignore
+.dockerignore
+Dockerfile
+README.md
+docs
+database
+
+# upload lokal dan file konfigurasi berisi password tidak ikut ke image
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/config/koneksi.php
+backend/config/storage.php
+backend/config/email.php
+.env
