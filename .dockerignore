@@ -1,0 +1,7 @@
+.git
+.gitignore
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/config/koneksi.php
+backend/config/storage.php
+backend/config/email.php
