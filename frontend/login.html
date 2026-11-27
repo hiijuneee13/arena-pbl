@@ -281,11 +281,13 @@
             fgBusy(fromResend ? "btnResendOtp" : "btnSendOtp", true, fromResend ? "Kirim Ulang" : "Kirim Kode Verifikasi");
             const res = await Auth.requestReset(em);
             fgBusy(fromResend ? "btnResendOtp" : "btnSendOtp", false, fromResend ? "Kirim Ulang" : "Kirim Kode Verifikasi");
-            if (!res.ok) { fgMsg(msgN, res.message); return; }
+                       if (!res.ok) { fgMsg(msgN, res.message); return; }
             fg.email = em;
             $("fgDesc2").textContent = res.message;
+            $("fgDemo").style.display = res.demo ? "" : "none";   // kotak simulasi hanya untuk mode demo
             fgShow(2); fgRenderInbox(); fgStartTimer(res.cooldown);
-            $("fgOtp").value = ""; fgMsg(2, ""); $("fgOtp").focus();
+            $("fgOtp").value = ""; fgMsg(2, ""); $("fgOtp").focus();    
+
         }
         $("btnSendOtp").addEventListener("click", () => sendOtp(false));
         $("forgotEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") sendOtp(false); });

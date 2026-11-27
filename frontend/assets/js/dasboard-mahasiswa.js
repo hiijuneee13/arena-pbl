@@ -365,7 +365,26 @@
   function shake() { const c = $('wizard'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
 
   /* Langkah 1: Unduh Surat Peminjaman */
-  $('btn-unduh').onclick = () => UI.toast(`Mengunduh Surat Peminjaman Tempat - ${org.nama_organisasi.split(' - ')[0]}.docx ...`, 'ok');
+  $('btn-unduh').onclick = async () => {
+    const btn = $('btn-unduh');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    // karakter yang dilarang pada nama file diganti agar aman di semua sistem operasi
+    const namaFile = `Surat Peminjaman Tempat - ${org.nama_organisasi.split(' - ')[0]}`.replace(/[\\/:*?"<>|]+/g, '-') + '.docx';
+    UI.toast(`Mengunduh ${namaFile} ...`);
+    const res = await API.unduhTemplate();
+    btn.disabled = false;
+    if (res.status !== 'success') return UI.toast(res.message, 'bad');
+    const url = URL.createObjectURL(res.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = namaFile;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    UI.toast('Surat berhasil diunduh.', 'ok');
+  };
 
   /* Langkah 4: Dropzone PDF */
   const dz = $('dropzone'), fileEl = $('f-file'), dzText = $('dz-text');

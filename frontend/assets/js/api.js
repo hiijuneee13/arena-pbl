@@ -106,6 +106,24 @@
     return postJson('mahasiswa/batalkan_reservasi.php', { id_reservasi: p.id_reservasi, alasan: (p.alasan || '').trim() });
   }
 
+  // Template surat peminjaman (.docx). Sukses: { status: 'success', blob }; gagal: { status: 'error', message }
+  async function unduhTemplate() {
+    try {
+      const res = await fetch(BASE + 'mahasiswa/download_template.php', { credentials: 'include', cache: 'no-store' });
+      const tipe = res.headers.get('Content-Type') || '';
+      if (res.ok && tipe.indexOf('wordprocessingml') !== -1) return { status: 'success', blob: await res.blob() };
+      if (res.status === 401) {                       // sesi PHP habis -> paksa login ulang
+        if (global.Auth) global.Auth.logout();
+        global.location.replace(LOGIN_URL);
+      }
+      let json = null;
+      try { json = await res.json(); } catch (e) { /* bukan JSON */ }
+      return err((json && json.message) || 'Gagal mengunduh template (kode ' + res.status + ').');
+    } catch (e) {
+      return err('Tidak dapat terhubung ke server backend.');
+    }
+  }
+
   async function listGedungAktif() {
     return getJson('mahasiswa/list_gedung_aktif.php');
   }
@@ -330,7 +348,7 @@
 
   global.API = {
     ymd, verifyUrl, qrUrl, BACKEND,
-    riwayatReservasi, buatReservasi, kirimRevisi, batalkanReservasi, listGedungAktif, cekKetersediaan, tanggalTerpesan, jadwalAcara,
+    riwayatReservasi, buatReservasi, kirimRevisi, batalkanReservasi, listGedungAktif, cekKetersediaan, jadwalAcara,
     getPending, prosesApproval, riwayatApproval,
     dashboardSatpam, scanQR,
     dashboardAdmin, getGedung, getJadwalGlobal, updateStatusGedung, terbitkanSurat, logAktivitas, rekapPemakaian,

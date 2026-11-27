@@ -166,11 +166,32 @@
     return u;
   }
 
-  const UNAVAILABLE = 'Fitur lupa kata sandi belum tersedia di backend. Hubungi Admin TU untuk mengatur ulang kata sandi.';
-  async function requestReset() { return { ok: false, message: UNAVAILABLE }; }
-  async function verifyResetOtp() { return { ok: false, message: UNAVAILABLE }; }
-  async function completeReset() { return { ok: false, expired: true, message: UNAVAILABLE }; }
-  function demoInbox() { return []; }
+  /* ---- Lupa kata sandi (backend/api/auth/lupa_password.php) ---- */
+  const demoMail = [];                                // hanya terisi saat server memakai mode demo
+  const resetCall = (body) => request('auth/lupa_password.php', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  });
+
+  async function requestReset(email) {
+    const res = await resetCall({ action: 'minta', email });
+    if (res.status !== 'success') return { ok: false, message: res.message };
+    if (res.demo_kode) {
+      demoMail.unshift({ to: email, subject: 'Kode Verifikasi ARENA', body: 'Kode verifikasi Anda: ' + res.demo_kode + '. Berlaku 10 menit.' });
+    }
+    return { ok: true, message: res.message, cooldown: res.cooldown, demo: !!res.demo };
+  }
+  async function verifyResetOtp(email, kode) {
+    const res = await resetCall({ action: 'verifikasi', email, kode });
+    return { ok: res.status === 'success', message: res.message, token: res.token, locked: !!res.locked };
+  }
+  async function completeReset(email, token, newPwd) {
+    const issues = passwordIssues(newPwd, email);
+    if (issues.length) return { ok: false, message: 'Kata sandi baru belum memenuhi syarat: ' + issues.join('; ') + '.' };
+    const res = await resetCall({ action: 'ganti', email, token, password_baru: newPwd });
+    if (res.status === 'success') clearLoginFail(String(email).toLowerCase());    // buka kunci percobaan login
+    return { ok: res.status === 'success', message: res.message, expired: !!res.expired };
+  }
+  function demoInbox() { return demoMail.slice(); }
 
   async function changePassword(email, oldPwd, newPwd) {
     const issues = passwordIssues(newPwd, email);

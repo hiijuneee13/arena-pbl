@@ -65,16 +65,6 @@ try {
     $pdo->beginTransaction();
 
     $nama_file_simpan = 'revisi_' . bin2hex(random_bytes(10)) . '.pdf';
-    $folder_upload = __DIR__ . '/../../uploads';
-    if (!is_dir($folder_upload)) {
-        mkdir($folder_upload, 0755, true);
-    }
-
-    $direktori_simpan = realpath($folder_upload) . DIRECTORY_SEPARATOR . $nama_file_simpan;
-    if (!move_uploaded_file($file['tmp_name'], $direktori_simpan)) {
-        batalkan($pdo, $direktori_simpan, "Gagal menyimpan berkas proposal ke server!");
-    }
-
     // Stored Function fn_kirim_revisi: path_file yang disimpan hanya NAMA FILE
     $stmt = $pdo->prepare("SELECT fn_kirim_revisi(:id_reservasi, :id_user, :nama_asli, :path_file, :ukuran, :catatan)");
     $stmt->execute([
@@ -90,6 +80,9 @@ try {
     $stmt_v = $pdo->prepare("SELECT posisi_approval FROM v_reservasi WHERE id_reservasi = :id");
     $stmt_v->execute([':id' => $id_reservasi]);
     $posisi = $stmt_v->fetchColumn();
+
+    // Unggah berkas setelah database menerima revisi; bila gagal, revisi dibatalkan
+    $direktori_simpan = simpan_berkas_proposal($file['tmp_name'], $nama_file_simpan);
 
     $pdo->commit();
 
@@ -107,6 +100,9 @@ try {
         error_log("kirim_revisi.php: " . $e->getMessage());
         batalkan($pdo, $direktori_simpan, "Terjadi kesalahan saat mengirim revisi proposal.", 500);
     }
+} catch (RuntimeException $e) {
+    error_log("kirim_revisi.php: " . $e->getMessage());
+    batalkan($pdo, $direktori_simpan, $e->getMessage());
 } catch (Exception $e) {
     error_log("kirim_revisi.php: " . $e->getMessage());
     batalkan($pdo, $direktori_simpan, "Terjadi kesalahan server saat mengirim revisi proposal.", 500);

@@ -1,0 +1,17 @@
+<?php
+// Pengaturan pengiriman kode lupa password.
+// PENTING: file ini jangan di-commit ke GitHub (bisa berisi password aplikasi).
+return [
+    // 'demo' = kode tampil di "Kotak Masuk Simulasi", HANYA bila web diakses dari komputer server.
+    // 'smtp' = kode dikirim ke email pengguna.
+    'mode' => 'demo',
+
+    // Khusus mode demo: alamat IP yang boleh melihat kode (default hanya komputer server sendiri).
+    'demo_ip' => ['127.0.0.1', '::1'],
+
+    // Khusus mode smtp. Untuk Gmail: aktifkan Verifikasi 2 Langkah, lalu buat "Sandi Aplikasi".
+    'smtp_host'     => 'smtp.gmail.com',
+    'smtp_port'     => 465,
+    'smtp_user'     => '',   // alamat Gmail pengirim
+    'smtp_password' => '',   // 16 huruf Sandi Aplikasi (bukan password Gmail biasa)
+];

@@ -93,7 +93,7 @@ if (($tgl_selesai . ' ' . $jam_selesai) <= ($tgl_mulai . ' ' . $jam_mulai)) {
 
 $zona_wib = new DateTimeZone('Asia/Jakarta');
 $hari_ini = (new DateTime('now', $zona_wib))->format('Y-m-d');
-if ($tgl_mulai < $hari_ini) {
+if ($tgl_mulai < $hari_ini || $tgl_selesai < $hari_ini) {
     echo json_encode(["status" => "error", "message" => "Gagal! Tanggal reservasi tidak boleh memilih tanggal di masa lalu."]);
     exit;
 }
@@ -185,18 +185,37 @@ try {
     $waktu_mulai   = $tgl_mulai . ' ' . $jam_mulai . '+07';
     $waktu_selesai = $tgl_selesai . ' ' . $jam_selesai . '+07';
 
+    // Pemeriksaan awal bentrok SEMUA tempat yang dipilih, supaya pesan error menyebut ruangan & acara yang bentrok
+    // (trigger item_validasi tetap menjadi pengaman terakhir saat INSERT, termasuk bila ada pengajuan lain yang masuk bersamaan)
+    $stmt_cek = $pdo->prepare("SELECT nama_acara, to_char(waktu_mulai AT TIME ZONE 'Asia/Jakarta', 'DD-MM-YYYY HH24:MI') AS mulai,
+                                      to_char(waktu_selesai AT TIME ZONE 'Asia/Jakarta', 'DD-MM-YYYY HH24:MI') AS selesai
+                               FROM fn_cek_bentrok(:g, :r, :mulai, :selesai) LIMIT 1");
+    $stmt_nama = $pdo->prepare("SELECT g.nama AS gedung, rg.nama AS ruangan FROM gedung g
+                                LEFT JOIN ruangan rg ON rg.id = :r AND rg.gedung_id = g.id WHERE g.id = :g");
+    foreach ($tempat as $t) {
+        $stmt_cek->bindValue(':g', $t['id_gedung'], PDO::PARAM_INT);
+        $stmt_cek->bindValue(':r', $t['id_ruangan'], $t['id_ruangan'] === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt_cek->bindValue(':mulai', $waktu_mulai);
+        $stmt_cek->bindValue(':selesai', $waktu_selesai);
+        $stmt_cek->execute();
+        if ($bentrok = $stmt_cek->fetch(PDO::FETCH_ASSOC)) {
+            $stmt_nama->bindValue(':g', $t['id_gedung'], PDO::PARAM_INT);
+            $stmt_nama->bindValue(':r', $t['id_ruangan'], $t['id_ruangan'] === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt_nama->execute();
+            $n = $stmt_nama->fetch(PDO::FETCH_ASSOC) ?: ['gedung' => 'Tempat', 'ruangan' => null];
+            $tempat_txt = $t['id_ruangan'] === null ? $n['gedung'] . ' (Gedung Utuh)' : $n['gedung'] . ' - ' . $n['ruangan'];
+            echo json_encode(["status" => "error", "message" => "Gagal! " . $tempat_txt . " sudah terisi oleh \"" . $bentrok['nama_acara']
+                . "\" (" . $bentrok['mulai'] . " s/d " . $bentrok['selesai'] . "). Pilih tanggal/ruangan lain."]);
+            exit;
+        }
+    }
+
     $pdo->beginTransaction();
 
-    // 1. Simpan berkas jika ada. Yang disimpan di database hanya NAMA FILE (path_file).
+    // 1. Siapkan nama berkas. Yang disimpan di database hanya NAMA FILE (path_file).
     $nama_file_simpan = null;
     if ($ada_file) {
         $nama_file_simpan = 'proposal_' . bin2hex(random_bytes(10)) . '.pdf';
-        $folder_upload = __DIR__ . '/../../uploads';
-        if (!is_dir($folder_upload)) { mkdir($folder_upload, 0755, true); }
-        $direktori_simpan = realpath($folder_upload) . DIRECTORY_SEPARATOR . $nama_file_simpan;
-        if (!move_uploaded_file($file['tmp_name'], $direktori_simpan)) {
-            batalkan($pdo, $direktori_simpan, "Gagal mengunggah berkas proposal ke server.");
-        }
     }
 
     // 2. Insert tabel utama reservasi (kolom sesuai skema: organisasi_id, pj_nama, pj_nim, pj_kontak)
@@ -248,6 +267,9 @@ try {
     $stmt_app = $pdo->prepare("SELECT fn_buat_approval(:id)");
     $stmt_app->execute([':id' => $id_reservasi]);
 
+    // 6. Unggah berkas setelah semua pemeriksaan database lolos; bila gagal, pengajuan dibatalkan
+    if ($ada_file) { $direktori_simpan = simpan_berkas_proposal($file['tmp_name'], $nama_file_simpan); }
+
     $pdo->commit();
 
     echo json_encode([
@@ -263,6 +285,9 @@ try {
         error_log("buat_reservasi.php: " . $e->getMessage());
         batalkan($pdo, $direktori_simpan, "Terjadi kesalahan database saat membuat reservasi.", 500);
     }
+} catch (RuntimeException $e) {
+    error_log("buat_reservasi.php: " . $e->getMessage());
+    batalkan($pdo, $direktori_simpan, $e->getMessage());
 } catch (Exception $e) {
     error_log("buat_reservasi.php: " . $e->getMessage());
     batalkan($pdo, $direktori_simpan, "Terjadi kesalahan server saat membuat reservasi.", 500);
